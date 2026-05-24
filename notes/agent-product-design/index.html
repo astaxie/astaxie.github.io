@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent 产品设计的真实入口 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="用户不需要一个万能机器人，而需要可预期的工作流入口。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="Agent 产品设计的真实入口">
+  <meta property="og:description" content="用户不需要一个万能机器人，而需要可预期的工作流入口。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/agent-product-design.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link active" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>Agent 产品设计的真实入口</span></nav>
+          <div class="note-kicker">NOTES / AGENT / 035</div>
+          <h1>Agent 产品设计的真实入口</h1>
+          <p>用户不需要一个万能机器人，而需要可预期的工作流入口。</p>
+          <div class="note-tag-row"><span>Product</span><span>Agent</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/agent-product-design.svg" alt="标题图" loading="lazy"><figcaption>Agent 产品设计的真实入口 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多 Agent 产品一开始都会把入口做成一个聊天框。聊天框很自然，用户可以随便说，模型也可以随便答，看起来最通用。但真正放进日常工作以后，问题会很快暴露：用户不知道该怎么描述任务，不知道系统能做到哪一步，不知道哪些动作会自动执行，也不知道结果错了以后该从哪里修。万能入口降低了启动成本，却把能力边界、上下文选择、权限确认和结果验收都推给了用户。</p>
+<p>用户真正需要的通常不是“一个懂所有事情的机器人”，而是“在我当前工作流里，有一个可预期的帮手接住下一步”。写文档的人希望在当前段落旁边改写、补证据、生成摘要；销售希望在客户页面里整理沟通记录、生成跟进计划、更新 CRM 字段；运维希望在告警详情页里归纳影响范围、查看最近变更、生成处置建议；开发者希望在 PR、issue、代码文件和 CI 失败之间切换，而不是每次都重新解释仓库背景。这些场景的共同点是：入口应该贴着工作对象，而不是悬浮在一个空白对话框里。</p>
+<p>Agent 产品设计的真实入口，是用户正在处理的对象和已经形成的工作意图。对象可以是一篇文档、一个客户、一条告警、一个工单、一段代码、一个表格、一场会议。意图可以是审核、补全、迁移、诊断、发布、总结、追踪。好的入口会把对象、意图、权限和可用动作一起呈现，让用户知道“这个 Agent 在这里能帮我做什么，做到什么程度，哪些地方需要我确认”。这比让用户从零写 prompt 稳定得多。</p>
+<p>聊天式入口不是不能用，而是不应该成为唯一入口。聊天更适合探索、澄清和跨对象协商；工作流入口更适合高频、可重复、有副作用的任务。一个成熟产品往往两者都需要：在对象页给出明确动作，在对话里允许用户调整目标；在执行前展示计划和影响范围，在执行后把产物落回原来的业务系统。这样 Agent 不会变成另一个需要维护的孤岛，而是嵌入用户已经使用的工具链。</p>
+<p>这里还有一个信任问题。用户并不会因为系统写着“AI 自动化”就放心把权限交出去。信任来自可预期性：入口明确、范围明确、步骤可见、预览可改、失败可恢复、责任可追踪。产品设计如果只强调模型能力，而不设计这些边界，用户会在低风险任务里试用，在高价值任务前停下。真正能进入生产流程的 Agent，往往不是最会聊天的，而是最清楚自己何时该行动、何时该请用户看一眼的。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>Agent 产品入口可以用几个概念来拆：工作对象、入口位置、意图模板、能力边界、权限姿态、预览确认、交接方式和反馈闭环。它们决定了用户是否能自然启动任务，也决定了系统是否能稳定完成任务。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">概念</th><th scope="col">产品问题</th><th scope="col">工程映射</th><th scope="col">设计要点</th></tr></thead><tbody><tr><td>工作对象</td><td>用户现在到底在处理什么</td><td>document、ticket、customer、repo、alert</td><td>入口必须能读取对象 ID 和当前状态</td></tr><tr><td>入口位置</td><td>用户在什么时刻需要帮助</td><td>页面按钮、侧栏、选中文本菜单、自动建议</td><td>入口越贴近对象，prompt 负担越低</td></tr><tr><td>意图模板</td><td>用户想完成哪类工作</td><td>summarize、rewrite、diagnose、prepare、publish</td><td>模板要保留可配置项，不要写死</td></tr><tr><td>能力边界</td><td>Agent 能做和不能做什么</td><td>capability registry、tool policy</td><td>用具体动作表达能力，不用空泛口号</td></tr><tr><td>权限姿态</td><td>系统能否读写外部对象</td><td>read-only、draft、requires-confirm、auto-apply</td><td>默认从低风险开始，逐步升级</td></tr><tr><td>预览确认</td><td>用户如何看见影响范围</td><td>diff、dry-run、draft、checklist</td><td>副作用动作必须先可视化</td></tr><tr><td>交接方式</td><td>任务完成后回到哪里</td><td>写回系统、生成草稿、创建任务、等待审批</td><td>产物要落在原工作流里</td></tr><tr><td>反馈闭环</td><td>如何让产品持续变好</td><td>thumbs、correction、trace、eval case</td><td>用户修正要进入评测和规则</td></tr></tbody></table></div>
+<p>第一个核心判断是：入口应该围绕对象，而不是围绕模型。比如在知识库产品里，“帮我做点什么”的入口很弱，“基于当前文档生成发布摘要”“检查这篇文章缺少哪些引用”“把选中段落改成社区公告风格”就清楚得多。对象给了上下文，动作给了目标，用户只需要调整少数参数。模型的自由度变小了，产品的确定性反而提高。</p>
+<p>第二个判断是：能力要以工作流表达，而不是以技术能力表达。用户不关心系统是否使用长上下文、向量检索、函数调用或多 Agent；用户关心“能不能帮我把会议纪要变成三条跟进任务，并在发送前让我确认”。产品文案、按钮和状态都应该围绕业务动作设计。技术能力留在系统内部，用来决定上下文组装、工具选择和权限策略。</p>
+<p>第三个判断是：副作用必须分级。读取、总结、草稿生成、写入系统、通知他人、执行命令，这些动作的风险完全不同。如果产品把它们都包装成“让 Agent 处理”，用户无法建立稳定预期。更好的方式是定义权限姿态：只读模式可以自动运行；草稿模式可以生成但不写回；确认模式必须展示差异；自动模式只给经过评测和权限授权的低风险流程。</p>
+<p>第四个判断是：用户需要能中途介入。Agent 产品不能只有开始和结束两个状态。长任务需要展示当前阶段、已使用资料、下一步动作、阻塞原因和可取消入口。用户发现方向不对时，应该能改目标、收窄范围、删除某个资料来源、要求先停在草稿。中途控制不是“高级功能”，而是信任机制的一部分。</p>
+<p>最后，入口设计要和评测设计连在一起。每一个入口其实都是一个可评测任务族。入口越明确，评测样本越容易收集，失败越容易归因。相反，一个万能聊天框会把所有场景混在一起，数据看起来很多，却很难知道到底哪个工作流需要改。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个面向产品入口的 Agent 架构，可以把“用户从哪里进来”和“运行时怎么执行”分开。前者属于产品表面，后者属于能力平台，中间通过结构化的工作流请求连接。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">业务界面
+  |-- 文档页：改写、补摘要、检查引用
+  |-- 客户页：生成跟进、更新字段、准备邮件
+  |-- 告警页：诊断影响、关联变更、生成处置记录
+  |-- 代码页：解释失败、建议修复、生成测试
+  |
+  v
+入口控制器：对象 ID、选区、用户角色、入口动作
+  |
+  v
+意图路由：匹配工作流模板，补齐参数，判断风险等级
+  |
+  v
+上下文构建：读取对象状态、权限范围、相关资料、历史偏好
+  |
+  v
+Agent Runtime：规划、工具调用、草稿生成、状态记录
+  |
+  v
+预览与确认：diff、dry-run、影响范围、人工修改
+  |
+  v
+业务写回：保存草稿、创建任务、更新系统、发送通知
+  |
+  v
+反馈与评测：用户修正、成功率、接管率、失败样本</code></pre></div>
+<p>这个流程里，入口控制器非常关键。它不是一个简单按钮，而是负责把产品上下文转成结构化请求。比如用户在文档里选中三段文字，点击“改成技术博客风格”，入口控制器应该传入文档 ID、选区范围、当前用户、目标风格、可写权限和返回位置。运行时不需要猜“这段文字从哪里来”，也不需要决定是否能直接覆盖原文，这些都由入口提供。</p>
+<p>意图路由负责把入口动作映射到工作流模板。模板不是死板脚本，而是一份可配置协议：需要哪些上下文、允许哪些工具、默认权限姿态、输出形态、确认策略、评测用例。比如“生成客户跟进计划”需要客户资料、最近沟通记录、合同阶段和团队规则；默认输出应该是草稿任务列表，不应该自动发邮件；如果要写入 CRM，就必须展示字段差异。</p>
+<p>上下文构建要尽量“少而准”。很多 Agent 产品为了显得聪明，会把用户所有历史资料都塞进去，结果模型被旧信息污染。入口已经提供了对象和意图，系统应该围绕它们取上下文：当前对象状态、用户选区、最近相关活动、组织规则、少量可引用知识。上下文清单要能展示给用户或进入 trace，尤其是在结果有争议时，用户需要知道 Agent 依据了什么。</p>
+<p>预览与确认是产品体验的核心。对于文档改写，预览可以是 diff；对于 CRM 更新，预览可以是字段前后对比；对于邮件发送，预览应该包含收件人、正文、附件和发送时间；对于运维动作，预览必须包含命令、目标资源、影响范围和回滚方式。确认不是一个“确定/取消”的弹窗，而是让用户有机会修改 Agent 的产物，并把修改记录变成系统学习材料。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>工程实现可以从一个入口注册表开始。每个入口声明自己适用的业务对象、可见条件、参数 schema、风险等级和工作流模板。前端根据对象状态渲染入口，后端根据注册表验证请求，运行时只接收结构化任务。</p>
+<div class="code-block"><pre class="line-numbers language-typescript" data-language="TypeScript"><code class="language-typescript">type AgentEntry = {
+  id: string;
+  label: string;
+  objectType: &quot;document&quot; | &quot;customer&quot; | &quot;alert&quot; | &quot;pull_request&quot;;
+  intent: string;
+  visibleWhen: string[];
+  parameterSchema: Record&lt;string, unknown&gt;;
+  defaultPermission: &quot;read_only&quot; | &quot;draft&quot; | &quot;confirm_required&quot; | &quot;auto_apply&quot;;
+  workflowTemplate: string;
+  outputMode: &quot;inline_diff&quot; | &quot;draft_card&quot; | &quot;task_list&quot; | &quot;timeline_note&quot;;
+  requiredCapabilities: string[];
+};
+
+type AgentRunRequest = {
+  entryId: string;
+  objectRef: { type: string; id: string; version?: string };
+  userRef: { id: string; role: string; tenant: string };
+  parameters: Record&lt;string, unknown&gt;;
+  returnTarget: { surface: string; anchor?: string };
+};</code></pre></div>
+<p>这里的重点是 <code>objectRef</code> 和 <code>returnTarget</code>。前者确保 Agent 处理的是明确对象，不是游离文本；后者确保结果能回到用户原来的工作表面。很多 Agent 原型失败，是因为生成结果停留在聊天窗口里，用户还要手动复制回业务系统。只要这个复制动作发生，高频工作流的价值就会大打折扣，也会引入权限和版本错误。</p>
+<p>后端可以把入口请求转成工作流实例：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;run_id&quot;: &quot;run_20260418_001&quot;,
+  &quot;entry_id&quot;: &quot;customer.followup.prepare&quot;,
+  &quot;object_ref&quot;: {&quot;type&quot;: &quot;customer&quot;, &quot;id&quot;: &quot;cus_2388&quot;, &quot;version&quot;: &quot;v17&quot;},
+  &quot;intent&quot;: &quot;prepare_followup_tasks&quot;,
+  &quot;permission&quot;: &quot;confirm_required&quot;,
+  &quot;context_policy&quot;: {
+    &quot;include&quot;: [&quot;customer_profile&quot;, &quot;last_5_interactions&quot;, &quot;open_contracts&quot;, &quot;team_playbook&quot;],
+    &quot;exclude&quot;: [&quot;private_notes_without_permission&quot;],
+    &quot;max_tokens&quot;: 12000
+  },
+  &quot;preview_policy&quot;: {
+    &quot;mode&quot;: &quot;task_list_diff&quot;,
+    &quot;requires_human&quot;: true,
+    &quot;write_targets&quot;: [&quot;crm.tasks&quot;, &quot;crm.next_step&quot;]
+  }
+}</code></pre></div>
+<p>这个实例里没有让模型决定是否读取私人备注，也没有让模型决定是否直接写 CRM。模型可以建议需要更多资料，但权限和预览策略由产品和平台定义。这样做会牺牲一点“自由发挥”，但换来的是稳定、可审计、可解释。</p>
+<p>产品界面上，建议把状态分成五类：可启动、准备中、生成中、等待确认、已写回。每个状态要有具体动作，而不是只显示旋转加载。准备中可以展示正在读取哪些资料；生成中可以展示当前阶段；等待确认要展示 diff 和可编辑草稿；已写回要提供回到对象的位置和撤销或修正入口。对于长任务，还要支持暂停、取消和接管。</p>
+<p>下面是一个客户跟进场景的完整流程例子：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">步骤</th><th scope="col">用户看到的界面</th><th scope="col">系统动作</th><th scope="col">风险控制</th></tr></thead><tbody><tr><td>进入客户页</td><td>侧栏出现“准备跟进任务”</td><td>读取客户 ID、阶段、用户角色</td><td>只在有读取权限时显示</td></tr><tr><td>点击入口</td><td>参数面板显示时间范围和任务数量</td><td>构造 <code>AgentRunRequest</code></td><td>默认草稿模式</td></tr><tr><td>生成草稿</td><td>展示引用的沟通记录和建议任务</td><td>检索最近记录，生成任务列表</td><td>不写入 CRM</td></tr><tr><td>用户编辑</td><td>用户删除一条、改一条截止日期</td><td>保存人工修正</td><td>修正进入反馈数据</td></tr><tr><td>确认写回</td><td>展示将创建的任务和字段变化</td><td>调用 CRM 工具</td><td>使用幂等键和审计日志</td></tr><tr><td>完成返回</td><td>客户页时间线出现新任务</td><td>写回结果和 trace 链接</td><td>支持撤销和备注</td></tr></tbody></table></div>
+<p>这个流程并不复杂，但它把 Agent 从“聊天助手”变成了“客户页里的工作流加速器”。用户不需要描述客户是谁，不需要复制沟通记录，也不需要担心系统偷偷发消息。入口已经把对象、意图、权限和返回位置都固定住了。</p>
+<p>对于文档产品，也可以采用类似结构。用户选中一段内容后，入口菜单提供“压缩为摘要”“补充技术背景”“改成发布语气”“检查缺少引用”。每个入口都对应不同上下文策略和输出模式。改写类入口返回 inline diff；引用检查返回问题清单；发布摘要返回草稿块。不要把所有能力塞进一个“AI 帮我”按钮，否则用户每次都要重新解释期望，系统也很难积累稳定评测。</p>
+<p>工程上还要处理版本和并发。用户启动 Agent 时，业务对象有一个版本号；写回前必须确认对象没有被别人改过。如果版本变化，系统应该重新生成 diff 或要求用户合并，而不是覆盖。对于外部系统写入，要使用幂等键，避免用户重复点击导致创建多条任务。对于自动模式，要限制在低风险动作上，并且保留可撤销记录。</p>
+<p>权限实现不要只做前端隐藏。入口可见性只是第一道门，后端还要基于用户、租户、对象和动作重新校验。Agent Runtime 调用工具时，也要带着工作流实例的权限上下文，不能因为模型请求某个工具就直接执行。最小权限原则在 Agent 产品里尤其重要，因为模型会探索路径，系统必须让探索停在授权边界内。</p>
+<p>还有一个容易被忽略的实现细节，是入口配置的生命周期。入口不是上线后永远不变的按钮，它会随着业务规则、工具能力、组织权限和用户习惯变化。配置里最好带版本号、启用范围、负责人和回滚版本。灰度时可以只给一个团队开放，观察接受率和人工修改率；发现模板有问题时，可以把入口降级到草稿模式，而不是直接下线。这样产品团队能以配置方式调整风险，不必每次都发布前端和后端代码。</p>
+<p>数据存储上，也建议把入口定义、运行实例、用户修改和写回结果分开。入口定义回答“这个功能应该怎样工作”；运行实例回答“这一次用户让系统做了什么”；用户修改回答“人类在哪些地方不认可模型产物”；写回结果回答“系统最终改变了哪些业务对象”。四类数据分开以后，排障、审计和评测都会清楚很多。否则所有信息混在一条聊天记录里，后面想分析某个入口为什么失败，会非常痛苦。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>Agent 产品评测要同时看模型质量和产品闭环。一个入口如果生成内容质量不错，但用户需要大量复制、改写、确认和补救，它仍然不是好入口。评测应该覆盖启动成本、上下文准确性、结果可编辑性、写回可靠性和用户接管成本。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">评测类型</th><th scope="col">关注点</th><th scope="col">样本来源</th><th scope="col">指标</th></tr></thead><tbody><tr><td>入口可发现性</td><td>用户是否知道何时使用</td><td>可用性测试、点击热区</td><td>首次启动率、误点率</td></tr><tr><td>意图匹配</td><td>入口动作是否符合用户目标</td><td>真实任务录屏、访谈</td><td>参数修改率、放弃率</td></tr><tr><td>上下文质量</td><td>Agent 是否拿到正确资料</td><td>trace、引用清单、对象版本</td><td>缺证据率、旧信息命中率</td></tr><tr><td>结果质量</td><td>产物是否可直接进入下一步</td><td>人工评分、业务结果</td><td>接受率、编辑距离、返工率</td></tr><tr><td>权限安全</td><td>副作用是否被正确确认</td><td>审计日志、策略测试</td><td>越权拦截率、误写率</td></tr><tr><td>工作流效率</td><td>是否减少总操作成本</td><td>A/B 测试、任务计时</td><td>完成时间、手动步骤数</td></tr></tbody></table></div>
+<p>我会为每个入口维护一个小型黄金集。比如“客户跟进任务”入口，样本应该覆盖不同客户阶段、沟通记录缺失、合同风险、客户表达模糊、团队规则冲突、无权限读取某些备注等情况。每个样本都要有期望输出形态，而不仅是期望文字。比如应该生成几个任务、是否需要引用来源、哪些字段不能自动写、什么情况下必须要求人工确认。</p>
+<p>除了离线评测，还要做产品内观测。每次运行都记录入口 ID、对象类型、权限姿态、上下文清单、预览修改、确认结果、写回目标和用户反馈。特别要关注“用户修改了什么”。如果用户经常删除某类建议，说明意图模板过宽；如果用户经常补充同一类上下文，说明入口没有拿到关键资料；如果用户经常停在确认页不提交，说明风险提示或产物质量不足。</p>
+<p>可用性测试也不能省。让真实用户在自己的工作对象上完成任务，观察他们是否理解入口、是否相信预览、是否知道如何撤销、是否能解释 Agent 做了什么。很多问题不会出现在模型评测里，只会出现在界面动作里。比如按钮文案太宽泛，用户以为会生成草稿，结果系统准备写回；或者确认页只展示最终文本，没有展示会更新哪些字段，用户因此不敢点确认。</p>
+<p>上线前还应该做“反向评测”：列出入口不应该处理的任务。比如客户页入口不应该处理跨客户统计，文档改写入口不应该读取用户没有权限的私有文档，告警诊断入口不应该直接执行重启命令。拒绝能力是产品能力的一部分。一个总是试图完成所有请求的 Agent，在企业环境里通常不可信。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>最常见的失败是入口过宽。产品只放一个“问 AI”按钮，用户每次从空白开始输入。短期看实现简单，长期看数据很脏、体验不稳、评测困难。修复方式不是把 prompt 写得更长，而是把高频工作流拆成贴近对象的入口。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">失败模式</th><th scope="col">用户感受</th><th scope="col">系统根因</th><th scope="col">改进方向</th></tr></thead><tbody><tr><td>魔法黑盒</td><td>不知道 Agent 要做什么，不敢确认</td><td>缺少步骤、依据和影响范围</td><td>展示计划、引用、预览和写回目标</td></tr><tr><td>能力宣传过大</td><td>用户要求超出系统边界的任务</td><td>入口文案空泛，边界未声明</td><td>用具体动作命名入口</td></tr><tr><td>上下文错配</td><td>结果引用旧资料或无关资料</td><td>入口没有绑定对象版本和资料策略</td><td>记录并展示上下文清单</td></tr><tr><td>副作用模糊</td><td>用户以为是草稿，系统实际写入</td><td>权限姿态没有分级</td><td>区分只读、草稿、确认、自动</td></tr><tr><td>产物孤岛</td><td>结果停在聊天里，用户手动搬运</td><td>没有 return target 和写回协议</td><td>让产物回到原业务对象</td></tr><tr><td>无法中断</td><td>长任务跑偏后只能等待结束</td><td>运行状态不可控</td><td>支持暂停、取消、修改目标</td></tr><tr><td>反馈浪费</td><td>用户修了很多，系统没有学习</td><td>没有收集编辑差异</td><td>把修正转成评测样本和规则</td></tr></tbody></table></div>
+<p>还有一种失败是“把 Agent 当功能层，而不是产品层”。团队做了能力平台、工具调用、记忆、评测，却没有认真设计入口。结果销售、运营、开发、客服都能打开同一个聊天框，但没有一个岗位觉得它正好贴合自己的工作。Agent 产品不是在现有系统旁边加一个智能面板，而是要把智能能力嵌入业务动作：该出现在选中文本旁边，就不要藏在全局侧栏；该在提交前做检查，就不要等用户事后追问；该生成草稿，就不要直接写入。</p>
+<p>另一个问题是“过早自动化”。有些团队为了展示效率，喜欢让 Agent 一键完成写入、发送和发布。低风险场景可以这样做，但高价值流程最好先从草稿和确认开始。产品要通过数据证明某个入口稳定以后，再提升自动化等级。自动化不是开关，而是一条成熟度路径：只读建议、草稿生成、人工确认写回、有限自动写回、异常自动回退。</p>
+<p>最后要警惕“入口泛滥”。当每个页面都有十几个 AI 按钮，用户会开始忽略它们。入口设计要基于高频痛点和明确时机，而不是把所有模型能力都暴露出来。一个页面上有两个真正好用的入口，往往比有二十个模糊入口更有效。产品经理应该持续删除低使用、低成功、高误解的入口，把资源集中在能改变工作流的地方。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>每个入口是否绑定明确的工作对象和对象版本。</li><li>入口文案是否描述具体工作动作，而不是泛泛写“AI 助手”。</li><li>是否为入口定义意图模板、参数 schema、上下文策略和输出形态。</li><li>是否区分只读、草稿、确认写回和自动写回四类权限姿态。</li><li>副作用动作是否有 diff、dry-run 或字段对比预览。</li><li>写回前是否重新校验用户权限、对象版本和幂等键。</li><li>结果是否能回到原业务界面，而不是停在聊天窗口。</li><li>长任务是否支持暂停、取消、接管和修改目标。</li><li>用户是否能看到关键资料来源、引用和影响范围。</li><li>是否记录入口 ID、对象类型、上下文清单、用户修改和确认结果。</li><li>是否为每个入口准备黄金评测集和拒绝样本。</li><li>是否把用户编辑差异转成评测样本、规则或模板改进。</li><li>是否对高风险入口设置灰度、审计和回滚流程。</li><li>是否定期清理低价值入口，避免按钮泛滥。</li></ul>
+<h2 id="总结">总结</h2>
+<p>Agent 产品设计的关键，不是把聊天框做得更聪明，而是找到用户真实工作流里的入口。入口贴着对象，系统就能拿到可靠上下文；入口表达具体动作，用户就能形成稳定预期；入口绑定权限和预览，副作用就能被治理；入口把产物写回原系统，Agent 才真正节省工作，而不是制造新的搬运任务。</p>
+<p>好的 Agent 产品通常是从窄入口长出来的。先选择一个高频、痛、可验证、风险可控的工作流，把对象、意图、上下文、预览、写回和反馈闭环打通。等这个入口稳定以后，再扩展相邻入口，而不是一开始承诺万能。模型能力会继续变化，但产品设计里这些基本问题不会过时：用户在哪里需要帮助，系统能代表用户做什么，哪些动作必须确认，结果如何回到工作现场。把这些回答清楚，Agent 才会从演示走进生产。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

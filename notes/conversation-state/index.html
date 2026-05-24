@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>会话状态设计 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="会话状态要区分用户意图、系统事实和模型临时推理。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="会话状态设计">
+  <meta property="og:description" content="会话状态要区分用户意图、系统事实和模型临时推理。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/conversation-state.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link active" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>会话状态设计</span></nav>
+          <div class="note-kicker">NOTES / LLM / 062</div>
+          <h1>会话状态设计</h1>
+          <p>会话状态要区分用户意图、系统事实和模型临时推理。</p>
+          <div class="note-tag-row"><span>Conversation</span><span>State</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/conversation-state.svg" alt="标题图" loading="lazy"><figcaption>会话状态设计 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多 LLM 应用的第一版会把会话历史当成一个简单数组：用户说一句，助手回一句，全部按时间顺序塞进下一轮模型输入。这个办法足够支撑演示，也足够支撑很短的一问一答。但只要应用开始接入工具、知识库、用户偏好、业务流程和多轮确认，单纯的消息列表就会变成系统里最危险的隐形数据库。它看起来只是上下文，实际承担了身份、权限、任务进度、工具结果、用户承诺、模型假设和临时草稿等多种职责。</p>
+<p>问题通常不是某一轮回答失败，而是状态边界逐渐模糊。用户说“这次只看华东客户”，这句话是本轮查询条件，还是以后所有查询的偏好？助手说“我已经找到三个疑似问题”，这是可审计事实，还是模型根据片段做出的临时判断？工具返回“订单不存在”，这是来自数据库的事实，还是因为调用时参数错了？模型在思考里决定“用户可能想要退款”，这能不能被下游工作流当成意图？如果系统没有明确区分，后续每一轮都可能把临时推理当事实，把本轮条件当长期偏好，把已失效的工具结果当最新状态。</p>
+<p>会话状态设计的难点在于，它处在用户体验和工程控制的交界处。用户希望助手记得上下文，不想每次重复目标；工程系统则要求每个动作可解释、可恢复、可撤销。用户说“按刚才那个方案继续”，人听得懂，程序必须知道“刚才那个方案”是哪一版，里面有哪些假设，是否已经被用户确认，关联的文件或业务对象有没有变化。没有结构化状态，系统只能把一堆自然语言摘要交给模型重新猜。</p>
+<p>我在做 LLM 应用时，会把会话状态看成一个有生命周期的数据模型，而不是 prompt 的附属品。消息记录只是原始事件；真正用于决策的是从事件里提取出来的状态视图。这个视图需要区分用户意图、系统事实、工具结果、业务对象、确认记录、模型草稿和可丢弃的推理缓存。它还要支持版本、过期、冲突、权限和审计。听起来比聊天窗口复杂，但这是让长期会话可控的基本成本。</p>
+<p>一个典型场景是企业内部数据助手。用户第一轮问：“帮我看一下三月份华东大客户的续费风险。”系统检索客户资料、调用数据仓库、生成风险摘要。第二轮用户说：“把风险最高的那几家整理成跟进清单。”第三轮又说：“发给客户成功团队，但先不要发给销售。”如果系统只有消息列表，模型可能从历史文本里抽取客户名，也可能漏掉“华东”“大客户”“三月份”“不要发给销售”等约束；如果工具结果发生更新，模型未必知道旧表格已经过期；如果发送动作需要确认，系统也未必能证明用户确认的是哪份清单。</p>
+<p>会话状态的目标不是让系统记住所有东西，而是让系统知道什么值得记、记到哪里、什么时候失效、谁可以使用、失败时如何恢复。这里面有一个很务实的原则：不要让模型承担状态数据库的责任。模型可以帮助解释自然语言、抽取候选事实、压缩长历史，但最终状态必须由应用层以结构化形式保存和校验。否则状态越多，应用越像一个靠运气运行的长 prompt。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>设计会话状态时，先要把“历史”和“状态”分开。历史是事件流，保存发生过什么；状态是当前可用视图，回答现在能做什么。事件流通常是追加式的，包含用户消息、助手消息、工具调用、工具结果、确认、拒绝、系统更新和错误。状态视图则是从事件流投影出来的业务对象，例如当前任务、已确认约束、活跃工具结果、用户偏好、待办动作和风险标记。</p>
+<p>第二个概念是状态来源。不是所有状态都同等可信。用户明确说出的约束、数据库返回的记录、工具执行的结果、模型从上下文里推断出的意图、摘要器压缩出的历史，都应该有不同来源和可信等级。工程上我会把状态来源至少分成五类：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">来源</th><th scope="col">例子</th><th scope="col">可信度</th><th scope="col">使用方式</th></tr></thead><tbody><tr><td>用户显式输入</td><td>“不要发给销售”</td><td>高，但可能有范围限制</td><td>作为硬约束，进入策略检查</td></tr><tr><td>系统事实</td><td>数据库订单、权限、配置</td><td>高，但需要版本和时间戳</td><td>可被工具和业务规则直接使用</td></tr><tr><td>工具结果</td><td>查询返回、文件 diff、API 响应</td><td>取决于调用是否成功</td><td>绑定参数和调用版本后使用</td></tr><tr><td>模型推断</td><td>“用户可能想生成周报”</td><td>中低</td><td>只能作为候选意图，需要确认或二次验证</td></tr><tr><td>历史摘要</td><td>压缩后的长会话摘要</td><td>中</td><td>用于提示模型，不直接驱动副作用</td></tr></tbody></table></div>
+<p>第三个概念是状态作用域。很多错误来自作用域不清。用户说“这次用英文”可能只影响当前回复，不应该成为全局偏好；用户说“以后发周报都按这个格式”才可能写入长期偏好。工具结果也有作用域：一次库存查询只对某个商品、某个仓库、某个时间点有效，不能在后续不同查询里复用。会话状态至少要区分本轮状态、任务状态、会话状态、用户长期状态和组织级状态。</p>
+<p>第四个概念是状态版本。一个业务对象进入会话后，后续工具调用可能改变它。比如助手读取一个 Markdown 文件，用户随后手动改了文件，再让助手“继续上次修改”。如果状态里只保存文件内容摘要，而没有文件路径、版本哈希和读取时间，系统就无法判断“上次修改”是否仍然有效。版本不是奢侈功能，而是恢复和审计的基础。</p>
+<p>第五个概念是确认记录。确认不是一句自然语言“好的”，而是一条绑定对象版本和动作计划的事件。用户确认发送邮件时，确认对象应该包括收件人、主题、正文摘要、附件、发送账号和风险提示。确认之后如果正文或收件人发生变化，旧确认应该失效。很多 Agent 事故不是没有确认，而是确认没有绑定到具体版本。</p>
+<p>第六个概念是可丢弃状态。模型临时推理、候选计划、草稿摘要、检索候选、UI 高亮等都可能只对当前轮有效。把它们和长期状态混在一起，会让会话越跑越脏。状态设计要允许明确丢弃：本轮结束后删除，任务切换后删除，工具失败后删除，确认过期后删除。记忆能力不是只增不减，好的状态系统要有遗忘机制。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个可控的会话系统可以画成事件流和状态投影两层：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户消息 / 系统事件 / 工具结果 / 确认记录
+  |
+  v
+Conversation Event Log
+  |-- append-only 保存原始事实
+  |-- 每个事件带 actor、time、source、trace_id
+  |
+  v
+State Projector
+  |-- 抽取用户显式约束
+  |-- 合并工具结果
+  |-- 标记过期和冲突
+  |-- 生成当前任务视图
+  |
+  v
+Conversation State Store
+  |-- short_term: 本轮和当前任务
+  |-- session: 会话级目标和已确认约束
+  |-- user_profile: 长期偏好
+  |-- artifacts: 文件、清单、邮件草稿等对象
+  |
+  v
+Context Assembler
+  |-- 选择本轮模型需要看的状态
+  |-- 降噪、排序、引用和裁剪
+  |
+  v
+Model / Tool Controller</code></pre></div>
+<p>这里最重要的是 <code>State Projector</code>。它负责把自然语言事件转换成可用状态，但不把模型输出无条件写入状态库。它可以调用模型做抽取，例如从用户消息里抽取候选约束；随后还要经过规则校验、作用域判断和冲突处理。比如用户说“之后都用中文回复，除非我特别要求英文”，这个偏好可以进入用户会话状态；用户说“这个表格先按美元看”，则只应绑定到当前表格任务。</p>
+<p>一次请求的细化流程如下：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">receive_user_message
+  -&gt; append Event{type:user_message}
+  -&gt; extract_candidate_intent_and_constraints
+  -&gt; validate_and_merge_state
+  -&gt; build_context_from_state
+  -&gt; call_model_for_next_action
+  -&gt; validate_action_against_state
+  -&gt; maybe_call_tool
+  -&gt; append tool/result/assistant events
+  -&gt; project_state_again
+  -&gt; return_response</code></pre></div>
+<p>这条链路里，模型不是唯一的状态生产者。工具结果、权限系统、业务数据库和用户确认都会更新状态。模型可以提出“下一步要创建跟进清单”，但控制器要检查当前状态里是否有足够客户列表、是否有发送权限、是否存在未解决冲突、是否需要用户确认。状态不是为了给模型更多上下文，而是为了让控制器可以做决定。</p>
+<p>状态图可以再简化成四个视图：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">视图</th><th scope="col">面向对象</th><th scope="col">主要问题</th></tr></thead><tbody><tr><td>对话视图</td><td>模型</td><td>本轮需要哪些上下文才能回答</td></tr><tr><td>控制视图</td><td>执行器</td><td>当前允许哪些动作，哪些动作要确认</td></tr><tr><td>审计视图</td><td>运维和安全</td><td>某个决定来自哪些事件和状态</td></tr><tr><td>恢复视图</td><td>任务恢复</td><td>中断后从哪个稳定点继续</td></tr></tbody></table></div>
+<p>不要试图用同一段摘要服务所有视图。给模型看的摘要可以自然语言化，给控制器看的状态必须结构化，给审计看的记录要保留来源，给恢复看的快照要包含版本和未完成动作。一个健康的会话状态架构，会允许这些视图从同一事件流派生，但各自按用途裁剪。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>下面用一个客户续费风险助手做例子。它要支持多轮查询、清单生成、团队发送和人工确认。核心不是模型怎么写，而是状态如何建模。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type Event struct {
+    ID        string
+    ThreadID  string
+    Actor     string // user, assistant, tool, system
+    Type      string // message, tool_call, tool_result, confirmation, correction
+    Payload   map[string]any
+    CreatedAt time.Time
+    TraceID   string
+}
+
+type ConversationState struct {
+    ThreadID       string
+    ActiveTask     *TaskState
+    Constraints    []Constraint
+    Artifacts      map[string]ArtifactState
+    ToolFacts      map[string]ToolFact
+    PendingActions []PendingAction
+    UserPrefs      []ScopedPreference
+    Conflicts      []StateConflict
+    UpdatedAt      time.Time
+}
+
+type Constraint struct {
+    ID        string
+    Text      string
+    Scope     string // turn, task, session, user
+    Source    string // user_explicit, system, model_candidate
+    Status    string // active, expired, superseded
+    CreatedBy string
+    CreatedAt time.Time
+}
+
+type ArtifactState struct {
+    ID          string
+    Kind        string // table, draft_email, customer_list, report
+    Version     string
+    Summary     string
+    DataRef      string
+    CreatedFrom  []string // event IDs or tool fact IDs
+    Status      string // draft, confirmed, sent, stale
+}
+
+type PendingAction struct {
+    ID              string
+    Kind            string // send_message, create_ticket, write_file
+    Target          map[string]string
+    ArtifactVersion string
+    RequiresConfirm bool
+    ConfirmedBy     string
+    Status          string // proposed, confirmed, executed, cancelled, expired
+}</code></pre></div>
+<p>这个结构里有几个细节。<code>Constraint.Scope</code> 避免把本轮条件写成长期偏好。<code>ArtifactState.Version</code> 让确认能绑定具体对象。<code>CreatedFrom</code> 让审计时能追溯一个清单来自哪些工具结果。<code>PendingAction</code> 把模型提出的动作和真正执行的动作分开。模型说“可以发给客户成功团队”，只是生成一个 <code>proposed</code> 动作；只有用户确认且对象版本未变，才会进入 <code>confirmed</code> 或 <code>executed</code>。</p>
+<p>合并状态时，要避免“最后一句话覆盖一切”的粗暴策略。用户新消息可能是补充、修正、撤销、限定或切换任务。实际实现里可以把合并拆成三层：</p>
+<ol><li>规则层先处理明确模式，例如“不要”“取消”“改成”“只看”“以后都”等高置信表达。</li><li>模型抽取层给出候选意图、约束、对象引用和任务切换判断。</li><li>控制层根据当前状态、来源和作用域决定写入、追问或标记冲突。</li></ol>
+<p>例如当前状态里有约束“只发给客户成功团队”，用户又说“也同步一下销售负责人”。系统不能直接覆盖，也不能自动合并后执行发送，因为两个约束可能冲突。更稳的做法是创建 <code>StateConflict</code>，让下一轮模型向用户澄清：“之前你要求不要发给销售，现在又提到同步销售负责人，请确认是否解除这个限制。”这类冲突处理比 prompt 里写“请谨慎”可靠得多。</p>
+<p>状态存储可以先从简单方案开始。事件流用数据库表或日志文件保存，状态视图用一张 JSON 列即可。关键是事件必须追加，状态可以重建。随着系统复杂，可以把状态投影做成独立 worker，但早期不用过度架构。一个实用的表设计如下：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">表</th><th scope="col">关键字段</th><th scope="col">用途</th></tr></thead><tbody><tr><td><code>conversation_events</code></td><td><code>id, thread_id, type, actor, payload, created_at</code></td><td>保存原始事件</td></tr><tr><td><code>conversation_states</code></td><td><code>thread_id, version, state_json, projected_at</code></td><td>保存当前投影视图</td></tr><tr><td><code>state_artifacts</code></td><td><code>id, thread_id, kind, version, data_ref, status</code></td><td>保存可确认对象</td></tr><tr><td><code>action_confirmations</code></td><td><code>id, action_id, artifact_version, user_id, expires_at</code></td><td>保存确认绑定</td></tr><tr><td><code>state_snapshots</code></td><td><code>thread_id, event_id, state_hash, summary</code></td><td>支持恢复和回放</td></tr></tbody></table></div>
+<p>上下文装配时，不要把整个 <code>ConversationState</code> 都塞给模型。应该根据当前任务选择。对于续费风险助手，本轮要生成跟进清单，模型需要看：活跃任务目标、已确认筛选条件、客户风险表摘要、禁止发送对象、待确认动作和冲突提示。它不需要看所有旧消息，也不需要看完整客户数据。可以把上下文结构化为：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;task&quot;: &quot;生成华东大客户三月续费风险跟进清单&quot;,
+  &quot;active_constraints&quot;: [
+    {&quot;text&quot;: &quot;只包含华东大客户&quot;, &quot;source&quot;: &quot;user_explicit&quot;},
+    {&quot;text&quot;: &quot;先不要发给销售&quot;, &quot;source&quot;: &quot;user_explicit&quot;}
+  ],
+  &quot;artifacts&quot;: [
+    {&quot;id&quot;: &quot;risk_table_17&quot;, &quot;kind&quot;: &quot;table&quot;, &quot;version&quot;: &quot;sha256:8fd1&quot;, &quot;summary&quot;: &quot;共 12 家客户，3 家高风险&quot;}
+  ],
+  &quot;pending_actions&quot;: [],
+  &quot;conflicts&quot;: []
+}</code></pre></div>
+<p>这样模型可以围绕状态工作，而不是在长聊天记录里做考古。控制器也可以用同一份状态判断是否允许发送、是否需要确认、是否存在冲突。</p>
+<p>再看一个更贴近线上问题的流程例子。用户先说“整理三月华东大客户续费风险，先不要发给销售”，系统查询后生成 <code>artifact=risk_list@v1</code>。随后用户说“把前三家同步给客户成功团队”，模型生成发送动作，宿主创建 <code>pending_action=send_followup@v1</code>，目标是客户成功团队，确认状态为 <code>proposed</code>。用户回复“可以，发吧”，这条确认绑定的是 <code>risk_list@v1</code> 和收件人列表的 hash。就在执行前，后台同步发现 CRM 里一家公司客户等级从大客户降为普通客户，风险清单重新投影为 <code>risk_list@v2</code>。这时控制器不能继续发送，因为确认绑定的是旧版本。正确行为是把发送动作标记为 <code>expired</code>，向用户说明清单数据已经更新，并展示差异后请求重新确认。</p>
+<p>这个例子说明状态不是为了让系统显得复杂，而是为了挡住真实业务里最普通的竞态。只要会话里有异步工具、外部数据和高风险动作，就一定会遇到“用户确认”和“对象变化”不同步的问题。很多产品把确认做成一个 UI 弹窗，却没有把确认和对象版本绑定，结果弹窗只是心理安慰。工程实现上可以给每个可执行动作生成一个 <code>execution_fingerprint</code>，由动作类型、目标对象、关键参数、工件版本、权限主体和风险摘要组成。执行前重新计算 fingerprint，只要不一致，就要求重新确认或进入人工复核。</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;action_id&quot;: &quot;send_followup_42&quot;,
+  &quot;kind&quot;: &quot;send_message&quot;,
+  &quot;artifact_id&quot;: &quot;risk_list&quot;,
+  &quot;artifact_version&quot;: &quot;v1:sha256:8fd1&quot;,
+  &quot;target_hash&quot;: &quot;sha256:91ac&quot;,
+  &quot;risk&quot;: &quot;external_notification&quot;,
+  &quot;confirmed_fingerprint&quot;: &quot;sha256:7b20&quot;,
+  &quot;current_fingerprint&quot;: &quot;sha256:aa19&quot;,
+  &quot;status&quot;: &quot;expired&quot;
+}</code></pre></div>
+<p>这种 fingerprint 不需要暴露给普通用户，但它应该进入审计日志。出现投诉时，团队可以回答：用户当时确认了哪个版本，系统执行前对象有没有变化，变化是否被拦截。没有这些字段，事故复盘只能依赖聊天记录截图，最后很难改出稳定系统。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>会话状态的测试要覆盖两类能力：状态投影是否正确，以及状态驱动的行为是否可靠。前者更像传统单元测试，后者更像端到端评测。不要只测试最终回答，因为状态错误可能暂时没有显现在文本里，却会在后续工具调用中放大。</p>
+<p>最基础的测试是事件到状态的投影测试。给定一组事件，断言最终状态里的约束、工件、待确认动作和冲突符合预期。例如：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">用例</th><th scope="col">事件序列</th><th scope="col">期望状态</th></tr></thead><tbody><tr><td>本轮限定</td><td>用户说“这次只看华东”</td><td>产生 <code>scope=task</code> 或 <code>turn</code> 的约束</td></tr><tr><td>长期偏好</td><td>用户说“以后报告都用中文”</td><td>产生 <code>scope=user</code> 的偏好候选</td></tr><tr><td>约束撤销</td><td>用户说“刚才不要发销售那条取消”</td><td>原约束 <code>superseded</code>，记录撤销事件</td></tr><tr><td>工具过期</td><td>查询客户表后客户数据版本更新</td><td>对应 artifact 标记 <code>stale</code></td></tr><tr><td>确认失效</td><td>用户确认邮件后正文被修改</td><td>原 confirmation 失效，需要重新确认</td></tr></tbody></table></div>
+<p>第二类测试是状态冲突评测。LLM 应用经常面对用户含糊修正。测试集应该包含“补充条件”“撤销条件”“对象引用不明”“任务切换”“前后矛盾”这些场景。指标不是模型是否写出漂亮澄清，而是系统是否没有越权执行，是否把冲突记录到状态，是否向用户请求最小必要确认。</p>
+<p>第三类测试是恢复测试。模拟服务重启、上下文压缩、工具超时、用户中途离开后回来。系统应该能从事件流重建状态，并判断哪些动作可以继续，哪些必须刷新证据。比如发送清单前服务重启，恢复后必须检查 artifact 版本和确认是否仍有效，而不是直接执行上次模型计划。</p>
+<p>第四类测试是观测一致性。线上 trace 应该能回答：这次回答使用了哪些状态，哪些约束来自用户，哪些事实来自工具，哪个动作被谁确认，确认绑定的对象版本是什么。可以写自动测试检查 trace 字段完整性，避免上线后才发现日志里只有一段最终回复。</p>
+<p>第五类测试是压缩损失测试。长会话一定会压缩，但压缩不能吞掉硬约束。可以构造一组长历史：前面有“不要发给销售”“只使用脱敏字段”“先不要写入系统”等约束，中间插入大量普通问答，最后要求模型执行动作。测试目标不是摘要文字是否优美，而是压缩后投影出的状态是否仍然保留硬约束，并且控制器是否能阻止越权动作。这里建议把自然语言摘要和结构化状态分开评估：摘要可以有信息损失，结构化硬约束不允许损失。</p>
+<p>第六类测试是引用解析测试。用户经常说“刚才那个”“第二个方案”“风险最高的那家”。系统需要把这些指代表达解析到具体 artifact 和版本。如果解析不唯一，就应该追问。评测集中要故意放入多个相似对象，例如两张风险表、两个邮件草稿、三个客户列表，检查系统是否会错误选择最近对象。很多会话事故不是模型不会推理，而是对象引用没有进入工程模型。</p>
+<p>我会给会话状态设置这些指标：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">指标</th><th scope="col">说明</th><th scope="col">风险信号</th></tr></thead><tbody><tr><td>状态投影通过率</td><td>事件流重建状态是否成功</td><td>JSON 迁移失败、未知事件过多</td></tr><tr><td>冲突拦截率</td><td>前后矛盾是否被识别并阻止动作</td><td>用户撤销后仍执行旧动作</td></tr><tr><td>确认绑定率</td><td>高风险动作是否绑定对象版本</td><td>确认记录缺 artifact hash</td></tr><tr><td>过期状态命中率</td><td>stale 状态是否被刷新</td><td>旧工具结果被反复使用</td></tr><tr><td>状态压缩损失率</td><td>长历史压缩后关键约束是否保留</td><td>约束在摘要中丢失</td></tr></tbody></table></div>
+<p>评测样本要尽量从线上失败回流。每一次“助手记错了”“助手忘了限制”“助手把草稿发出去了”的反馈，都应该转成事件序列测试，而不只是改 prompt。会话状态系统的可靠性来自大量小样本回归，不来自某段万能系统提示词。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是把消息历史当数据库。系统每轮都把历史摘要交给模型，模型从里面重新抽取状态。短期看省事，长期会出现不可解释漂移：同一段历史在不同模型版本下抽取出不同约束；摘要压缩时漏掉否定词；旧工具结果被当成新事实。解决办法是事件流和结构化状态分层，摘要只能辅助模型，不能作为唯一状态源。</p>
+<p>第二类失败是作用域污染。本轮筛选条件写进长期偏好，临时语言要求影响所有后续回复，某个客户的风险判断被复用到另一批客户。作用域污染很隐蔽，因为它往往在几轮之后才出错。每个约束、偏好和事实都应该带 <code>scope</code>、<code>created_at</code>、<code>expires_at</code> 或失效条件。</p>
+<p>第三类失败是确认漂移。用户确认的是 A 版本邮件，系统后来根据模型建议改了正文，却仍然使用旧确认发送。确认必须绑定动作参数和工件版本，动作执行前重新校验。如果任何高风险字段变化，确认就要失效。</p>
+<p>第四类失败是模型推断升级为事实。模型说“用户似乎想要退款”，系统就调用退款流程；模型总结“这三家客户最危险”，下游就当成数据库结论。模型推断应该标记为候选，需要工具验证或用户确认。状态来源字段不是装饰，它决定能否驱动副作用。</p>
+<p>第五类失败是状态不可回放。线上发生事故后，团队只有聊天截图，没有事件 ID、工具参数、状态版本和确认记录。这样就无法复现，也无法判断是模型错、工具错、状态错还是用户后来改了条件。事件日志要从第一天就做追加保存，哪怕状态视图很简单。</p>
+<p>第六类失败是过度记忆。系统把所有用户说过的话都当偏好，最后会话里充满历史包袱。好的状态系统要有遗忘规则：任务完成后清理本任务临时状态，用户纠正后废弃旧候选，超过有效期的工具事实需要刷新，长期偏好写入前要有明确表达或确认。</p>
+<p>第七类失败是多端并发。用户在桌面端发起任务，又在手机端修改条件；后台工具异步返回旧结果；团队成员共享同一会话时权限不同。状态更新需要版本检查和冲突处理，不能简单最后写入覆盖。对于关键动作，执行前读取最新状态并验证不变量。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>事件流是否追加保存，且包含用户消息、助手消息、工具调用、工具结果、确认、错误和系统事件。</li><li>front-end 显示的“已记住信息”是否能对应到结构化状态，而不是只存在于自然语言摘要。</li><li>每个约束和偏好是否有来源、作用域、创建时间和失效策略。</li><li>工具结果是否绑定调用参数、工具版本、数据版本和时间戳。</li><li>高风险动作是否有 <code>PendingAction</code>，并且确认绑定动作参数和工件版本。</li><li>模型推断是否被标记为候选，避免直接驱动写入、发送、删除、支付等副作用。</li><li>上下文装配是否只选择本轮必要状态，并保留来源标记。</li><li>状态投影是否可以从事件流重建，重建结果是否有 hash 或版本号。</li><li>冲突处理是否覆盖撤销、覆盖、补充、任务切换和对象引用不明。</li><li>服务重启、上下文压缩、工具超时后，是否有恢复测试。</li><li>trace 是否记录本轮使用的状态版本、关键约束、确认记录和工具事实。</li><li>用户是否可以查看、修改或清除长期偏好，尤其是影响隐私和权限的偏好。</li></ul>
+<h2 id="总结">总结</h2>
+<p>会话状态不是把聊天记录塞得更长，而是把对话里的事实、意图、约束和动作拆成可管理的数据。消息历史负责保留发生过什么，状态投影负责告诉系统现在能做什么，确认记录负责证明用户同意了哪个版本的动作，观测日志负责在失败后复盘。模型仍然很重要，但它不应该成为状态数据库。</p>
+<p>真正可用的 LLM 应用，往往不是回答最花哨的应用，而是能在第十轮、第十五轮、服务重启后、用户反悔后仍然保持边界清楚的应用。做到这一点，需要从第一天就把会话状态当成工程对象：有来源、有作用域、有版本、有过期、有冲突、有测试。这样应用才不会在看似自然的多轮对话里逐渐失去控制。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

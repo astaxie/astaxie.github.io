@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAG 上生产清单 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="从数据、检索、引用、评测、权限和成本六个维度检查 RAG。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="RAG 上生产清单">
+  <meta property="og:description" content="从数据、检索、引用、评测、权限和成本六个维度检查 RAG。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/rag-production-checklist.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link active" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>RAG 上生产清单</span></nav>
+          <div class="note-kicker">NOTES / RAG / 020</div>
+          <h1>RAG 上生产清单</h1>
+          <p>从数据、检索、引用、评测、权限和成本六个维度检查 RAG。</p>
+          <div class="note-tag-row"><span>Production</span><span>RAG</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/rag-production-checklist.svg" alt="标题图" loading="lazy"><figcaption>RAG 上生产清单 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>RAG demo 很容易做，RAG 上生产很难。demo 只要把几篇文档切块、向量化、召回、塞给模型，就能回答几个看起来不错的问题。生产系统面对的是另一套现实：数据每天变化，用户权限不同，查询写得含糊，文档互相冲突，模型偶尔编造，向量库有延迟，成本持续增长，合规要求追问每个答案从哪里来。demo 证明“能跑”，生产要证明“可用、可控、可解释、可维护”。</p>
+<p>我见过很多 RAG 项目卡在同一个位置：团队已经有一个原型，老板和用户都觉得有希望，于是准备接入真实业务。接入后问题集中爆发。第一，用户问的问题比测试问题更短、更脏、更带上下文。第二，真实文档里有过期内容、重复内容和权限内容。第三，系统答错时没有日志能定位是数据问题、召回问题还是生成问题。第四，成本和延迟随着文档规模增长突然失控。第五，团队没有定义“什么问题不应该回答”，导致 RAG 被迫承担业务决策和操作指导。</p>
+<p>生产清单的意义，是在上线前把这些风险显性化。它不是为了追求完美架构，而是为了避免最常见的事故。一个 RAG 系统只要进入真实用户路径，就需要回答几个硬问题：数据来源是否可信，索引是否可重建，召回是否可观测，引用是否可追溯，权限是否前置，评测是否覆盖负样本，成本是否有上限，失败时是否能降级。答不上来，就不该把系统包装成可靠能力。</p>
+<p>生产 RAG 还要区分业务风险等级。内部技术问答、客服辅助、合同审阅、医疗建议、代码修改，它们的风险完全不同。低风险场景可以容忍答案不完整，高风险场景必须要求引用、人工确认和审计。不要用同一套链路回答所有问题。工程上最实用的做法，是先定义“允许回答的问题”和“必须拒答的问题”，再设计检索和生成。</p>
+<p>这篇文章把 RAG 上生产拆成若干检查面。它不是产品宣传里的大图，而是工程团队可以逐项打勾的清单。每一项都对应一个真实失败模式：文档更新后索引没变，用户越权看到摘要，答案引用不存在的段落，召回结果全是旧版本，评测集只有正样本，缓存把 A 用户上下文返回给 B 用户，模型在无证据时给出操作命令。生产系统要先防这些低级但致命的问题。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>生产 RAG 的核心概念可以概括为六个词：数据、检索、上下文、生成、治理、运行。数据决定系统知道什么，检索决定系统找到了什么，上下文决定模型实际看到了什么，生成决定答案如何表达，治理决定能不能回答和怎么追责，运行决定系统在真实流量下是否稳定。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">检查面</th><th scope="col">核心问题</th><th scope="col">最低要求</th><th scope="col">常见误区</th></tr></thead><tbody><tr><td>数据</td><td>来源是否可信、可更新、可删除</td><td>有来源、版本、owner、权限</td><td>只存切片不存原文</td></tr><tr><td>检索</td><td>正确证据能否被召回</td><td>混合召回、重排、可观测日志</td><td>只看向量相似度</td></tr><tr><td>上下文</td><td>模型看到的材料是否足够且不越权</td><td>引用包、去重、排序、预算控制</td><td>把 Top K 直接拼接</td></tr><tr><td>生成</td><td>答案是否基于证据且知道边界</td><td>引用、拒答、冲突说明</td><td>用提示词掩盖数据问题</td></tr><tr><td>治理</td><td>谁能问、问什么、答案如何审计</td><td>权限前置、策略引擎、日志脱敏</td><td>生成后再过滤</td></tr><tr><td>运行</td><td>延迟、成本、降级是否可控</td><td>指标、告警、回滚、重建</td><td>上线后才补监控</td></tr></tbody></table></div>
+<p>“可重建”是生产系统很重要的概念。索引不是数据库备份，它是从原始材料和处理规则派生出来的。只要切分策略、嵌入模型、元数据规则、权限策略发生变化，就可能需要重建。生产前必须能回答：当前索引由哪批原文、哪版代码、哪版模型、哪些配置生成；如果今天发现切分有 bug，能不能在可接受时间内重建；重建期间如何服务用户。</p>
+<p>“引用包”也是核心概念。引用不是答案末尾贴几个链接，而是贯穿检索和生成的证据对象。一个引用包应该包含来源、片段、版本、权限、时间、相关性理由和原文位置。模型可以压缩引用包里的内容，但系统要保留完整结构，便于审计和回放。没有引用包，RAG 答案就很难区别于模型自由发挥。</p>
+<p>“拒答策略”要提前设计。很多团队上线后才发现，用户会问超出文档范围、需要专业判断、涉及敏感信息或要求执行危险操作的问题。生产 RAG 不能只会回答，也要会拒绝、澄清、转人工、给出安全范围内的下一步。拒答不是失败，而是可靠系统的一部分。</p>
+<p>最后是“评测闭环”。评测不是上线前跑一次分数，而是持续告诉团队系统哪里在退化。数据更新、模型切换、重排参数调整、权限策略变更，都可能影响答案。没有评测闭环的 RAG 系统，迟早会在某次看似无害的改动后悄悄变差。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>生产 RAG 可以画成一条双向链路：离线索引链路负责把数据变成可检索证据，在线问答链路负责把用户问题变成可审计答案，两条链路通过评测和反馈持续校准。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">离线链路：
+数据源 -&gt; 采集 -&gt; 解析 -&gt; 清洗 -&gt; 权限/版本/owner 标注
+     -&gt; 切分 -&gt; 嵌入 -&gt; 关键词索引 -&gt; 关系/元数据索引
+     -&gt; 索引质检 -&gt; 发布索引版本 -&gt; 可回滚快照
+
+在线链路：
+用户请求 -&gt; 身份与策略 -&gt; 查询理解 -&gt; 召回计划
+     -&gt; 权限内混合召回 -&gt; 重排 -&gt; 引用包组装
+     -&gt; 生成/拒答/澄清 -&gt; 答案审计日志 -&gt; 用户反馈
+
+闭环链路：
+日志抽样 -&gt; 评测集更新 -&gt; 错误归因 -&gt; 数据或策略修复 -&gt; 回归验证</code></pre></div>
+<p>这张图里，索引发布版本是生产边界。很多原型直接写入向量库，线上立即可见；生产环境最好把索引构建和索引发布分开。新索引先在影子环境跑评测，通过后再切流。这样即使某次解析器把表格内容弄丢，也不会立刻污染线上结果。</p>
+<p>在线链路的第一个节点是身份与策略，而不是查询向量化。用户是谁、属于哪个租户、能看哪些文档、能不能问某类问题，必须在召回前确定。策略结果会影响召回范围、是否需要脱敏、是否允许生成操作建议。把策略放到生成后处理，已经太晚了。</p>
+<p>重排之后不要马上生成，要做上下文预算控制。生产查询经常召回大量片段，如果全部塞给模型，成本高、延迟高，还会稀释关键证据。上下文组装应该按证据质量排序，合并同源相邻片段，去掉重复版本，把冲突材料成对保留，并把“为什么选中这段”写入日志。</p>
+<p>反馈链路要连接到错误归因。用户点踩以后，系统至少要记录答案、引用、召回候选、重排分数、模型版本、索引版本和策略结果。否则后续只能猜。一个错误答案可能来自数据缺失，也可能来自召回没命中、重排压错、上下文超长、提示词不当、模型不遵守引用，修复路径完全不同。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>先从数据契约开始。每个进入索引的文档都要有稳定 ID、来源 URI、版本、更新时间、owner、权限级别、生命周期状态和内容哈希。不要只存一段文本和 embedding。后者能跑 demo，但无法处理删除、权限变更、重复检测和审计。</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;doc_id&quot;: &quot;policy-refund-v3&quot;,
+  &quot;source_uri&quot;: &quot;s3://kb/policies/refund.md&quot;,
+  &quot;source_type&quot;: &quot;markdown&quot;,
+  &quot;title&quot;: &quot;退款政策说明&quot;,
+  &quot;owner&quot;: &quot;customer-success&quot;,
+  &quot;version&quot;: &quot;2026-05-03T09:00:00+08:00&quot;,
+  &quot;lifecycle_status&quot;: &quot;published&quot;,
+  &quot;acl&quot;: {
+    &quot;tenant&quot;: &quot;cn&quot;,
+    &quot;groups&quot;: [&quot;support&quot;, &quot;ops&quot;],
+    &quot;confidentiality&quot;: &quot;internal&quot;
+  },
+  &quot;content_hash&quot;: &quot;sha256:...&quot;
+}</code></pre></div>
+<p>切分器要输出结构化片段。字段至少包括片段 ID、文档 ID、标题路径、正文、token 数、原文偏移、表格或代码类型、有效时间。对于 PDF、网页、Markdown、代码文件，解析质量差异很大，应该为每类来源建立解析质检。比如 Markdown 要保留标题层级，PDF 要检测页眉页脚重复，网页要去掉导航和广告，代码文件要按符号或逻辑块切分。</p>
+<p>检索实现建议采用混合召回。向量召回适合语义相近，BM25 或关键词召回适合精确名词、错误码、接口名，元数据过滤适合时间、权限、产品线，图关系适合依赖和影响分析。一个生产召回计划可能长这样：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">query: &quot;退款失败错误 E214 怎么处理&quot;
+filters:
+  tenant: &quot;cn&quot;
+  groups: [&quot;support&quot;]
+  lifecycle_status: [&quot;published&quot;, &quot;accepted&quot;]
+retrievers:
+  - type: keyword
+    fields: [&quot;title&quot;, &quot;body&quot;, &quot;error_code&quot;]
+    top_k: 30
+  - type: vector
+    embedding: &quot;text-embedding-prod-v2&quot;
+    top_k: 50
+  - type: metadata
+    field: &quot;error_code&quot;
+    value: &quot;E214&quot;
+    top_k: 20
+rerank:
+  model: &quot;cross-encoder-prod&quot;
+  top_k: 12
+context:
+  max_tokens: 6000
+  require_citations: true</code></pre></div>
+<p>引用包可以用独立结构贯穿在线链路：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type Evidence struct {
+    CitationID   string
+    ChunkID      string
+    DocID        string
+    SourceURI    string
+    Title        string
+    HeadingPath  []string
+    Text         string
+    Version      string
+    UpdatedAt    time.Time
+    ACLHash      string
+    RelevanceWhy string
+}</code></pre></div>
+<p>答案生成时，提示词要把行为边界写清楚：只能基于证据回答；没有证据就拒答或澄清；引用冲突时说明差异；不得输出证据外的数字、命令、负责人；操作步骤需要列出前置条件和回滚方式。提示词不是万能的，但它是最后一道表达约束。真正的安全来自前面的证据和策略。</p>
+<p>缓存要谨慎。RAG 缓存通常有三类：查询结果缓存、embedding 缓存、答案缓存。embedding 缓存相对安全；查询结果缓存必须包含权限和索引版本；答案缓存风险最大，因为答案可能包含用户上下文和权限内容。生产系统如果做答案缓存，key 必须包含用户或权限集合摘要、索引版本、模型版本和策略版本，并设置短 TTL。否则很容易把一个人的答案返回给另一个人。</p>
+<p>删除和权限变更要被当作一等事件。文档删除后，原文、片段、向量、关键词索引、摘要缓存、评测样本中的敏感引用都要处理。权限从公开变内部时，也要触发索引或过滤更新。生产清单里必须有“撤回路径”，否则合规和用户信任都会出问题。</p>
+<p>观测日志建议至少包含：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;request_id&quot;: &quot;req_abc&quot;,
+  &quot;user_scope_hash&quot;: &quot;scope_93a&quot;,
+  &quot;query&quot;: &quot;退款失败错误 E214 怎么处理&quot;,
+  &quot;index_version&quot;: &quot;kb_20260503_1200&quot;,
+  &quot;retrieved&quot;: [{&quot;chunk_id&quot;: &quot;c1&quot;, &quot;score&quot;: 0.82}],
+  &quot;reranked&quot;: [{&quot;chunk_id&quot;: &quot;c1&quot;, &quot;score&quot;: 0.91}],
+  &quot;context_tokens&quot;: 4210,
+  &quot;model&quot;: &quot;answer-prod&quot;,
+  &quot;citations&quot;: [&quot;C1&quot;, &quot;C2&quot;],
+  &quot;decision&quot;: &quot;answered&quot;,
+  &quot;latency_ms&quot;: 1840
+}</code></pre></div>
+<p>日志里不要直接记录敏感正文，必要时记录哈希和引用 ID。调试需要原文时，通过受控后台按权限查看。这样既能排障，也能降低日志泄露风险。</p>
+<p>容量规划也要在上线前做。RAG 的成本不只来自生成模型，还来自解析、嵌入、向量存储、重排、日志、评测和重建。很多团队只估算单次回答价格，忽略了索引更新和回归评测的长期成本。生产前可以先做一张容量表，按文档数量、平均切片数、每日更新量、查询量、重排候选数、上下文 token 和缓存命中率估算。估算不需要特别精确，但要能发现数量级错误。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">成本项</th><th scope="col">影响因素</th><th scope="col">控制手段</th></tr></thead><tbody><tr><td>解析与切分</td><td>文档格式、页数、更新频率</td><td>增量处理、解析缓存、失败重试队列</td></tr><tr><td>嵌入生成</td><td>切片数量、嵌入维度、重建频率</td><td>内容哈希去重、批处理、模型分层</td></tr><tr><td>向量存储</td><td>切片规模、租户数量、历史版本</td><td>冷热分层、生命周期清理</td></tr><tr><td>重排</td><td>候选数量、重排模型复杂度</td><td>分阶段召回、Top K 限制、规则预过滤</td></tr><tr><td>生成</td><td>上下文长度、模型选择、回答长度</td><td>模型路由、引用摘要、答案缓存</td></tr><tr><td>评测</td><td>样本数量、运行频率、对比版本</td><td>关键样本阻断、全量样本定时跑</td></tr></tbody></table></div>
+<p>容量规划里还有一个容易漏掉的指标：索引新鲜度。用户通常不关心系统内部有多少向量，但会关心“我刚改的文档为什么还答旧答案”。可以把新鲜度拆成采集延迟、解析延迟、嵌入延迟、索引发布延迟和缓存失效延迟。不同业务可以有不同目标：客服政策可能要求十分钟内生效，内部架构文档可以接受一小时，历史归档资料一天也许足够。目标说清楚，系统才知道该在哪一段投入成本。</p>
+<p>生产环境还需要“答案等级”。不是所有回答都应该以同样口吻输出。根据证据质量和风险，可以分成确认答案、建议答案、低置信答案和拒答。确认答案要求多个证据一致且来源权威；建议答案可以给出下一步排查；低置信答案必须明确不确定点；拒答则说明缺少权限、缺少证据或超出系统范围。这个等级应该由系统根据召回和策略计算，再交给模型表达，而不是让模型自己判断自己有多确定。</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;answer_grade&quot;: &quot;suggestion&quot;,
+  &quot;reason&quot;: &quot;召回到 runbook，但缺少最近 24 小时通道状态&quot;,
+  &quot;allowed_style&quot;: &quot;给出排查步骤，不给最终原因&quot;,
+  &quot;required_disclaimer&quot;: &quot;需要结合当前监控确认&quot;
+}</code></pre></div>
+<p>这样做可以减少“没有足够证据却给确定结论”的问题。尤其在故障处理、合规解释和客户沟通场景里，答案等级比单纯相似度分数更容易被业务方理解。</p>
+<p>多租户系统还要检查隔离模型。很多 RAG 原型只在 metadata 里放一个 <code>tenant_id</code>，查询时加过滤条件。生产上要进一步考虑索引物理隔离、加密密钥、日志隔离、评测数据隔离和运维权限。对于强隔离场景，不同租户使用独立索引或独立 namespace 更稳；对于共享索引场景，必须保证所有检索入口都强制带租户过滤，并且管理后台不能绕过。隔离策略要写进架构文档和自动化测试，而不是只存在于某个查询函数里。</p>
+<p>数据质量也要有阻断规则。新索引构建完成后，如果解析失败率超过阈值、空片段比例异常、权限为空的文档数量增加、重复片段激增、某个关键来源突然少了一半文档，就不应该发布。RAG 的很多线上事故不是模型突然变差，而是数据管道悄悄坏了。索引质检可以像数据库迁移一样有红线：不过线就停在影子环境，不能带病上线。</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">index_quality_gate:
+  max_parse_failure_rate: 0.01
+  max_empty_chunk_rate: 0.005
+  max_acl_missing_docs: 0
+  max_duplicate_chunk_rate: 0.08
+  required_sources:
+    - &quot;runbook&quot;
+    - &quot;published_policy&quot;
+    - &quot;accepted_adr&quot;</code></pre></div>
+<p>这些阈值一开始可以保守，随着系统成熟再调整。关键是让团队习惯：索引不是随便生成的缓存，而是会影响用户判断的生产制品。</p>
+<p>最后要准备人工运营入口。生产 RAG 不可能完全自动修好所有知识问题，系统应该把失败查询聚合成队列，让知识 owner 能看到问题、证据、缺失来源和建议动作。比如某个问题连续三次无答案，队列里应该显示它可能缺少哪类文档；某个答案引用了过期政策，队列里应该能直接跳到冲突片段；某个用户反馈“这不是我们团队规则”，队列里应该能把反馈转成权限或租户标注检查。没有这个入口，失败只会留在日志里，系统不会真正变好。</p>
+<p>人工运营入口还可以反向生成评测样本。每修复一个高价值失败查询，就把它加入回归集，绑定正确证据和拒答条件。这样生产问题会逐步沉淀成自动化防线，而不是下次换模型、换索引策略后重新踩坑。</p>
+<p>这也是把用户反馈变成工程资产的关键步骤，很重要。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>生产 RAG 的测试可以分四层：单元测试、索引质检、离线评测、线上观测。单元测试检查解析器、切分器、权限过滤和引用格式；索引质检检查文档数量、空片段、重复片段、权限分布、嵌入失败；离线评测检查固定问题集的召回和答案；线上观测检查真实查询的延迟、点击、反馈和错误归因。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">测试层</th><th scope="col">关注点</th><th scope="col">示例</th></tr></thead><tbody><tr><td>单元测试</td><td>规则正确性</td><td>Markdown 表格切分后仍可引用原位置</td></tr><tr><td>索引质检</td><td>数据健康</td><td>新索引空片段比例不能超过阈值</td></tr><tr><td>离线评测</td><td>答案质量</td><td>必须引用指定文档并拒绝超范围问题</td></tr><tr><td>影子评测</td><td>版本对比</td><td>新重排模型不能降低关键问题召回</td></tr><tr><td>线上观测</td><td>运行质量</td><td>P95 延迟、无引用回答率、踩率</td></tr></tbody></table></div>
+<p>离线评测样本不要只写“能回答”的问题，还要写“不能回答”的问题。例如文档里没有某产品价格、用户无权查看某合同、问题要求法律结论、问题要求执行删除操作。这些样本能测试拒答策略。很多 RAG 系统的事故不是回答不够多，而是不该回答时回答了。</p>
+<p>每个评测样本应该有期望证据和评分规则：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">id: refund_e214_support_001
+question: &quot;退款失败 E214 应该怎么处理？&quot;
+role: &quot;support_agent_cn&quot;
+must_retrieve:
+  - &quot;runbook/refund-errors.md#E214&quot;
+must_answer:
+  - &quot;先确认支付通道返回状态&quot;
+  - &quot;不要重复发起退款&quot;
+must_cite: true
+must_not_answer:
+  - &quot;直接修改退款状态表&quot;
+negative_roles:
+  - &quot;external_viewer&quot;</code></pre></div>
+<p>召回评测和答案评测要分开。召回没命中正确证据，生成模型再强也只是猜；召回命中了但答案错误，问题在上下文组装或生成约束。分开评测可以让修复路径更清楚。建议先把关键问题的召回率做到可接受，再调答案表达。</p>
+<p>还要评测索引版本升级。每次切分策略、嵌入模型、重排模型、权限规则变化，都跑一组回归。关注三个指标：关键证据是否仍在 Top N；答案引用是否仍准确；拒答样本是否仍拒答。只看平均分会掩盖高风险样本退化，所以要给关键样本设置阻断阈值。</p>
+<p>线上 A/B 要谨慎。RAG 答案可能影响真实决策，不适合盲目把差模型放给用户。更安全的方式是影子运行：线上仍用旧系统回答，新系统在后台对同一查询生成结果，比较召回和答案，但不展示给用户。通过评测后再小流量切换。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一种失败是索引不可追溯。线上答错了，团队不知道答案来自哪版文档、哪版切分器、哪版模型。解决方式是所有索引和答案都带版本，索引发布可回滚，日志记录引用包。</p>
+<p>第二种失败是权限过滤放错位置。先召回再过滤看似方便，但召回日志、重排输入、缓存和模型上下文都可能泄露。权限必须前置到检索候选集合，后续每层也要保留权限摘要。</p>
+<p>第三种失败是引用虚假或太粗。答案引用整篇文档，用户无法定位；或者模型生成了不存在的引用编号。引用应该由系统分配，模型只能选择和解释，不能自己编造来源。</p>
+<p>第四种失败是只评测正样本。系统看起来准确率很高，遇到无答案问题却开始编造。生产评测必须有负样本、越权样本、冲突样本和过期样本。</p>
+<p>第五种失败是成本没有闸门。Top K 过大、重排模型昂贵、上下文过长、答案缓存无效，会让单次查询成本飙升。需要设置上下文 token 预算、重排候选上限、模型路由和成本告警。</p>
+<p>第六种失败是数据删除不彻底。原文删了，向量还在；权限改了，缓存还在；评测集里还保留敏感片段。生产系统必须有删除传播和验证工具。</p>
+<p>第七种失败是降级策略缺失。向量库故障、重排服务超时、模型限流时，系统要么挂死，要么返回无证据答案。更好的做法是根据场景降级到关键词搜索、只返回引用列表、提示稍后再试或转人工。</p>
+<p>第八种失败是把用户反馈当满意度数字。点踩只记录一个计数，没有保存召回和引用，无法修复。反馈必须能进入错误归因流程，最好能自动生成数据修复或评测样本候选。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>所有数据源都有 owner、来源 URI、版本、权限级别、生命周期状态和更新时间。</li><li>索引构建可重复，能追踪原文版本、处理代码版本、嵌入模型版本和配置版本。</li><li>支持索引快照、影子评测、灰度发布和快速回滚。</li><li>文档删除、权限变化、内容更新都会触发索引和缓存更新。</li><li>检索前完成身份解析和策略判断，权限过滤不依赖生成后处理。</li><li>同时使用向量、关键词、元数据或图关系中的至少两类召回方式。</li><li>重排和上下文组装有可观测日志，能看到候选、分数、裁剪原因。</li><li>回答必须引用系统提供的证据包，模型不能生成不存在的引用。</li><li>有明确拒答、澄清、转人工和降级策略。</li><li>评测集包含正样本、负样本、越权样本、冲突样本、过期样本和长尾表达。</li><li>每次索引策略、模型、提示词或权限规则变更都跑回归评测。</li><li>日志脱敏，敏感正文不进入普通日志、监控标签或第三方分析平台。</li><li>缓存 key 包含权限摘要、索引版本、模型版本和策略版本。</li><li>设置 P50、P95、P99 延迟指标，以及单次查询成本和每日总成本告警。</li><li>准备向量库、重排服务、模型服务异常时的降级路径。</li><li>提供用户反馈入口，并能把失败查询转成评测样本或数据修复任务。</li><li>高风险场景要求人工确认，低置信答案不能输出操作命令。</li><li>上线文档说明系统覆盖范围、非覆盖范围、数据更新时间和责任团队。</li></ul>
+<h2 id="总结">总结</h2>
+<p>RAG 上生产不是把原型接到真实文档库，而是补齐数据契约、权限策略、检索可观测、引用审计、评测回归和运行降级。生产系统最重要的品质不是每次都回答，而是在证据不足、权限不足、风险过高时知道停下来。一个可控的 RAG，比一个看起来无所不知但无法追责的 RAG 更有价值。</p>
+<p>我的建议是把上线门槛写成硬清单，并让每一项都能被测试或演示。能重建索引，能解释引用，能拒绝越权问题，能回放错误答案，能在模型或向量库异常时降级，这些都比换一个更大的模型更关键。RAG 的生产化不是模型能力问题，而是工程纪律问题。先把清单做扎实，再谈规模化和智能化。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

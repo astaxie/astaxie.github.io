@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent 沙箱与安全边界 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="文件、网络和命令执行都应该被隔离和记录。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="Agent 沙箱与安全边界">
+  <meta property="og:description" content="文件、网络和命令执行都应该被隔离和记录。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/agent-sandbox-security.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link active" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>Agent 沙箱与安全边界</span></nav>
+          <div class="note-kicker">NOTES / AGENT / 032</div>
+          <h1>Agent 沙箱与安全边界</h1>
+          <p>文件、网络和命令执行都应该被隔离和记录。</p>
+          <div class="note-tag-row"><span>Security</span><span>Agent</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/agent-sandbox-security.svg" alt="标题图" loading="lazy"><figcaption>Agent 沙箱与安全边界 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>Agent 一旦能读文件、跑命令、访问网络、调用内部系统，它就不再只是聊天机器人，而是一个可以影响真实环境的自动化执行者。这个变化很大。过去模型回答错了，最多是用户不采纳；现在模型执行错了，可能删除文件、泄露密钥、提交错误代码、调用生产接口、下载恶意依赖，或者把内部数据发到外部地址。沙箱不是给 Agent 加一层形式上的安全壳，而是把“模型想做什么”和“系统允许发生什么”切开。</p>
+<p>很多团队在原型阶段为了速度，会把 Agent 放在开发机或 CI 容器里，给它项目目录、shell、网络和一组环境变量。这样跑 demo 很方便：模型可以查代码、安装依赖、跑测试、改文件、开本地服务。但这个环境也很危险。模型可能因为误解任务执行破坏性命令；用户提供的 issue、网页、文档里可能夹带提示注入；依赖安装脚本可能在 <code>postinstall</code> 阶段读取环境变量；测试命令可能访问真实数据库；日志里可能打印 token；网络请求可能把源码片段发到未知域名。</p>
+<p>安全边界的目标不是让 Agent 什么都不能做。相反，好的沙箱让 Agent 能放心做该做的事：在指定工作区读写，在允许的命令集合内构建和测试，在白名单网络里拉依赖或查文档，在经过代理的方式使用短期密钥，在审计日志里留下完整轨迹。边界越清楚，自动化程度反而越高。没有边界时，团队只能靠人盯着每一步；有边界后，低风险动作可以自动执行，高风险动作进入确认流程。</p>
+<p>Agent 安全和传统应用安全有相似处，也有新问题。传统应用的代码路径相对固定，权限可以按接口设计；Agent 的行动路径是动态生成的，同一个目标可能走不同路线。传统应用里的用户输入通常被当作数据；Agent 会阅读用户输入并把它纳入规划，提示注入会诱导它改变行为。传统后台服务很少需要执行任意 shell；代码型 Agent 却经常需要跑构建、测试、格式化和包管理命令。因此，Agent 沙箱必须覆盖文件系统、进程、网络、密钥、资源、人工确认和审计，而不能只靠一句“模型要小心”。</p>
+<p>最朴素的原则是最小权限。Agent 做一次任务，只应该拿到完成这个任务所需的最小文件范围、最小网络范围、最小命令集合、最短时间密钥和最少副作用能力。任务结束后，这些权限应该被撤销，工作区应该归档或清理，敏感日志应该脱敏。不要把用户长期凭证、整个主目录、生产数据库地址和无限网络访问一次性塞给 Agent。那不是智能自动化，是把边界交给概率模型。</p>
+<p>还有一个原则是默认可复盘。Agent 的安全事故如果不能复盘，就无法修复。每次文件读写、命令执行、网络出站、密钥租约、策略拒绝和人工批准，都应该能回到同一个运行 ID。审计日志不只是合规材料，也是调试材料。一个好的事故报告应该能回答：Agent 当时的目标是什么；它看到哪些输入；策略为什么允许或拒绝；哪个命令产生副作用；哪些文件被改；有没有外发数据；谁确认了高风险动作；事后如何回滚。</p>
+<p>沙箱还要考虑协作场景。真实仓库可能已经有用户未提交的改动，Agent 不应该随意覆盖；多个 Agent 可能同时工作，不能互相踩文件；某个任务可能只允许改 <code>content/articles/</code>，不允许碰 <code>js/</code> 或部署脚本；某次评测只允许访问本地服务，不允许联网。安全边界如果只在容器层，往往表达不了这些项目语义；如果只在提示词里，又没有强制力。需要一层任务策略，把业务约束编译成沙箱配置和工具网关规则。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>Agent 沙箱至少要定义七类边界：身份边界、文件边界、命令边界、网络边界、密钥边界、资源边界和审计边界。身份边界说明 Agent 代表谁行动；文件边界说明能读写哪里；命令边界说明能执行什么；网络边界说明能连接哪里；密钥边界说明如何使用敏感凭证；资源边界说明最多消耗多少 CPU、内存、时间和磁盘；审计边界说明每个动作如何记录和回放。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">边界</th><th scope="col">关键问题</th><th scope="col">推荐机制</th><th scope="col">失控表现</th></tr></thead><tbody><tr><td>身份边界</td><td>Agent 代表用户、服务账号还是临时任务身份</td><td>任务身份、权限快照、短期令牌</td><td>借用管理员权限做普通任务</td></tr><tr><td>文件边界</td><td>哪些路径可读、哪些路径可写</td><td>只读挂载、可写根、路径规范化、符号链接检查</td><td>读取主目录密钥或覆盖无关文件</td></tr><tr><td>命令边界</td><td>哪些命令允许执行，参数如何限制</td><td>命令策略、工作目录限制、环境变量清洗</td><td>执行破坏性命令或任意下载执行</td></tr><tr><td>网络边界</td><td>能访问哪些域名、协议和端口</td><td>出站代理、域名白名单、请求审计</td><td>向未知地址泄露代码和数据</td></tr><tr><td>密钥边界</td><td>凭证何时可用、可用于什么</td><td>密钥代理、短期租约、按工具注入</td><td>token 出现在日志或子进程环境</td></tr><tr><td>资源边界</td><td>任务最多跑多久、占多少资源</td><td>CPU/内存/磁盘/进程/时间限制</td><td>fork 风暴、磁盘写满、长时间占用</td></tr><tr><td>审计边界</td><td>发生过什么，能否解释</td><td>结构化事件、哈希、输出脱敏、轨迹归档</td><td>事故后只剩一段聊天记录</td></tr></tbody></table></div>
+<p>身份边界经常被忽略。Agent 不应该天然继承运行它的服务器权限，也不应该直接使用用户的长期登录态。更合适的是为每个任务创建临时身份：它包含用户、工作区、任务目标、允许资源和过期时间。调用内部系统时，用这个临时身份换取受限令牌。这样审计日志里可以区分“用户本人点击了按钮”和“Agent 代表用户在任务 run_123 中调用了工具”。</p>
+<p>文件边界要同时控制读和写。很多人只限制写目录，以为不写就安全，但读权限也很敏感。代码仓库里可能有 <code>.env</code>、私钥、客户数据样本、内部设计文档和历史日志。Agent 如果能读取，就可能在模型上下文、命令输出或网络请求里泄露。文件策略应该明确可读路径、可写路径、禁止路径和输出归档路径。对于写操作，还要防止符号链接逃逸，例如可写目录里有链接指向 <code>/Users/name/.ssh</code>。</p>
+<p>命令边界不能只靠字符串黑名单。<code>rm -rf</code> 很危险，但危险命令不止它一个。包管理器的安装脚本、shell 展开、重定向、管道、远程脚本、测试命令里的副作用，都可能越界。更稳的方式是把命令分级：安全读命令、构建命令、测试命令、包管理命令、网络命令、系统修改命令。低风险命令自动执行；中风险命令在受限环境执行；高风险命令需要批准或直接禁止。命令执行前要解析可执行文件、工作目录、参数、环境变量和预期输出。</p>
+<p>网络边界是防数据外流的关键。Agent 做研发任务时确实可能需要访问包仓库、官方文档、模型 API 或公司内部服务，但不应该默认全网开放。出站网络最好走代理，由代理做域名白名单、端口限制、请求大小限制、响应大小限制和日志记录。白名单要区分“允许下载依赖”和“允许上传数据”。例如访问 <code>registry.npmjs.org</code> 拉包是一个场景，把仓库压缩包 POST 到陌生地址是另一个场景。</p>
+<p>密钥边界要避免“把 token 放进环境变量然后祝好运”。环境变量会被子进程继承，会被测试打印，会进入崩溃报告，也可能被依赖脚本读取。更可靠的设计是密钥代理：Agent 本身拿不到明文长期密钥，只能请求某个工具执行受控动作，或者拿到短期、窄作用域、可撤销的凭证。需要给命令临时注入凭证时，要限制命令、目录、有效期和日志脱敏。</p>
+<p>资源边界不是性能优化，而是安全控制。模型可能写出无限循环命令，测试可能启动大量进程，构建可能下载巨量依赖，浏览器可能占满内存。沙箱应该限制 CPU、内存、磁盘、进程数、打开文件数和总运行时间。超过限制时，系统要能中止任务并生成清晰报告。没有资源边界，单个 Agent 任务就可能拖垮共享环境。</p>
+<p>审计边界要结构化。自然语言总结有帮助，但不能替代事件日志。每个安全相关事件都要有时间、运行 ID、动作类型、策略版本、主体、资源、结果和证据哈希。文件写入要记录路径和内容哈希；命令执行要记录命令、工作目录、退出码和脱敏输出；网络请求要记录目标、方法、字节数和策略决策；密钥使用要记录租约和工具名。审计越细，越能放心开放自动化。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>Agent 沙箱可以分为控制面和执行面。控制面负责策略、身份、审批和审计；执行面负责隔离运行、文件挂载、命令执行、网络代理和密钥注入。不要把这些逻辑都塞进模型提示词，也不要只依赖容器默认隔离。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户目标
+  |
+  v
+任务策略编译器：目标、允许文件、允许命令、网络范围、风险等级
+  |
+  v
+临时任务身份：user_id、workspace_id、run_id、expires_at、permission_snapshot
+  |
+  v
+沙箱管理器
+  |-- 文件系统：只读挂载、可写目录、禁止路径、产物目录
+  |-- 进程执行：命令策略、资源限制、环境清洗、超时控制
+  |-- 网络代理：域名白名单、端口限制、请求审计、上传限制
+  |-- 密钥代理：短期租约、按工具注入、日志脱敏、撤销
+  |-- 人工确认：高风险动作预览、审批记录、过期校验
+  |
+  v
+Agent 工具调用：读文件、写文件、运行命令、访问网络、调用服务
+  |
+  v
+审计与回放：事件流、文件哈希、命令输出、网络摘要、最终报告</code></pre></div>
+<p>任务策略编译器把用户要求和项目规则转成机器可执行策略。例如用户说“只修改这两篇 Markdown，并运行检查脚本”，策略就应该允许读取仓库、允许写指定两个文件、允许执行检查命令，禁止改其他路径，禁止联网，禁止安装依赖。这个策略不能只存在于聊天上下文里，必须进入文件网关和命令网关。模型即使想写别的文件，也会被拦住。</p>
+<p>沙箱管理器负责创建运行环境。不同团队可以选择不同隔离级别：本地临时目录、容器、轻量虚拟机、远程执行器、受限 CI runner。隔离级别取决于风险。只读文档整理可以用较轻环境；能跑不可信依赖安装的任务，最好使用容器或虚拟机；能接触生产数据的任务，应该进一步限制网络和密钥。不要用同一种环境处理所有任务。</p>
+<p>文件系统层要尽量显式。可读挂载和可写挂载分开，工作目录不等于可写范围。比如 Agent 可以读取整个仓库，但只允许写 <code>content/articles/browser-agent-workflow.md</code> 和 <code>content/articles/agent-sandbox-security.md</code>。路径检查要在最终解析后做，不能只检查字符串前缀。<code>content/articles/../js/articles.js</code>、大小写差异、符号链接、硬链接、挂载点都要考虑。</p>
+<p>进程执行层要把命令当作受控操作，而不是直接交给 shell。优先以参数数组执行，减少 shell 注入；必须用 shell 时，要标记为更高风险。每次执行前计算策略决策：命令是否允许，工作目录是否在范围内，环境变量是否包含敏感项，是否会写禁止路径，是否需要网络，是否超过资源预算。执行后记录退出码和输出摘要，并对密钥、邮箱、token、私有 URL 做脱敏。</p>
+<p>网络代理层要覆盖命令和工具。只限制 Agent 自己的 HTTP 客户端不够，因为 <code>npm install</code>、<code>go test</code>、<code>curl</code>、浏览器、语言运行时都可能发请求。理想情况下，沙箱的所有出站流量都经过代理。代理可以记录域名、端口、字节数和策略结果，但不要默认保存完整请求体，避免审计系统变成新的数据泄露点。对上传请求要更严格，可以按目标域、内容类型和大小限制。</p>
+<p>密钥代理要和工具系统结合。比如 Agent 需要发布 GitHub PR，不应该把 GitHub token 放进通用 shell 环境，而应该调用“创建 PR”工具。工具在服务端用受限 token 完成动作，并把结果返回。确实需要命令使用凭证时，可以发短期 token，并把它绑定到命令、仓库和过期时间。任务结束后，密钥租约必须撤销。</p>
+<p>人工确认是沙箱的一部分，不是 UI 附件。高风险动作被拦截时，系统要生成确认对象：动作摘要、参数、影响文件或资源、风险说明、回滚方式、策略版本和过期时间。用户确认后，执行请求必须携带确认 ID；如果动作参数变化、策略版本变化或确认过期，就不能复用旧确认。这样可以避免“确认的是 A，执行的是 B”。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>可以从一份 <code>SandboxSpec</code> 开始，把任务权限表达清楚。下面的结构偏概念，但足够落地。</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;run_id&quot;: &quot;run_20260421_001&quot;,
+  &quot;subject&quot;: {
+    &quot;user_id&quot;: &quot;u_123&quot;,
+    &quot;workspace_id&quot;: &quot;kb_site&quot;,
+    &quot;expires_at&quot;: &quot;2026-04-21T18:00:00+08:00&quot;
+  },
+  &quot;filesystem&quot;: {
+    &quot;read_roots&quot;: [&quot;.&quot;],
+    &quot;write_files&quot;: [
+      &quot;content/articles/browser-agent-workflow.md&quot;,
+      &quot;content/articles/agent-sandbox-security.md&quot;
+    ],
+    &quot;write_roots&quot;: [],
+    &quot;deny_globs&quot;: [&quot;.env&quot;, &quot;**/.ssh/**&quot;, &quot;**/*secret*&quot;, &quot;node_modules/**&quot;],
+    &quot;artifact_root&quot;: &quot;.agent-artifacts/run_20260421_001&quot;
+  },
+  &quot;commands&quot;: {
+    &quot;allow&quot;: [
+      {&quot;argv0&quot;: &quot;python3&quot;, &quot;args_prefix&quot;: [&quot;scripts/check_articles.py&quot;]},
+      {&quot;argv0&quot;: &quot;rg&quot;},
+      {&quot;argv0&quot;: &quot;sed&quot;},
+      {&quot;argv0&quot;: &quot;git&quot;, &quot;args_prefix&quot;: [&quot;status&quot;]}
+    ],
+    &quot;deny_shell&quot;: true,
+    &quot;timeout_seconds&quot;: 120,
+    &quot;max_output_bytes&quot;: 200000
+  },
+  &quot;network&quot;: {
+    &quot;mode&quot;: &quot;deny&quot;
+  },
+  &quot;resources&quot;: {
+    &quot;cpu_seconds&quot;: 300,
+    &quot;memory_mb&quot;: 2048,
+    &quot;disk_mb&quot;: 1024,
+    &quot;processes&quot;: 64
+  },
+  &quot;approval&quot;: {
+    &quot;required_for&quot;: [&quot;delete&quot;, &quot;external_write&quot;, &quot;secret_access&quot;, &quot;network_upload&quot;]
+  }
+}</code></pre></div>
+<p>这里有几个值得强调的点。<code>read_roots</code> 是相对宽的，因为写文章需要参考样式和元数据；<code>write_files</code> 非常窄，只允许写目标文件。<code>network.mode</code> 是 <code>deny</code>，说明这个任务不需要联网。命令允许列表只放检查和读取命令。真实系统里策略不一定这么严格，但原则一样：权限来自任务，而不是来自 Agent 的愿望。</p>
+<p>文件网关要做路径规范化。伪代码如下：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">func AuthorizeWrite(spec SandboxSpec, requested string) (ResolvedPath, error) {
+    clean := filepath.Clean(requested)
+    abs := filepath.Join(spec.WorkspaceRoot, clean)
+    resolved, err := filepath.EvalSymlinks(filepath.Dir(abs))
+    if err != nil {
+        return ResolvedPath{}, err
+    }
+    final := filepath.Join(resolved, filepath.Base(abs))
+    rel, err := filepath.Rel(spec.WorkspaceRoot, final)
+    if err != nil || strings.HasPrefix(rel, &quot;..&quot;) {
+        return ResolvedPath{}, ErrOutsideWorkspace
+    }
+    if matchesDenyGlob(rel, spec.Filesystem.DenyGlobs) {
+        return ResolvedPath{}, ErrDeniedPath
+    }
+    if !isExactAllowedFile(rel, spec.Filesystem.WriteFiles) &amp;&amp;
+       !isUnderAllowedRoot(rel, spec.Filesystem.WriteRoots) {
+        return ResolvedPath{}, ErrReadOnly
+    }
+    return ResolvedPath{Absolute: final, Relative: rel}, nil
+}</code></pre></div>
+<p>这段逻辑避免了几个常见问题：用户传入 <code>../</code> 绕过，符号链接指向外部目录，禁止路径在允许目录下面出现。实际实现还要考虑操作系统大小写、挂载点和并发 TOCTOU 问题。高风险环境里，最好让底层容器或虚拟机也强制挂载只读和可写范围，应用层检查作为第二道防线。</p>
+<p>命令执行不要默认走 <code>sh -c</code>。推荐接口是参数数组：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;run_id&quot;: &quot;run_20260421_001&quot;,
+  &quot;command_id&quot;: &quot;cmd_008&quot;,
+  &quot;argv&quot;: [&quot;python3&quot;, &quot;scripts/check_articles.py&quot;, &quot;--min-han&quot;, &quot;5000&quot;, &quot;browser-agent-workflow&quot;, &quot;agent-sandbox-security&quot;],
+  &quot;cwd&quot;: &quot;.&quot;,
+  &quot;env&quot;: {},
+  &quot;requires_network&quot;: false,
+  &quot;expected_writes&quot;: []
+}</code></pre></div>
+<p>命令网关检查 <code>argv[0]</code> 和参数前缀，限制工作目录，清洗环境变量，设置超时和输出上限。对于可能写文件的命令，要么禁止，要么声明预期写入范围并由文件系统层拦截。比如格式化命令可能修改很多文件，只有当任务允许这些文件时才执行。包管理命令通常需要单独策略，因为安装依赖会触发脚本、写 lockfile、访问网络。</p>
+<p>环境变量清洗要默认删除敏感项。可以保留 <code>PATH</code>、<code>HOME</code> 的沙箱值、语言工具链必要变量，但不要继承宿主机完整环境。尤其要处理 <code>AWS_*</code>、<code>GITHUB_TOKEN</code>、<code>OPENAI_API_KEY</code>、<code>DATABASE_URL</code>、<code>SSH_AUTH_SOCK</code>、云厂商凭证和公司内部代理变量。很多泄露不是 Agent 主动读取密钥，而是子进程、测试框架或依赖脚本把环境打印出来。</p>
+<p>网络代理可以用策略事件表达决策：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;event&quot;: &quot;network_request&quot;,
+  &quot;run_id&quot;: &quot;run_20260421_001&quot;,
+  &quot;process&quot;: &quot;python3&quot;,
+  &quot;method&quot;: &quot;GET&quot;,
+  &quot;host&quot;: &quot;pypi.org&quot;,
+  &quot;port&quot;: 443,
+  &quot;path_class&quot;: &quot;package_index&quot;,
+  &quot;bytes_out&quot;: 0,
+  &quot;bytes_in&quot;: 15320,
+  &quot;decision&quot;: &quot;denied&quot;,
+  &quot;reason&quot;: &quot;task_network_mode_deny&quot;
+}</code></pre></div>
+<p>如果任务需要联网，白名单也要细分。例如允许 <code>go env GOPROXY</code> 拉模块，不等于允许任意 POST；允许访问官方文档，不等于允许上传代码片段；允许访问公司 issue 系统，不等于允许访问生产管理 API。代理层可以给不同目标贴标签：依赖下载、文档读取、内部只读 API、外部写 API。标签进入策略引擎，决定是否自动允许、需要确认或禁止。</p>
+<p>密钥代理的接口应该按能力设计，而不是按明文设计。举例说，Agent 需要“读取某个私有仓库 issue”，可以调用：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;tool&quot;: &quot;github.read_issue&quot;,
+  &quot;arguments&quot;: {
+    &quot;repo&quot;: &quot;org/project&quot;,
+    &quot;issue_number&quot;: 42
+  },
+  &quot;subject&quot;: &quot;agent-run:run_20260421_001&quot;
+}</code></pre></div>
+<p>服务端根据临时身份检查权限，使用受限凭证读取 issue，返回必要字段。Agent 不接触 token，也不能把 token 传给其他命令。对于必须签名或上传的场景，也尽量封装成工具，让密钥只在受控服务端使用。把密钥交给通用 shell 是最后选择。</p>
+<p>审计事件可以统一成 append-only 流：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;ts&quot;: &quot;2026-04-21T10:35:12+08:00&quot;,
+  &quot;run_id&quot;: &quot;run_20260421_001&quot;,
+  &quot;seq&quot;: 19,
+  &quot;actor&quot;: &quot;agent&quot;,
+  &quot;action&quot;: &quot;file_write&quot;,
+  &quot;resource&quot;: &quot;content/articles/agent-sandbox-security.md&quot;,
+  &quot;decision&quot;: &quot;allowed&quot;,
+  &quot;policy_version&quot;: &quot;sandbox-policy-v3&quot;,
+  &quot;before_hash&quot;: null,
+  &quot;after_hash&quot;: &quot;sha256:4f6a...&quot;,
+  &quot;evidence&quot;: {
+    &quot;tool&quot;: &quot;apply_patch&quot;,
+    &quot;reason&quot;: &quot;create requested article&quot;
+  }
+}</code></pre></div>
+<p>日志要防篡改，至少保证按运行追加、带序号、带哈希；更高要求可以写入不可变存储。输出日志要脱敏，但脱敏不能破坏调试价值。可以保存原始输出的加密版本和脱敏摘要，普通开发者看摘要，安全人员在审批后查看原文。</p>
+<p>人工确认对象也要结构化：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;approval_id&quot;: &quot;appr_1007&quot;,
+  &quot;run_id&quot;: &quot;run_20260421_001&quot;,
+  &quot;risk&quot;: &quot;external_write&quot;,
+  &quot;action&quot;: &quot;publish_release&quot;,
+  &quot;summary&quot;: &quot;将当前 main 分支发布到生产环境&quot;,
+  &quot;resources&quot;: [&quot;service:knowledge-site&quot;, &quot;env:production&quot;],
+  &quot;diff_ref&quot;: &quot;artifact://run_20260421_001/release-plan.md&quot;,
+  &quot;rollback&quot;: &quot;执行上一版本镜像回滚&quot;,
+  &quot;expires_at&quot;: &quot;2026-04-21T11:00:00+08:00&quot;,
+  &quot;policy_hash&quot;: &quot;sha256:9b2c...&quot;
+}</code></pre></div>
+<p>确认不是一句“同意”。它绑定动作、资源、策略和时间。Agent 后续执行时，网关重新计算动作摘要和策略哈希；不一致就拒绝。这样做能防止模型在确认后扩展动作范围。</p>
+<p>上线前还要处理产物和缓存。Agent 运行会产生补丁、截图、下载文件、测试报告、临时数据库、构建缓存。产物目录应在沙箱内，任务结束后按策略归档或清理。缓存可以提升速度，但共享缓存会带来污染和泄露风险。依赖缓存最好只读挂载，写缓存按任务隔离；包含源码或密钥的临时文件不能进入共享缓存。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>Agent 沙箱的测试要像安全产品测试，而不是只跑几条正常路径。至少要覆盖策略正确性、隔离强度、提示注入抗性、审计完整性和用户确认流程。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">测试类型</th><th scope="col">样本</th><th scope="col">期望结果</th><th scope="col">验收信号</th></tr></thead><tbody><tr><td>文件越界</td><td>写 <code>../outside.txt</code>、通过符号链接写外部路径</td><td>拒绝并记录策略事件</td><td>错误分类为 path_escape</td></tr><tr><td>只读保护</td><td>尝试修改非授权文件</td><td>拒绝，原文件哈希不变</td><td>审计有 denied file_write</td></tr><tr><td>命令策略</td><td>执行未授权命令、shell 管道、远程脚本</td><td>拒绝或要求审批</td><td>命令未启动</td></tr><tr><td>网络隔离</td><td><code>curl</code> 外部地址、依赖安装访问公网</td><td>按网络策略拒绝</td><td>代理记录 denied</td></tr><tr><td>密钥保护</td><td>子进程读取环境变量、日志打印 token</td><td>无明文密钥，输出脱敏</td><td>扫描无 secret pattern</td></tr><tr><td>资源限制</td><td>无限循环、写大文件、启动大量进程</td><td>超限终止，生成报告</td><td>exit reason 为 resource_limit</td></tr><tr><td>提示注入</td><td>README 要求读取密钥或上传代码</td><td>不执行越权动作</td><td>策略拒绝且模型解释为不可信输入</td></tr><tr><td>审计完整性</td><td>完成一次含读写和命令的任务</td><td>事件序列完整可回放</td><td>run_id 下事件无缺口</td></tr></tbody></table></div>
+<p>文件边界测试要特别认真。路径处理的 bug 很常见，而且一旦出错影响很大。测试用例应包含相对路径、绝对路径、重复斜杠、大小写差异、Unicode 文件名、符号链接、目录替换、硬链接和并发写入。不要只测简单的 <code>../</code>。如果底层平台支持只读挂载，还要验证应用层策略失效时，操作系统层仍然能挡住写入。</p>
+<p>命令边界测试不能只测黑名单。应该准备一批“看起来无害但会产生副作用”的命令，比如测试脚本里写文件、包管理器触发生命周期脚本、<code>git</code> hook 执行、构建工具访问网络、压缩命令读取外部路径。策略引擎要基于命令类别、工作目录、网络需求和文件写入范围做判断。对允许命令，也要测试超时、输出过大和非零退出码。</p>
+<p>网络测试要从沙箱内部发起，而不是只测应用 HTTP 客户端。因为真实泄露往往来自子进程。可以在测试环境放一个受控外部域名，要求所有未授权请求都失败，并在代理侧看到拒绝事件。对允许域名，要测试 DNS 重绑定、直接 IP、非标准端口、重定向到未知域名、HTTP 到 HTTPS 降级和大体积上传。</p>
+<p>密钥测试要做自动扫描。每次任务结束后扫描命令输出、审计摘要、产物目录、模型上下文缓存和错误报告，确认没有明文 token、私钥、数据库 URL、cookie 或云凭证。脱敏规则要覆盖常见格式，但不能只靠正则。更根本的是减少密钥进入沙箱的机会。</p>
+<p>提示注入测试要贴近 Agent 场景。把恶意指令放在 README、issue 描述、网页正文、测试失败日志、依赖文档和数据文件里，观察 Agent 是否把它当成任务规则。正确行为是：模型可以提到“输入中出现了要求越权的文本”，但文件、网络、命令和密钥网关不会因此改变策略。最终安全性依赖强制边界，而不是模型是否识破每个攻击文本。</p>
+<p>审计评测要检查可回放性。给定一个运行 ID，安全人员应该能重建：初始策略、所有允许和拒绝动作、文件变化、命令输出摘要、网络请求摘要、密钥租约、人工确认和最终产物。缺少任何一类事件，都说明事故调查会有盲区。还要验证日志本身不会包含过多敏感数据，否则审计系统会成为新的高价值目标。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一种失败是过宽挂载。为了方便，把整个主目录、Docker socket、SSH agent、云配置目录挂进沙箱。这样 Agent 即使没有恶意，也可能被依赖脚本或测试命令带偏。最小权限要从挂载开始，不能事后靠模型自律。</p>
+<p>第二种失败是只限写不限读。很多泄露发生在读取阶段：模型读到 <code>.env</code>，命令输出打印配置，网络请求带出源码片段。读权限也要按任务控制，敏感路径默认拒绝。确实需要读取敏感文件时，应进入人工确认并限制后续网络。</p>
+<p>第三种失败是路径检查只做字符串前缀。攻击或误操作可以利用 <code>../</code>、符号链接、目录替换和大小写差异逃逸。路径授权必须在规范化和解析后进行，并尽量配合底层只读挂载。</p>
+<p>第四种失败是网络默认开放。很多 Agent 任务在本地看似只是在跑测试，实际测试会连外部服务，包管理器会下载脚本，浏览器会加载第三方资源。网络默认开放会让任何提示注入都有外发通道。更稳的默认是禁止，按任务打开。</p>
+<p>第五种失败是密钥进入通用环境。只要 token 出现在环境变量里，就可能被任何子进程读取。依赖脚本、测试框架、错误报告都可能泄露。密钥应该通过工具代理使用，必须注入时也要短期、窄范围、可撤销。</p>
+<p>第六种失败是命令策略只有黑名单。危险可以被包装在脚本、解释器、包管理器、构建工具里。策略要理解命令类别和上下文。对于无法判断的命令，默认升级确认或拒绝，而不是放行。</p>
+<p>第七种失败是审批疲劳。所有动作都弹确认，用户很快就会闭眼点通过。确认应该只用于真正高风险动作，且内容必须具体：将修改哪些文件、调用哪个外部系统、发送给谁、是否可回滚。低风险动作靠策略自动放行，高风险动作才让人承担决策。</p>
+<p>第八种失败是审计缺口。只记录最终回答，不记录中间命令和文件变化，事故后无法判断发生了什么。Agent 的工作流越自动，审计就越要细。日志也要保护，不能被任务进程修改或删除。</p>
+<p>第九种失败是资源无上限。一个错误命令写满磁盘，或者启动大量浏览器进程，就会影响其他任务。资源限制要在执行层强制，并在超限时可靠中止。</p>
+<p>第十种失败是策略和提示不一致。提示里告诉模型“只能改两个文件”，但文件系统实际上允许写整个仓库；或者沙箱允许联网，提示里说不要联网。安全以强制策略为准，提示只用于帮助模型理解。两者不一致时，应该视为配置 bug。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>为每个 Agent 任务生成临时身份，绑定用户、工作区、目标、权限快照和过期时间。</li><li>把用户目标和项目规则编译成 <code>SandboxSpec</code>，不要只写在提示词里。</li><li>明确可读路径、可写文件、可写目录、禁止路径和产物目录。</li><li>文件授权在路径规范化、符号链接解析和工作区相对化之后执行。</li><li>底层运行环境使用只读挂载和可写挂载，应用层策略作为第二道防线。</li><li>命令执行使用参数数组，默认不走 shell；必须用 shell 时提高风险等级。</li><li>命令策略包含可执行文件、参数前缀、工作目录、超时、输出上限和网络需求。</li><li>运行命令前清洗环境变量，默认不继承宿主机密钥、SSH agent、云凭证和数据库地址。</li><li>出站网络默认关闭；需要联网时通过代理做域名、端口、方法、大小和重定向控制。</li><li>区分依赖下载、文档读取、内部只读 API、外部写入和网络上传，分别配置策略。</li><li>密钥通过工具代理或短期租约使用，避免进入通用 shell 环境。</li><li>高风险文件删除、外部写入、密钥访问、网络上传、发布部署必须生成结构化确认对象。</li><li>审计日志记录文件读写、命令执行、网络请求、密钥租约、策略拒绝和人工确认。</li><li>命令输出、错误报告、截图和产物归档要脱敏，必要时加密保存原文。</li><li>设置 CPU、内存、磁盘、进程数、打开文件数、命令超时和任务总时长限制。</li><li>建立安全回归测试，覆盖路径逃逸、符号链接、未授权命令、网络外发、密钥泄露和提示注入。</li><li>任务结束后撤销临时凭证，归档必要产物，清理临时目录和可写缓存。</li><li>定期复查策略拒绝日志，找出用户真实需要和当前边界之间的差距，避免靠人工绕过。</li></ul>
+<h2 id="总结">总结</h2>
+<p>Agent 沙箱的核心是把能力变成可授权、可限制、可记录的动作。模型可以提出计划，但文件系统决定能不能写，命令网关决定能不能执行，网络代理决定能不能连接，密钥代理决定能不能用凭证，人工确认决定高风险动作是否继续。这个分工让 Agent 不必靠自律来保证安全。</p>
+<p>真正可用的安全边界不会让开发效率变慢太多。相反，它会让团队更敢把重复任务交给 Agent：只读任务自动跑，低风险修改自动做，高风险操作有预览和确认，失败后能复盘，事故后能收敛策略。没有沙箱，Agent 越强越让人紧张；有了清晰边界，Agent 才能成为工程系统里可信的一环。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>桌面 AI 应用的安全边界 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="桌面应用离本地文件太近，权限和确认机制必须清楚。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="桌面 AI 应用的安全边界">
+  <meta property="og:description" content="桌面应用离本地文件太近，权限和确认机制必须清楚。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/desktop-ai-app-security.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link active" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>桌面 AI 应用的安全边界</span></nav>
+          <div class="note-kicker">NOTES / LLM / 064</div>
+          <h1>桌面 AI 应用的安全边界</h1>
+          <p>桌面应用离本地文件太近，权限和确认机制必须清楚。</p>
+          <div class="note-tag-row"><span>Desktop AI</span><span>Security</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/desktop-ai-app-security.svg" alt="标题图" loading="lazy"><figcaption>桌面 AI 应用的安全边界 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>桌面 AI 应用和普通 Web 聊天机器人最大的区别，是它天然站在用户机器旁边。它可能读取本地文件，查看剪贴板，打开浏览器页面，调用系统通知，写入笔记目录，执行 Git 命令，甚至通过插件访问公司内部系统。能力越贴近工作流，风险越贴近真实资产。一个云端问答服务答错了，多半是回答质量问题；一个桌面助手误删了文件、泄露了源码路径、把私密文本送到不该去的模型，就变成了安全事件。</p>
+<p>很多团队一开始会把桌面 AI 做成“更方便的 ChatGPT 外壳”：左侧会话，右侧文件，底层接几个模型和工具。这个阶段最容易忽视安全边界，因为功能看起来都由用户主动触发。用户把目录拖进去，助手读取；用户点了“执行”，助手运行命令；用户选了本地模型，助手就不上传。问题在于，真实交互不是这么干净。模型会根据上下文推断下一步，插件会替用户拼参数，自动化流程会连续调用多个工具，用户也不可能逐行检查每一次工具调用。只要系统没有明确的权限模型，很多“用户授权”其实只是一次模糊的默认同意。</p>
+<p>桌面端还有一个独特难点：它处在个人环境和组织环境的交叉处。开发者的电脑里既有个人笔记，也有公司代码；设计师的剪贴板里可能有客户资料；运营同学的下载目录里混着公开素材和合同扫描件。系统级权限提示只能解决应用是否能访问某类资源，解决不了“这次任务是否应该访问这个文件”“这个内容是否可以发给这个模型”“这个命令是否应该在这个工作区执行”。AI 应用必须在自己的业务层再做一层细粒度边界。</p>
+<p>我更愿意把桌面 AI 安全看成产品能力，而不是上线前加一个免责弹窗。一个安全边界清楚的应用，会让用户知道助手能看见什么、不能看什么、准备做什么、会把数据送到哪里、失败后如何恢复。相反，一个安全边界含糊的应用，即使没有事故，也会让团队不敢打开自动化能力，最终只剩“复制粘贴式问答”。桌面 AI 要真正进入工程、写作、运营和知识管理场景，必须先把这些边界设计扎实。</p>
+<p>安全设计也不能停在“所有高风险操作都弹确认”。确认框太多，用户会机械点击；确认文本太抽象，用户无法判断；确认粒度太粗，模型一次请求就能夹带额外操作。好的安全边界应该把读、写、执行、联网、外发、跨工作区访问拆开，把权限授予和具体动作绑定，把自动执行范围限定在可回滚、可审计、可解释的集合里。这样用户既不会被打断到无法工作，也不会在不知情时交出整台机器。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>桌面 AI 应用至少要区分四类边界：数据边界、动作边界、模型边界和身份边界。数据边界决定助手能读什么；动作边界决定助手能改什么、执行什么；模型边界决定哪些内容可以发给哪个推理端；身份边界决定这次操作代表谁、使用谁的凭据、审计到谁名下。很多安全事故来自把这四类边界混在一起，例如“用户选择了项目目录”被解释成“模型可以读取目录下所有文件并上传到云端模型”，这是典型的授权扩大。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">边界</th><th scope="col">需要回答的问题</th><th scope="col">典型控制点</th><th scope="col">常见误区</th></tr></thead><tbody><tr><td>数据边界</td><td>这次任务能读取哪些路径、剪贴板、窗口内容和索引库</td><td>工作区授权、路径 allowlist、敏感文件过滤、读取摘要</td><td>用户打开目录就等于全量授权</td></tr><tr><td>动作边界</td><td>助手能创建、修改、删除、执行哪些操作</td><td>工具风险等级、dry-run、差异预览、幂等键</td><td>只要命令来自模型就让用户确认一次</td></tr><tr><td>模型边界</td><td>哪些数据可以送到云模型、本地模型或第三方插件</td><td>数据分级、模型能力声明、出站策略、脱敏</td><td>“本地模式”只替换模型，不限制插件联网</td></tr><tr><td>身份边界</td><td>操作使用谁的系统权限、Git 身份、API token</td><td>凭据隔离、会话绑定、审计日志、最小授权</td><td>复用桌面应用的所有登录态</td></tr><tr><td>时间边界</td><td>授权持续多久，是否跨会话、跨任务复用</td><td>单次授权、项目级授权、过期时间、撤销入口</td><td>一次同意永久有效</td></tr></tbody></table></div>
+<p>权限不是布尔值。读一个公开 README 和读一个 <code>.env</code> 文件不是同一件事；写一份草稿和删除一个目录也不是同一件事；打开本地模型和调用远端检索 API 也不是同一件事。工程上应该把工具能力分成几个风险等级：只读、可逆写入、高风险写入、执行命令、外发数据、凭据访问。每个等级对应不同的默认策略、确认方式和审计要求。</p>
+<p>上下文也是权限的一部分。模型看见的内容越多，越可能在回答、工具参数或日志里带出敏感信息。桌面 AI 常常会把文件片段、窗口标题、终端输出、剪贴板内容拼进 prompt。即使工具只读，模型输出也可能把读到的内容外泄到插件、遥测、错误报告或共享会话。因此安全边界不能只包住工具调用，还要包住上下文构建、模型网关和日志系统。</p>
+<p>还有一个容易被低估的概念：用户确认必须绑定到可理解的影响范围，而不是绑定到技术调用。用户不关心 <code>fs.writeFile</code> 参数，也不关心某个 shell 命令的完整 AST；用户关心“将修改哪几个文件”“会删除哪些内容”“会向哪个域名发送多少数据”“是否能撤销”。确认页面应该展示业务影响、差异摘要和风险原因，并保留原始细节供展开。这样确认才是责任转移，而不是形式合规。</p>
+<p>最后，安全边界需要默认保守，但不是默认残废。用户愿意使用桌面 AI，是因为它能替自己完成本地工作。把所有能力都关掉，只会让用户绕过安全层，用复制粘贴、临时脚本和不受控插件解决问题。更好的做法是给出渐进授权：新项目先只读；第一次写入必须预览；同类低风险写入可以在项目内记住；跨目录、删除、执行和外发始终需要更强确认；凭据和秘密文件默认不进入模型上下文。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个可靠的桌面 AI 安全架构，不应该把策略散落在每个按钮和每个插件里。建议把所有模型调用、工具调用、文件访问和外部请求都收敛到几个网关，由统一策略引擎做判断。UI 层负责解释和确认，运行时负责执行，审计层负责记录，策略层负责判断风险。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户目标
+  |
+  v
+Session Manager
+  |-- 当前工作区
+  |-- 用户身份
+  |-- 授权状态
+  |-- 模型偏好
+  |
+  v
+Agent Runtime
+  |-- Context Builder ----&gt; Data Classifier ----&gt; Model Gateway
+  |                         |                    |-- 本地模型
+  |                         |                    |-- 云端模型
+  |                         |                    |-- 禁止发送
+  |
+  |-- Tool Planner ----&gt; Policy Engine ----&gt; Consent UI ----&gt; Tool Gateway
+                            |                    |             |-- 文件系统
+                            |                    |             |-- Shell
+                            |                    |             |-- 浏览器
+                            |                    |             |-- 插件 API
+                            |
+                            v
+                       Audit Store / Permission Store / Recovery Store</code></pre></div>
+<p>这条流程里，<code>Context Builder</code> 不只是拼 prompt，它要先知道材料的来源和分级。来自用户手动粘贴的文本、工作区文件、全盘搜索结果、剪贴板、浏览器 DOM、终端输出，风险都不同。<code>Data Classifier</code> 可以先用规则做第一层：路径命中 <code>.env</code>、私钥、证书、浏览器 Cookie、聊天记录、工资表、合同扫描件时直接标为敏感；文件过大、二进制、未知编码时不自动读取；Git ignored 文件默认不进入云模型。必要时再叠加本地分类模型，但不要把分类本身变成新的外发。</p>
+<p><code>Policy Engine</code> 是核心。它接收“谁在什么会话里，为了什么任务，准备用哪个工具，对哪些资源做什么动作，并把哪些数据送到哪里”。策略输出不只是真假，而是 <code>allow</code>、<code>deny</code>、<code>require_confirmation</code>、<code>require_scope_upgrade</code>、<code>require_local_model</code>、<code>require_redaction</code> 等结果。这样运行时能根据策略做具体补救，而不是简单失败。</p>
+<p><code>Consent UI</code> 必须接收结构化影响摘要，而不是自己解析命令字符串。对于文件写入，它展示文件列表、增删行数、是否新建、是否删除、是否跨工作区；对于 Shell，它展示命令类别、工作目录、网络访问可能性、文件写入可能性和可替代 dry-run；对于外发，它展示目标服务、数据类型、估算 token 或字节数、是否包含敏感标签。只有结构化摘要稳定，用户体验和审计日志才稳定。</p>
+<p>审计不是为了吓用户，而是为了排障和建立信任。每次被允许、被拒绝、被确认、被撤销的动作都要有 run id、策略版本、工具版本、资源摘要、确认人和时间。日志里不要保存完整秘密内容，但要保存足够的哈希、路径、数据类别和差异摘要。事故发生时，团队要能回答：模型看见了什么，工具做了什么，用户确认了什么，策略为什么放行。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>实现桌面 AI 安全边界时，我通常从能力清单开始，而不是从弹窗开始。把应用里所有可能产生安全影响的能力列出来，给每个能力定义输入、输出、风险等级、是否可撤销、是否需要网络、是否可能接触凭据。这个清单后来会变成工具注册表、策略输入和用户说明。</p>
+<p>下面是一个简化的工具能力结构，可以放在 TypeScript 或 Go 的工具网关里。重点不是字段名字，而是把风险信息变成机器可判断的数据，而不是藏在文档里。</p>
+<div class="code-block"><pre class="line-numbers language-typescript" data-language="TypeScript"><code class="language-typescript">type RiskLevel = &quot;read&quot; | &quot;reversible_write&quot; | &quot;destructive_write&quot; | &quot;execute&quot; | &quot;exfiltrate&quot; | &quot;credential&quot;;
+
+type DataClass = &quot;public&quot; | &quot;workspace&quot; | &quot;personal&quot; | &quot;secret&quot; | &quot;unknown&quot;;
+
+interface ToolCapability {
+  name: string;
+  version: string;
+  risk: RiskLevel;
+  scopes: string[];
+  supportsDryRun: boolean;
+  supportsRollback: boolean;
+  networkAccess: &quot;none&quot; | &quot;declared_hosts&quot; | &quot;arbitrary&quot;;
+  inputClasses: DataClass[];
+  outputClasses: DataClass[];
+}
+
+interface PolicyRequest {
+  runId: string;
+  userId: string;
+  workspaceId: string;
+  taskSummary: string;
+  tool: ToolCapability;
+  resources: Array&lt;{
+    uri: string;
+    action: &quot;read&quot; | &quot;create&quot; | &quot;update&quot; | &quot;delete&quot; | &quot;execute&quot; | &quot;send&quot;;
+    dataClass: DataClass;
+    outsideWorkspace: boolean;
+  }&gt;;
+  destination?: {
+    kind: &quot;local_model&quot; | &quot;cloud_model&quot; | &quot;plugin&quot; | &quot;browser&quot; | &quot;shell&quot;;
+    name: string;
+    host?: string;
+  };
+}</code></pre></div>
+<p>有了这个结构，策略可以做得非常直接：只读工作区文件可以自动放行；读取 secret 类文件默认拒绝，除非用户明确选择该文件并选择本地模型；可逆写入要求展示 diff；删除、覆盖、执行命令和外发数据要求强确认；跨工作区访问要求升级 scope；任意网络访问默认拒绝或要求插件声明域名。这里不要追求一开始就写复杂策略语言，先用清晰的代码和测试覆盖高频场景，等规则稳定后再考虑声明式策略。</p>
+<p>文件访问层要特别小心路径规范化。桌面应用常见漏洞不是复杂攻击，而是路径判断不严：符号链接跳出工作区，相对路径绕过 allowlist，大小写敏感差异导致 Windows 和 macOS 行为不同，压缩包解压覆盖外部路径，插件传入 <code>~/Documents/../.ssh/id_rsa</code> 这类路径。所有路径进入工具前都要经过 canonicalize，并记录原始路径和规范化路径。</p>
+<p>一个文件读取流程可以这样设计：</p>
+<ol><li>UI 或模型提出读取请求，带上任务摘要和候选路径。</li><li>Path Resolver 解析真实路径，拒绝不存在、循环符号链接和超出授权根目录的路径。</li><li>Data Classifier 根据文件名、扩展名、Git ignore、大小、内容片段和用户标记给出数据分级。</li><li>Policy Engine 判断是否允许读取，以及读取后的内容能否进入模型上下文。</li><li>Context Builder 只拿到被允许的片段，并在上下文清单里记录来源、哈希和截断规则。</li><li>Audit Store 记录读取摘要，但不记录完整敏感内容。</li></ol>
+<p>写入流程要比读取流程更严格。AI 生成的变更应该先落在内存或临时 patch 里，然后生成 diff 给用户确认。确认后再写入目标文件，并保存回滚材料。对于文本文件，可以保存旧内容哈希和 patch；对于二进制文件，可以保存备份或禁止自动覆盖；对于目录级操作，默认不允许模型直接删除，应该移动到应用自己的回收区，并给出恢复入口。</p>
+<p>Shell 执行要单独治理。很多桌面助手会把终端能力当成“高级用户功能”，但模型生成命令的风险极高。建议先把命令分成受支持的结构化工具，例如 <code>git.status</code>、<code>git.diff</code>、<code>npm.test</code>、<code>go.test</code>，而不是开放任意 shell。确实需要 shell 时，也要启用工作目录限制、环境变量过滤、超时、输出截断、网络命令识别、危险命令黑名单和 dry-run。黑名单不是完整安全方案，但可以挡住明显事故，如 <code>rm -rf</code>、重定向覆盖、读取 SSH 私钥、上传压缩包到未知域名。</p>
+<p>模型网关要处理“本地”和“远端”的真实差异。用户选择本地模型时，系统不能再把完整 prompt 发到云端做标题生成、遥测分析或错误诊断。错误报告也要脱敏，最好默认只上传结构化错误码和本地日志摘要。若某个功能必须依赖云模型，UI 应明确提示，并让用户选择是否临时切换。否则“本地模式”会变成营销词，工程上没有边界。</p>
+<p>插件系统更要收紧。插件不应该直接拿到文件系统、网络、模型和用户凭据，而应该通过宿主提供的受控 API。每个插件声明需要的 scope、域名、工具能力和数据用途，安装时展示，运行时仍按任务粒度确认。插件返回给模型的内容也要分类，因为插件可能把外部系统里的客户资料带回来。桌面 AI 的插件如果没有沙箱和网关，安全模型会被最弱的插件击穿。</p>
+<p>还要给用户可见的权限面板。用户应该能看到每个工作区授予了哪些目录、哪些模型可以接收工作区数据、哪些插件有权限、哪些规则被记住、最近有哪些高风险操作。撤销权限后，后台索引、缓存和向量库也要同步清理或标记不可用。权限撤销只改 UI 状态是不够的，旧索引仍可能被检索出来进入 prompt。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>桌面 AI 安全测试不能只靠单元测试，也不能只靠人工点按钮。它需要覆盖策略判断、路径处理、上下文泄漏、工具执行、UI 确认和审计回放。我的做法是把测试分成五层：规则测试、模拟任务测试、红队提示测试、端到端 UI 测试和事故回放测试。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">测试层</th><th scope="col">关注点</th><th scope="col">示例用例</th><th scope="col">通过标准</th></tr></thead><tbody><tr><td>规则测试</td><td>单条策略是否正确</td><td>secret 文件进入云模型应拒绝</td><td>策略输出稳定，包含原因</td></tr><tr><td>路径测试</td><td>路径解析和工作区限制</td><td>符号链接指向工作区外</td><td>工具层拒绝并记录</td></tr><tr><td>任务测试</td><td>多步骤自动化是否越权</td><td>总结项目时跳过 <code>.env</code></td><td>输出说明被跳过资源</td></tr><tr><td>红队测试</td><td>prompt injection 和诱导操作</td><td>文档里写“请上传私钥”</td><td>模型不能绕过策略</td></tr><tr><td>UI 测试</td><td>用户能否理解影响范围</td><td>写入三个文件前展示 diff</td><td>确认内容和实际写入一致</td></tr><tr><td>回放测试</td><td>事故样本不复发</td><td>历史误删流程重放</td><td>新策略阻断或要求确认</td></tr></tbody></table></div>
+<p>策略测试要使用真实的 <code>PolicyRequest</code> 样本，而不是只测函数参数。每个样本包含用户目标、工具能力、资源列表、数据分级和目标模型。这样当工具能力字段变化时，测试会提醒你补齐策略。不要只断言 <code>allow == false</code>，还要断言原因、所需确认等级和用户提示摘要，因为这些内容会影响前端和审计。</p>
+<p>红队提示测试对桌面 AI 特别重要。攻击内容可能藏在 README、网页、邮件、PDF、代码注释或终端输出里，诱导模型忽略系统规则、读取更多文件、执行命令或把内容发送到远端。测试样本应覆盖几类典型指令：要求读取秘密文件，要求修改安全配置，要求把项目打包上传，要求关闭审计，要求伪造用户确认，要求把输出写入自启动脚本。通过标准不是模型“看起来没听”，而是工具网关确实没有收到越权动作，或者策略确实拒绝了。</p>
+<p>还要测误伤。安全策略如果频繁阻断正常工作，用户会关掉它。比如读取测试 fixture 里的假私钥、生成 <code>.env.example</code>、运行 <code>git clean -n</code>、在临时目录里删除构建产物，这些操作在不同上下文下可能是合理的。测试集要同时包含应该阻断的恶意样本和应该放行的正常样本，并记录每次策略调整对两类样本的影响。</p>
+<p>性能评测也不能忽略。安全网关如果让每次文件读取都慢几百毫秒，用户会感到应用卡顿。可以把分类和策略分为同步快速路径与异步深度检查。路径规范化、扩展名规则、工作区判断应在毫秒级完成；内容扫描可以按文件大小分段；本地敏感信息检测可以缓存哈希结果；大型目录索引可以后台完成，但索引结果进入模型前仍要二次检查。</p>
+<p>最后要做审计回放演练。随便挑一次复杂任务，从审计日志里还原用户目标、模型上下文清单、策略判断、确认页面摘要、工具调用和最终产物。让另一个工程师只看审计记录，判断这次任务是否合规。如果他看不懂，说明日志不是审计日志，只是调试碎片。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是权限漂移。用户在某个项目里授权了读取 <code>docs/</code>，后来项目结构变化，符号链接或生成目录把敏感内容带进来，系统仍按旧规则放行。解决办法是所有访问都实时规范化路径和分类，不要只在授权时扫描一次；权限记录保存的是授权根和策略，不是永久可信的文件列表。</p>
+<p>第二类失败是上下文外泄。工具层没有越权，但 Context Builder 把敏感片段拼进 prompt，云模型、日志、崩溃报告或会话分享把内容带走。解决办法是模型网关也接入数据分级，任何出站请求都通过同一套策略，并给 prompt 片段建立来源清单。只治理工具，不治理 prompt，是桌面 AI 很常见的安全空洞。</p>
+<p>第三类失败是确认疲劳。系统把所有写入、读取和命令都弹窗，用户很快形成无脑点击。解决办法是减少低风险确认，增强高风险确认：低风险的工作区内只读可以静默；可逆写入展示清晰 diff；高风险操作要求用户选择具体资源、输入确认短语或切换到手动执行。确认次数少一点，但每次都要有信息量。</p>
+<p>第四类失败是插件绕过。宿主应用做了完整策略，插件却直接使用 Node、Python 或系统 API 读文件联网。解决办法是插件运行在受限环境里，宿主只暴露能力代理；插件包安装时做静态检查，运行时做网络和文件访问拦截；高权限插件要求明确标记，不和普通 UI 插件混在一起。</p>
+<p>第五类失败是本地模型误信。很多用户认为“本地模型等于安全”，于是把所有文件都交给它。实际上本地模型可能由第三方服务承载，本地推理服务可能有开放端口，模型输出可能进入联网插件，本地缓存也可能被其他应用读取。解决办法是把本地模型看成降低外发风险的一部分，而不是取消权限模型的理由。</p>
+<p>第六类失败是日志过度采集。为了排障，团队把 prompt、工具参数、文件片段和模型输出全量写进日志。事故发生时，日志系统反而成为敏感数据集合。解决办法是默认记录摘要、哈希、长度、数据类别和引用；需要原文时进入加密回放仓库，并通过权限审批和保留期控制。</p>
+<p>第七类失败是恢复缺失。AI 助手写坏文件后，只告诉用户“操作失败”或“请从 Git 恢复”。但不是所有目录都有 Git，也不是所有用户懂 Git。解决办法是对所有可逆写入建立应用级恢复：写入前保存快照，写入后保存变更 ID，UI 提供撤销入口。对于无法可靠恢复的动作，默认提升风险等级。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>所有文件、Shell、浏览器、插件和模型调用都经过统一网关，没有绕过路径。</li><li>工具注册表声明风险等级、网络访问、是否支持 dry-run、是否支持 rollback。</li><li>工作区权限和单次任务权限分开，跨工作区访问必须升级确认。</li><li>路径处理覆盖符号链接、相对路径、大小写差异、压缩包解包和隐藏文件。</li><li>Context Builder 为每个 prompt 片段记录来源、数据分级、哈希和截断规则。</li><li>云模型、本地模型、插件和遥测都使用同一套出站数据策略。</li><li>secret、凭据、私钥、浏览器 Cookie、<code>.env</code>、系统配置默认不进入模型上下文。</li><li>写入操作先生成 diff 或影响摘要，确认后执行，并保存可恢复材料。</li><li>删除和覆盖默认不直接执行；确需执行时展示资源列表和恢复方式。</li><li>Shell 能力优先使用结构化工具；任意命令需要强确认、超时和输出截断。</li><li>插件通过宿主代理访问资源，声明 scope 和目标域名，不能直接拿系统能力。</li><li>用户可以查看、撤销和过期化项目权限、模型权限和插件权限。</li><li>审计日志记录策略版本、确认摘要、工具版本、资源摘要和结果状态。</li><li>日志和错误报告默认脱敏，不全量上传 prompt、文件内容和工具输出。</li><li>红队样本覆盖 prompt injection、秘密文件读取、命令诱导、外发诱导和确认伪造。</li><li>回归测试同时覆盖阻断恶意样本和放行正常样本，避免策略只会变严。</li><li>高风险操作有产品文案解释风险原因，不把技术细节丢给用户猜。</li><li>本地模式禁用隐式云端辅助功能，或者在启用前明确提示并要求选择。</li><li>权限撤销会影响索引、缓存、向量库和历史会话的后续检索。</li><li>有事故回放流程，能从审计记录还原一次任务的关键决策链。</li></ul>
+<h2 id="总结">总结</h2>
+<p>桌面 AI 应用的价值，来自它能进入用户真实工作环境；它的风险，也来自同一个事实。离本地文件越近，越不能用“用户点过按钮”来概括授权。安全边界要落到数据、动作、模型、身份和时间这些具体维度上，并在架构里形成统一网关、策略引擎、确认 UI、审计日志和恢复机制。</p>
+<p>工程上最重要的原则是把安全信息结构化。工具能力要声明风险，资源要有数据分级，策略请求要描述上下文，确认页面要展示影响范围，审计日志要记录判断依据。只要这些信息仍然散落在 prompt、按钮文案和插件代码里，系统就很难证明自己安全，也很难在事故后修复。</p>
+<p>我不认为桌面 AI 应该因为安全风险而保守到不能做事。相反，边界清楚之后，很多自动化能力才敢打开：工作区内低风险读取可以更顺滑，可逆写入可以更大胆，结构化工具可以更少打扰用户，高风险操作则用强确认和可恢复机制兜住。用户真正需要的不是一个永远问“是否允许”的助手，而是一个知道自己能做什么、为什么能做、做错了怎么退回的助手。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex 接手一个仓库的第一小时 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="先读结构、跑检查、定位入口，再开始改代码。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="Codex 接手一个仓库的第一小时">
+  <meta property="og:description" content="先读结构、跑检查、定位入口，再开始改代码。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/codex-repo-onboarding.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link active" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>Codex 接手一个仓库的第一小时</span></nav>
+          <div class="note-kicker">NOTES / WORKFLOW / 086</div>
+          <h1>Codex 接手一个仓库的第一小时</h1>
+          <p>先读结构、跑检查、定位入口，再开始改代码。</p>
+          <div class="note-tag-row"><span>Codex</span><span>Workflow</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/codex-repo-onboarding.svg" alt="标题图" loading="lazy"><figcaption>Codex 接手一个仓库的第一小时 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>让 Codex 接手一个陌生仓库，最容易犯的错误不是读得太少，而是太快进入“我已经理解了”的状态。人类工程师接手项目时会先翻 README、问同事、跑测试、看最近提交，再决定从哪里下手。AI 编码助手如果一上来就搜索一个关键词、打开两个文件、立刻改实现，很可能把局部现象当成系统事实。短小仓库里这种做法偶尔能成功，业务仓库里则会暴露很多问题：入口找错、生成文件被误改、测试命令跑错、用户的未提交改动被覆盖、补丁绕过了真实约束，最后看起来像模型能力问题，其实是接手流程没有建立。</p>
+<p>“第一小时”不是一个精确计时器，而是一个工程边界：在开始大幅修改代码之前，先用有限时间建立足够可靠的仓库地图。这个阶段的目标不是读完整个代码库，也不是把所有目录背下来，而是回答几类关键问题：这个仓库如何构建和测试，用户请求落在哪个业务边界，代码风格和架构习惯是什么，哪些文件是源文件，哪些文件是生成物，哪些命令可以作为验收证据，当前工作区有没有不属于我的改动。只要这些问题没有基本答案，任何补丁都缺少地基。</p>
+<p>Codex 的接手方式还要考虑它和普通编辑器插件不同。它可以运行命令、读取大量文件、编辑多个模块、汇总结果，也可能因为上下文过长而丢掉最早的约束。它不是只补全一段函数，而是在一个共享工作区里执行工程任务。共享工作区意味着必须尊重现有脏状态；执行命令意味着要区分可读检查和有副作用操作；编辑文件意味着要有明确写入范围；最终汇报意味着要把验证证据说清楚，而不是只说“应该可以”。</p>
+<p>很多团队第一次把 AI 引入代码库时，会给它一句很宽的任务：“帮我修一下登录问题”“优化这个页面”“把这段逻辑重构一下”。如果仓库很小，Codex 可以靠搜索和推断找到方向；如果仓库有历史债务、多个包管理器、生成代码、老测试和新测试并存，它就必须先做 onboarding。否则，它可能在旧目录里修了一个已经不用的页面，或者根据过期 README 运行错误命令，或者把构建产物也一起提交。第一小时的价值就在这里：用系统化观察把“陌生仓库”变成“有边界、有入口、有验收方式的任务空间”。</p>
+<p>接手流程还关系到信任。用户希望看到的不是 AI 对仓库的表演式阅读，而是可复盘的工程判断。什么文件说明这是 React 项目，什么配置说明测试用 Vitest，为什么选择改这个模块而不是另一个相似模块，为什么没有碰某个目录，为什么最终只跑了这些检查。这些判断如果只停留在模型内部，用户无法评估风险。一个好的 Codex 工作流应该把关键发现转成显式笔记、计划和最终验证，让用户知道补丁是在什么证据上做出来的。</p>
+<p>我在项目里更愿意把“接手仓库”看作建立四本账：目标账、结构账、验证账和边界账。目标账记录用户真正要解决的问题和硬约束；结构账记录仓库的模块、入口和数据流；验证账记录可以证明修改有效的命令、测试和人工检查点；边界账记录允许修改和禁止修改的范围。第一小时不一定把四本账写成正式文档，但 Codex 的上下文里必须有这些信息。没有目标账，容易跑偏；没有结构账，容易找错入口；没有验证账，容易交付不可证实的补丁；没有边界账，容易造成额外变更。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>接手仓库的核心不是“多读文件”，而是“把读到的信号归类并形成可执行判断”。源码、配置、脚本、测试、文档、提交状态都只是原始信号。Codex 需要把它们转换成几个工程概念：入口、依赖、控制流、数据模型、命令矩阵、写入范围、风险面和验收证据。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">概念</th><th scope="col">要回答的问题</th><th scope="col">常见证据</th><th scope="col">如果缺失会怎样</th></tr></thead><tbody><tr><td>任务目标</td><td>用户到底要什么结果</td><td>用户原话、issue、失败日志、截图</td><td>改了相关但不解决问题的地方</td></tr><tr><td>仓库拓扑</td><td>代码按什么边界组织</td><td>目录树、包配置、模块命名、路由入口</td><td>在废弃目录或相似模块里工作</td></tr><tr><td>执行入口</td><td>程序从哪里启动</td><td><code>package.json</code>、<code>go.mod</code>、<code>cmd/</code>、框架配置</td><td>无法判断修改是否进入真实路径</td></tr><tr><td>验收命令</td><td>什么检查能证明补丁有效</td><td>test、lint、build、专用脚本</td><td>最终汇报只能靠主观判断</td></tr><tr><td>写入边界</td><td>哪些文件可以动，哪些不能动</td><td>用户约束、生成标记、git 状态</td><td>覆盖用户改动或扩大 diff</td></tr><tr><td>项目语法</td><td>这个仓库偏好的实现方式</td><td>邻近代码、工具函数、类型定义</td><td>引入不合群的新抽象</td></tr><tr><td>风险等级</td><td>这次修改的外部影响多大</td><td>权限、数据迁移、支付、发布链路</td><td>用小补丁心态处理高风险变更</td></tr></tbody></table></div>
+<p>第一个概念是“入口优先”。很多仓库有多个相似目录：旧版页面和新版页面、服务端渲染和客户端组件、示例代码和生产代码、实验包和主包。搜索关键词只能找到文本相似处，不能证明它在真实执行路径上。Codex 要优先找到入口：前端应用的路由和组件挂载点，后端服务的 <code>main</code>、路由注册和依赖注入，库项目的导出文件和公共 API，静态站点的构建脚本和内容目录。只有确认入口，局部文件才有意义。</p>
+<p>第二个概念是“可执行证据”。文档会过期，注释会滞后，命名也可能误导。能够运行的命令、失败的测试、类型检查、构建输出和快照差异，比单纯阅读更能说明当前仓库状态。Codex 接手时应该尽早找到低成本命令：列文件、读配置、运行现有检查、执行针对性测试。不是所有命令都要马上跑，尤其是耗时或有副作用的命令，但必须知道验收路径在哪里。</p>
+<p>第三个概念是“写集边界”。AI 修改代码时，用户最关心的往往不是它能否改对一行，而是它会不会顺手动了不该动的地方。写集边界包括用户明确指定的文件范围，也包括工程上应该避免触碰的范围：生成代码、锁文件、格式化全仓、迁移脚本、历史归档目录、第三方 vendor、未关联的样式系统。边界不是束缚能力，而是降低交付风险。Codex 如果需要越界，应该先说明理由并等待确认。</p>
+<p>第四个概念是“最小垂直切片”。接手陌生仓库时，不要从大规模重构开始。先找一条能从输入走到输出的真实路径，做一个小而完整的改动：一个 API 的参数校验、一个页面状态、一个测试断言、一个文档生成项。垂直切片能验证入口、依赖、测试和发布方式是否理解正确。等这条路径跑通，再考虑扩展到更多模块。</p>
+<p>第五个概念是“仓库语法”。每个项目都有自己的语言：错误处理怎么写，日志字段叫什么，配置从哪里读，组件如何拆分，测试用什么辅助函数，命名是否偏领域词而不是技术词。Codex 不应该因为自己能写一个漂亮抽象，就无视本地语法。接手阶段要读邻近实现，优先复用已有 helper、schema、类型和测试工厂。新抽象只有在确实减少复杂度、符合项目方向时才值得引入。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个稳妥的仓库接手流程，可以画成从“任务约束”到“可验证补丁”的管线。它不是机械瀑布，实际中会反复回到前面补证据，但每一步都有清晰产物。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户请求与硬约束
+        |
+        v
+工作区体检：git 状态、目标文件是否存在、未跟踪内容、生成目录
+        |
+        v
+仓库索引：目录拓扑、包管理器、入口文件、脚本、测试框架
+        |
+        v
+任务定位：相关模块、调用链、数据模型、相邻实现、风险等级
+        |
+        v
+验收设计：最小命令集、针对性测试、人工检查点、回归范围
+        |
+        v
+补丁计划：写入文件、非目标文件、实现策略、失败时回退路径
+        |
+        v
+实施与验证：小步修改、运行检查、阅读失败、修正假设
+        |
+        v
+最终汇报：改动范围、验证结果、残留风险</code></pre></div>
+<p>第一层是工作区体检。Codex 和用户共享同一个目录，不能假设工作区干净。<code>git status --short</code> 的意义不只是看有没有改动，更是保护用户劳动。如果目标文件已经有未提交修改，Codex 要读懂这些修改并在其上继续，而不是重置。未跟踪目录也不能随便删除，因为它可能是用户刚生成的资产。体检阶段还要确认目标文件是否已存在，用户要求“只修改这些文件”时尤其重要。</p>
+<p>第二层是仓库索引。索引不是把所有文件装进上下文，而是建立一张轻量地图：顶层目录代表什么，主要语言和框架是什么，构建脚本在哪里，测试框架是什么，是否有 monorepo，是否有内容生成管线，是否有本地约定文档。对于 Web 仓库，<code>package.json</code>、<code>vite.config</code>、<code>next.config</code>、<code>src/main</code>、<code>app/</code>、<code>pages/</code>、<code>content/</code> 都可能是入口信号。对于 Go 仓库，<code>go.mod</code>、<code>cmd/</code>、<code>internal/</code>、<code>pkg/</code>、<code>Makefile</code>、<code>*_test.go</code> 更关键。对于文档站，内容目录、生成脚本、静态资源和索引文件之间的关系就是主线。</p>
+<p>第三层是任务定位。拿到用户请求后，不要用仓库全局视角平均阅读，而是围绕目标建立调用链。修页面时找路由、组件、状态和样式；修 API 时找 handler、service、repository、schema 和测试；写文章时找元数据、风格规范、校验脚本和目标目录。任务定位的产物应该是“我将改这些文件，因为它们处在真实路径上；我不会改那些相似文件，因为它们是示例、旧版或生成物”。</p>
+<p>第四层是验收设计。很多失败补丁不是代码不会写，而是没有提前想清楚如何证明它有效。Codex 在改代码前就应该知道最小验收命令：是 <code>npm test -- component.test.tsx</code>，还是 <code>go test ./internal/foo</code>，还是 <code>python3 scripts/check_articles.py slug</code>。如果完整检查太慢，也要先跑针对性检查，再说明没有跑全量的原因。验收设计还包括人工检查点，例如前端页面需要浏览器截图或交互验证，迁移脚本需要 dry run，文档需要字符数和 front matter 检查。</p>
+<p>第五层是补丁计划。计划不需要长篇大论，但要足够具体：哪些文件会改，采用什么实现策略，哪些约束会保持，验证命令是什么。计划的作用不是向用户展示仪式感，而是防止 Codex 在实现中漂移。对于复杂任务，计划还可以按步骤更新；对于小任务，计划可以内化为简短执行说明。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>落地这个流程，可以把第一小时拆成几个实际动作。第一步是收集低成本、高信号的信息。常见命令包括 <code>git status --short</code>、<code>rg --files</code>、读取 README、读取包配置、查找任务关键词、打开邻近测试。这里强调“低成本”是因为接手阶段还没有足够上下文，不适合随便跑数据库迁移、端到端测试或写操作命令。读文件和列目录通常安全，构建和测试要看项目约定，清理缓存、安装依赖、格式化全仓则要谨慎。</p>
+<p>第二步是形成仓库简报。Codex 不一定要创建文件，但在上下文里应该维护类似下面的数据结构：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type RepoOnboardingBrief struct {
+    Goal              string
+    HardConstraints   []string
+    WorkspaceState    []string
+    ProjectSignals    []string
+    EntryPoints       []string
+    RelevantModules   []string
+    AllowedWritePaths []string
+    AvoidPaths        []string
+    Verification      []VerificationStep
+    OpenQuestions     []string
+}
+
+type VerificationStep struct {
+    Command string
+    Purpose string
+    Cost    string
+    Risk    string
+}</code></pre></div>
+<p>这段结构的价值在于强迫 Codex 区分事实、约束和推断。<code>Goal</code> 来自用户请求，<code>HardConstraints</code> 来自用户明确要求，例如“只修改两个 Markdown 文件”。<code>WorkspaceState</code> 来自 git 状态，防止覆盖已有改动。<code>ProjectSignals</code> 是仓库类型证据，例如“存在 <code>scripts/check_articles.py</code>，说明内容有本地校验”。<code>EntryPoints</code> 和 <code>RelevantModules</code> 连接代码结构与任务目标。<code>AllowedWritePaths</code> 和 <code>AvoidPaths</code> 决定编辑边界。<code>Verification</code> 保存准备运行的命令。<code>OpenQuestions</code> 则提醒模型不要把未知当已知。</p>
+<p>第三步是按任务类型建立入口查找策略。不同仓库的入口证据不同，不能只靠一个通用关键词。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">任务类型</th><th scope="col">优先入口</th><th scope="col">辅助证据</th><th scope="col">常见误区</th></tr></thead><tbody><tr><td>前端页面</td><td>路由、组件挂载、状态管理、样式入口</td><td>Storybook、截图测试、设计 tokens</td><td>只改相似组件，没有确认被路由引用</td></tr><tr><td>后端 API</td><td>路由注册、handler、service、schema</td><td>OpenAPI、集成测试、日志字段</td><td>只改 repository，忽略 handler 校验</td></tr><tr><td>CLI 工具</td><td>命令注册、参数解析、执行器</td><td>help 输出、golden tests</td><td>改了库函数但 CLI 没接上</td></tr><tr><td>文档站</td><td>元数据、内容目录、构建脚本、静态资源</td><td>校验脚本、生成规则、样例文章</td><td>手写正文时漏掉 front matter 字段</td></tr><tr><td>数据管线</td><td>DAG 定义、输入输出 schema、调度配置</td><td>回填脚本、质量检查、血缘</td><td>只看 SQL，不看调度和幂等</td></tr><tr><td>SDK/库</td><td>公共导出、类型声明、兼容性测试</td><td>changelog、示例代码</td><td>改内部实现破坏公开 API</td></tr></tbody></table></div>
+<p>第四步是读邻近代码而不是只读目标文件。目标文件告诉你当前问题，邻近代码告诉你项目语法。例如修一个 Go handler，不只看 handler 本身，还要看同目录别的 handler 如何解析请求、返回错误、记录日志、组织测试。修一个 React 组件，不只看组件，还要看相邻组件如何处理 loading、empty、error、可访问性和 i18n。写文档时，不只看风格文件，还要看现有文章如何组织 heading、表格、代码块和总结。邻近代码是仓库的实际规范，往往比 README 更及时。</p>
+<p>第五步是把验证命令分层。一个可用的命令矩阵通常包含四层：快速静态检查、局部测试、集成检查和人工验证。快速检查用于尽早发现语法、格式、类型错误；局部测试证明目标行为；集成检查证明改动没有破坏主流程；人工验证处理自动化覆盖不到的视觉和体验。Codex 不一定每次跑完整矩阵，但要知道自己跑了哪一层，没跑哪一层，原因是什么。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">验证矩阵示例
+
+level 1: python3 scripts/check_articles.py slug
+  目的：验证 front matter、标题图、必需章节和中文字符数
+
+level 2: npm run build
+  目的：验证内容被站点构建系统接受
+
+level 3: 本地浏览器打开目标 notes 页面
+  目的：检查页面渲染、图片路径和目录跳转
+
+level 4: 人工阅读抽查
+  目的：确认文章不是模板堆砌，风格符合站点预期</code></pre></div>
+<p>第六步是小步编辑。Codex 应该避免一次性重写过多无关模块。对于代码任务，先改最接近目标的一层并跑针对性检查；如果失败，再根据错误扩展范围。对于文档任务，先确保 front matter 和固定结构正确，再补充正文深度，最后运行校验脚本。小步编辑可以减少上下文漂移，也让失败更容易定位。</p>
+<p>第七步是处理命令失败。命令失败不是坏事，它是仓库提供的真实反馈。关键是不要把失败粗暴归因于环境，也不要为了通过检查随意扩大修改范围。Codex 应该先读失败信息：是依赖缺失、命令不存在、语法错误、断言失败、测试超时，还是校验规则不满足。然后判断失败是否与当前任务相关。相关则修补；不相关则记录为残留风险；不确定则继续收集证据。最终汇报要说明运行了什么、结果是什么，而不是隐藏失败。</p>
+<p>第八步是保护用户改动。若 <code>git status</code> 显示目标文件之外已有修改，Codex 不应该格式化全仓或运行会重写大量文件的命令。若目标文件已有用户修改，Codex 需要在编辑前阅读并保持这些内容的意图。共享工作区里，最危险的不是改错一行，而是把用户正在进行的工作当作可丢弃噪声。</p>
+<p>一个具体例子：用户要求给静态站新增两篇文章，并要求 front matter 与 <code>js/articles.js</code> 一致。第一小时的合理动作不是先写正文，而是先读 <code>content/ARTICLE_STYLE.md</code>，再从 <code>js/articles.js</code> 抽取两个 slug 的元数据，确认目标 Markdown 不存在，查看校验脚本如何检查章节、图片和汉字数，最后再写文件。这里的入口不是页面路由，而是内容源、元数据索引和校验脚本。验证命令也不是全站构建优先，而是文章校验脚本优先。这个过程说明接手仓库并不等于读最多代码，而是找到与任务相关的真实约束链。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>仓库接手质量可以评测，而且应该评测。不要只看最终补丁是否“刚好通过”，还要看 Codex 是否在正确证据上工作。一个接手流程的评测可以分成五个维度：定位准确性、边界控制、验证充分性、风格一致性和汇报可复盘性。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">评测维度</th><th scope="col">具体问题</th><th scope="col">可观察信号</th></tr></thead><tbody><tr><td>定位准确性</td><td>是否找到真实入口和相关模块</td><td>计划中引用了入口、调用链、目标测试</td></tr><tr><td>边界控制</td><td>是否只改必要文件</td><td>diff 范围小，未触碰生成物和无关文件</td></tr><tr><td>验证充分性</td><td>是否运行了与任务匹配的检查</td><td>命令、结果、失败解释清楚</td></tr><tr><td>风格一致性</td><td>是否遵循本地项目语法</td><td>复用 helper、类型、测试工厂、命名习惯</td></tr><tr><td>可复盘性</td><td>用户能否理解为什么这样改</td><td>最终说明包含证据、改动和残留风险</td></tr></tbody></table></div>
+<p>定位准确性可以用“十问法”评估。让 Codex 在动手前能够回答：项目主要语言是什么，构建入口在哪里，测试框架是什么，用户目标落在哪个目录，目标文件是否存在，是否有相似但不应修改的模块，当前工作区是否干净，最小验证命令是什么，可能的风险是什么，预计修改哪些文件。如果这些问题答不上来，说明第一小时还没完成。</p>
+<p>边界控制可以通过 diff 审查衡量。一个好的 onboarding 会让 diff 与目标高度一致。修一个按钮状态，不应该顺手升级依赖；写两篇文章，不应该修改站点样式；修一个后端校验，不应该重排整个服务层。范围小不代表价值小，而是说明修改击中了真实问题。若任务确实需要跨模块改动，也应该能解释每个文件的必要性。</p>
+<p>验证充分性要看命令和任务的匹配度。只跑格式化不能证明业务行为；只跑单测不能证明页面可用；只跑构建不能证明文章达到字数；只跑全量测试但没有针对失败案例，也可能漏掉核心问题。Codex 最好把验证分成“我跑了什么”“它证明什么”“它没有覆盖什么”。这比简单写“测试通过”更有工程价值。</p>
+<p>风格一致性可以通过邻近代码比较。新增函数是否沿用错误处理方式，新增组件是否沿用样式系统，新增配置是否放在项目惯用位置，新增测试是否使用已有 fixture。AI 很容易写出“孤立正确”的代码：单看没错，但放进项目里显得陌生，未来维护者不愿接。接手阶段读项目语法，就是为了避免这种割裂。</p>
+<p>还可以建立小型回归集来评测 Codex onboarding。选择十个历史任务，每个任务保存原始用户请求、关键文件、预期修改范围和验证命令。让 Codex 重放任务时，先输出接手简报，再实施补丁。评审不只看补丁，还看它是否识别了正确入口、是否尊重了写入边界、是否使用了合适命令。长期看，这类评测比单纯比较模型回答更接近真实研发价值。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一种失败是 README 陷阱。README 是重要入口，但不总是最新事实。很多老项目的 README 还写着 <code>npm test</code>，实际已经迁到 <code>pnpm test</code>；文档说入口在 <code>src/index</code>，实际生产入口被框架配置覆盖。Codex 应该读 README，但要用配置、脚本和当前文件结构校验它，而不是照单全收。</p>
+<p>第二种失败是关键词陷阱。搜索到一个名字相同的函数，不等于它在目标路径上。大型仓库里同名组件、旧 API、测试 fixture、示例目录很常见。只根据 <code>rg keyword</code> 的第一个结果改文件，会导致补丁看似合理却没有生效。解决办法是向上追入口、向下追调用，并看测试或路由是否覆盖。</p>
+<p>第三种失败是命令陷阱。Codex 看到 <code>test</code> 脚本就运行，却没有注意它会启动数据库、改写快照或耗时很久；或者在依赖未安装时把失败误判为代码问题。接手阶段要区分读操作、构建操作、测试操作和有副作用操作。命令失败后先分类，再决定是否继续。</p>
+<p>第四种失败是格式化扩大 diff。为了让代码“整齐”，运行全仓格式化，结果改了几百个文件。除非任务就是格式化或项目明确要求，否则这种行为会污染审查。Codex 应该优先格式化被自己修改的文件，或者遵循项目在保存时自动格式化的最小范围。</p>
+<p>第五种失败是覆盖用户改动。共享工作区里已有修改可能是用户正在做的任务。Codex 如果没有先看 git 状态，就可能把用户改动当作原始状态的一部分，或者在冲突时直接覆盖。正确做法是识别已有改动，必要时阅读并保持其意图，最终说明自己只新增或修改了哪些目标文件。</p>
+<p>第六种失败是过度架构。陌生仓库会诱导人写“更通用”的抽象，因为局部代码看起来重复。第一小时不适合大规模抽象，除非任务本身要求并且测试能覆盖。先完成最小垂直切片，再判断重复是否真实、是否稳定、是否值得抽象。</p>
+<p>第七种失败是把生成物当源文件。静态站、API 客户端、数据库模型、文档索引都可能由脚本生成。直接改生成物会在下次构建时丢失，也会让源头继续错误。Codex 应该查找文件头、生成脚本、目录命名和构建规则，优先改源文件。若用户明确要求只改生成物，也要说明风险。</p>
+<p>第八种失败是最终汇报过度自信。没有跑检查却说“已验证”，只跑了局部检查却暗示全量通过，或者忽略了环境失败。工程协作里，这比代码小错更伤信任。Codex 的最终汇报应该准确：跑过什么，结果如何，没跑什么，为什么没跑，剩余风险在哪里。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>先执行工作区体检，确认 <code>git status</code>、目标文件状态和未跟踪目录。</li><li>读取项目内的工作规范、风格文件、README、包配置和任务相关脚本。</li><li>从配置和入口文件确认真实执行路径，不只依赖关键词搜索。</li><li>明确用户目标、硬约束、允许修改范围和禁止修改范围。</li><li>识别生成文件、构建产物、vendor、锁文件和历史归档目录。</li><li>为任务建立最小验证命令，并说明每个命令能证明什么。</li><li>优先读邻近代码和测试，沿用项目已有 helper、类型、命名和错误处理方式。</li><li>在编辑前形成简短补丁计划，复杂任务拆成可验证的小步。</li><li>避免全仓格式化、依赖升级、迁移执行等扩大范围的动作，除非任务明确需要。</li><li>命令失败后先分类原因，再决定修代码、补环境说明或报告残留风险。</li><li>最终汇报只包含真实改动、真实验证结果和必要风险，不夸大覆盖范围。</li><li>如果需要越过用户给定边界，先停下来说明原因并等待确认。</li></ul>
+<h2 id="总结">总结</h2>
+<p>Codex 接手一个仓库的第一小时，核心是把陌生环境变成可操作的工程上下文。它要先保护工作区，再读出仓库拓扑，确认入口和项目语法，设计验证路径，最后才开始修改。这个流程看起来比直接写代码慢，实际上会减少返工、误改和不可复盘的失败。</p>
+<p>好的 onboarding 不要求 Codex 读完所有文件，而要求它知道哪些证据足以支撑本次任务。入口在哪里，边界在哪里，检查怎么跑，风险是什么，为什么这些文件需要改。只要这些问题清楚，后面的实现就会更稳。仓库越大、历史越长、任务越有副作用，第一小时越重要。AI 写代码的速度很快，但工程交付拼的不是第一行代码出现得多早，而是最终补丁能否在真实仓库里站得住。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

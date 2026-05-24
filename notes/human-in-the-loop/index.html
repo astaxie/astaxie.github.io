@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Human-in-the-loop 不是退步 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="人工确认可以把风险从隐式行为变成显式决策。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="Human-in-the-loop 不是退步">
+  <meta property="og:description" content="人工确认可以把风险从隐式行为变成显式决策。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/human-in-the-loop.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link active" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>Human-in-the-loop 不是退步</span></nav>
+          <div class="note-kicker">NOTES / AGENT / 025</div>
+          <h1>Human-in-the-loop 不是退步</h1>
+          <p>人工确认可以把风险从隐式行为变成显式决策。</p>
+          <div class="note-tag-row"><span>HITL</span><span>Agent</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/human-in-the-loop.svg" alt="标题图" loading="lazy"><figcaption>Human-in-the-loop 不是退步 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多团队做 Agent 时，会把 Human-in-the-loop 当成能力不足的补丁：模型不够强，所以让人确认；等模型更强，就把人拿掉。这个理解太窄。真实生产系统里，人工环节不是低智能的象征，而是风险表达、责任分配和组织协作的一部分。即使模型能力继续提升，仍然会有一些决策不应该由系统静默完成，因为它们涉及成本、客户关系、法律承诺、品牌语气、权限边界或者业务优先级。</p>
+<p>普通自动化流程的输入和输出都相对确定。用户点一个按钮，服务执行一个固定动作，失败就回滚。Agent 的特点是中间步骤会变化。它会拆任务，会选择资料，会生成候选方案，会发现冲突后改变计划，也会在工具失败时寻找替代路径。这个弹性是价值来源，也是风险来源。如果系统把所有判断都藏在后台，用户只能在结果出来以后被动接受；如果每一步都打断用户，Agent 又会变成一个更慢的表单。Human-in-the-loop 的设计目标，就是在这两者之间找到合适的决策点。</p>
+<p>我更愿意把人工环节称为“显式决策界面”。它让系统把不确定性摊开：这里有两个可能解释，请选择一个；这里将影响十个客户，请确认范围；这里证据不足，请补充背景；这里动作可逆，可以自动执行；这里动作不可逆，需要负责人审批。人不是来替模型补作业的，而是在模型无法拥有完整责任的地方，把业务判断、上下文知识和组织授权补进去。</p>
+<p>在很多企业场景里，最危险的不是 Agent 明显失败，而是它看起来很顺利。比如它自动回复了客户邮件，语气礼貌但承诺了一个产品还没排期的功能；它整理了销售线索，却把两个同名公司合并；它根据历史文档更新了配置说明，但没有发现文档已经被新版本替换；它把会议纪要发给所有参会人，却包含了只应该给管理层看的预算讨论。这些问题不是简单的准确率指标能覆盖的，需要在关键位置让人看到证据、范围和后果。</p>
+<p>Human-in-the-loop 也不是只有“批准”和“拒绝”。更常见的动作包括澄清、改写、选择方案、缩小范围、换负责人、延后执行、接管任务、标注错误、补充证据。把这些动作设计清楚，Agent 就能把人的反馈转成可执行状态，而不是把用户的一句“再改改”塞回 prompt 里反复猜。工程上要把人工输入视为结构化事件，进入状态机、审计日志和评测数据，而不是只当聊天记录。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>Human-in-the-loop 的第一件事，是区分不同类型的人工参与。澄清是为了理解任务，审核是为了检查产物，批准是为了授权动作，协作是为了让人和 Agent 各做一部分，接管是为了停止自动化并由人完成。不同类型的输入，对 UI、状态机和日志要求都不一样。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">人工环节</th><th scope="col">触发原因</th><th scope="col">用户需要看到</th><th scope="col">系统收到后怎么处理</th></tr></thead><tbody><tr><td>澄清</td><td>目标含糊、缺少参数、范围冲突</td><td>当前理解、缺失字段、可选项</td><td>更新任务约束，重新规划</td></tr><tr><td>审核</td><td>产物质量需要判断</td><td>草稿、证据、差异、评价维度</td><td>记录反馈，修订或通过</td></tr><tr><td>批准</td><td>动作有成本或外部影响</td><td>影响范围、接收方、回滚方式</td><td>生成授权事件，继续执行</td></tr><tr><td>选择</td><td>存在多个合理方案</td><td>方案对比、取舍、风险</td><td>固定路径，丢弃其他分支</td></tr><tr><td>接管</td><td>自动化失去信心或超出能力</td><td>当前状态、已完成步骤、阻塞点</td><td>暂停 Agent，转交给人</td></tr><tr><td>标注</td><td>需要沉淀训练和评测数据</td><td>错误类别、期望结果</td><td>写入反馈库和回归样本</td></tr></tbody></table></div>
+<p>第二个概念是信心不是一个分数。很多产品喜欢说“置信度低于 0.8 就问人”，但 Agent 场景的风险通常不能由单一分数表达。检索证据少、工具返回冲突、用户意图模糊、动作不可逆、接收方敏感、金额超阈值、历史任务失败率高，这些都可能触发人工环节。它们有的是模型不确定，有的是业务风险高，有的是治理要求。把它们合成一个数字，会让团队误以为阈值调好就安全。</p>
+<p>第三个概念是决策包。不要让用户在一段长聊天里猜 Agent 想干什么。每次请求人工参与时，系统应该构造一个 decision packet，包含目标摘要、当前计划、待决问题、候选选项、证据、影响范围、推荐动作和可撤销性。用户的注意力有限，必须把真正需要判断的部分放在前面，把背景材料折叠在后面。一个好的决策包会让用户用几十秒做出可靠判断，而不是重新读完整个任务历史。</p>
+<p>第四个概念是可恢复状态。人工环节会带来等待。用户可能十分钟后才批准，也可能第二天才补充信息。Agent 不能把状态只放在进程内存里，必须保存检查点：已经读过哪些资料、已经生成哪些候选结果、哪些工具调用完成、哪些假设仍然有效、等待的是谁的什么动作。恢复时还要验证环境是否变化，例如文档版本、工单状态、客户名单是否已经更新。</p>
+<p>第五个概念是责任边界。让人点一个“确认”按钮，不等于责任就全部转移给人。系统必须确保人看到的信息足以支持判断，并且确认的是具体动作，而不是模糊授权。反过来，人也不应该被要求确认机器能确定的事情。比如格式化 Markdown、运行本地测试、生成草稿摘要，这些低风险步骤不需要人工；向客户发送承诺、修改生产配置、合并敏感数据，则必须让有权限的人参与。</p>
+<p>最后一个概念是学习闭环。人工反馈如果只影响当前会话，系统会一直犯相似错误。每次澄清、拒绝、改写、接管都应该进入反馈库，经过脱敏后变成提示词改进、工具改造、策略规则或评测样本。Human-in-the-loop 的长期收益，不只是这一次避免事故，而是让系统逐渐知道哪些地方该自动，哪些地方该提前问，哪些地方应该换一种产品形态。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个稳定的 Human-in-the-loop 架构，不能只靠聊天界面的“等用户回复”。它需要独立的决策服务、任务状态机和通知通道。Agent Runtime 在遇到触发条件时创建 decision packet，任务进入 waiting 状态；人通过 Web、Slack、邮件或内部工单作出选择；系统验证回复者身份和上下文版本；然后把结构化结果写回运行时，Agent 从检查点继续。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户目标
+  |
+  v
+Agent Runtime
+  |-- 规划任务
+  |-- 调用工具
+  |-- 评估证据和风险
+  |
+  +--&gt; HITL Trigger Evaluator
+          |-- 意图不清
+          |-- 证据冲突
+          |-- 高风险动作
+          |-- 质量低于门槛
+          |-- 需要业务负责人
+          v
+      Decision Packet Builder
+          |
+          v
+      Review Queue / Notification
+          |
+          v
+      Human Response
+          |
+          v
+      State Validator
+          |
+          v
+      Agent Resume / Replan / Stop</code></pre></div>
+<p>这个流程的关键不是“有人看一下”，而是每个环节都有机器可处理的结构。触发器说明为什么需要人，决策包说明人要判断什么，队列负责找到正确的人，回复事件说明人的选择，状态校验确认任务还能继续。只要其中一环退化成自由文本，系统就会回到模型猜测用户意图的老路上。</p>
+<p>以“Agent 帮产品经理整理客户反馈并准备对外回复”为例。Agent 先从工单系统和会议纪要中提取问题，发现有三条反馈都指向同一个功能缺口，但客户用词不同。它可以自动完成聚类草稿，但在准备对外回复时触发人工环节，因为回复可能形成交付预期。决策包里列出客户原话、内部证据、建议回复、不能承诺的点、可选语气和发送对象。产品经理可以选择“改成更保守的语气并只发给客户成功经理”，Agent 收到结构化反馈后只更新回复草稿，不直接外发。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">收集反馈 -&gt; 聚类 -&gt; 生成内部摘要 -&gt; 生成对外回复草稿
+                                      |
+                                      v
+                          人工选择语气、范围、发送策略
+                                      |
+                                      v
+                       更新草稿 -&gt; 等待最终发送批准或转人工</code></pre></div>
+<p>另一个例子是代码维护。用户说“把这个依赖升级一下”。Agent 可以读 changelog、改配置、跑测试。如果测试失败并且失败原因明确，它可以继续修；如果升级涉及破坏性变更，或者测试覆盖不到生产路径，就应该生成决策包：升级收益、破坏点、需要人工确认的迁移步骤、推荐的发布窗口。这里人工不是帮它写代码，而是在工程风险和业务排期上作判断。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>落地 Human-in-the-loop，建议先定义状态机。不要让任务状态只有 running 和 done。至少需要 <code>planning</code>、<code>executing</code>、<code>waiting_human</code>、<code>resuming</code>、<code>blocked</code>、<code>completed</code>、<code>cancelled</code>、<code>taken_over</code>。状态转换要有原因和事件 ID，这样才能审计和恢复。</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">state: waiting_human
+runId: run_20260428_003
+stepId: step_prepare_customer_reply
+waitingFor:
+  type: approval
+  assigneeRole: product_owner
+  assigneeUserId: u_17
+decisionPacketId: dp_88
+expiresAt: 2026-04-28T18:00:00Z
+resumePolicy:
+  onApprove: continue
+  onEdit: replan_from_current_step
+  onReject: stop_external_action
+  onTimeout: escalate_to_owner
+checkpoint:
+  artifactIds:
+    - draft_reply_31
+    - feedback_cluster_12
+  evidenceVersion: ev_44</code></pre></div>
+<p>决策包的数据结构要足够具体。最小字段包括标题、任务摘要、待决问题、推荐选项、可选操作、证据列表、影响范围、风险说明、过期时间和提交后动作。对于需要批准的动作，还要包含规范化后的参数哈希；对于需要审核的内容，还要包含草稿版本和 diff；对于需要选择的方案，还要列出各方案的成本、收益和不可逆点。</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;decision_packet_id&quot;: &quot;dp_88&quot;,
+  &quot;kind&quot;: &quot;approval&quot;,
+  &quot;question&quot;: &quot;是否允许把这封客户回复草稿交给客户成功经理发送？&quot;,
+  &quot;recommended_option&quot;: &quot;edit_then_approve_internal&quot;,
+  &quot;options&quot;: [
+    {&quot;id&quot;: &quot;approve&quot;, &quot;label&quot;: &quot;批准草稿&quot;, &quot;effect&quot;: &quot;continue&quot;},
+    {&quot;id&quot;: &quot;edit&quot;, &quot;label&quot;: &quot;修改后继续&quot;, &quot;effect&quot;: &quot;replan&quot;},
+    {&quot;id&quot;: &quot;reject&quot;, &quot;label&quot;: &quot;停止外发&quot;, &quot;effect&quot;: &quot;stop&quot;}
+  ],
+  &quot;evidence&quot;: [
+    {&quot;type&quot;: &quot;ticket&quot;, &quot;id&quot;: &quot;CS-1024&quot;, &quot;quote&quot;: &quot;客户需要明确时间表&quot;},
+    {&quot;type&quot;: &quot;roadmap&quot;, &quot;id&quot;: &quot;RM-77&quot;, &quot;quote&quot;: &quot;该功能仍在评估&quot;}
+  ],
+  &quot;impact&quot;: {
+    &quot;audience&quot;: &quot;customer_success_internal&quot;,
+    &quot;externalCommitment&quot;: false,
+    &quot;reversible&quot;: true
+  }
+}</code></pre></div>
+<p>触发逻辑可以分成规则触发和模型自评两类。规则触发负责硬边界，例如外部发送、生产写入、金额超过阈值、跨租户访问、缺少必填参数。模型自评负责软边界，例如“资料之间冲突”、“用户目标可能有两种解释”、“生成内容语气不确定”。软边界不能直接放行或拒绝，最好让模型输出结构化不确定性，再由触发器结合业务规则判断是否需要人。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type HitlTrigger struct {
+    Name        string
+    Severity    string
+    Reason      string
+    RequiredRole string
+    EvidenceIDs []string
+}
+
+type HumanResponse struct {
+    DecisionPacketID string
+    UserID           string
+    Action           string // approve, edit, reject, clarify, takeover
+    EditedFields     map[string]string
+    Comment          string
+    SubmittedAt      time.Time
+}</code></pre></div>
+<p>队列设计也很重要。不是所有人工请求都应该发给最初的用户。预算审批可能需要团队负责人，客户回复可能需要客户成功，法律条款可能需要法务，生产发布可能需要值班工程师。Review Queue 要能根据资源、任务类型、租户、风险等级和工作时间找到合适的人，并支持转派、超时升级和多人会签。没有队列层，Agent 很容易把所有问题都丢给一个发起人，最后变成通知疲劳。</p>
+<p>我建议把人工工作台分成两个视角：待办视角和任务视角。待办视角服务审批人，重点是快速判断，列表里应该显示风险等级、业务对象、等待时长、推荐动作和截止时间；任务视角服务发起人和接管人，重点是理解上下文，里面要有时间线、已完成步骤、证据、草稿、阻塞点和下一步选择。两个视角复用同一份 decision packet，但展示密度不同。审批人不应该被迫阅读完整 trace，接管人也不能只看到一个孤立按钮。</p>
+<p>用户体验上，确认页要避免“请审批以下 Agent 操作”这种空泛表达。页面应该直接呈现业务对象：要发给谁、内容是什么、依据是什么、会改变什么、如果不批准会怎样。按钮也不要只有“是”和“否”，应该贴合动作，例如“保存为草稿”、“交给负责人”、“要求补充证据”、“停止外发”。这些选择会直接映射到状态机事件，减少模型二次解释。</p>
+<p>恢复执行时要做版本校验。假设 Agent 等待审批期间，客户工单已经被人更新，或者文档已经被另一个任务修改，原来的决策包就可能过期。State Validator 应该检查证据版本、资源版本和动作哈希。如果变化在安全范围内，可以继续；如果变化影响判断，应该重新生成决策包，而不是沿用旧批准。</p>
+<p>最后是反馈沉淀。每个人工动作都应该带分类。拒绝是因为事实错误、语气不对、权限不足、证据不够，还是业务策略改变？编辑了哪些字段？用户选择了哪个方案？这些结构化标签会进入评测系统。下一次类似任务中，Agent 可以更早生成保守草稿，或者在收集证据阶段就补齐缺失材料。</p>
+<p>证据裁剪也需要产品化。把所有上下文都展示给人，看起来透明，实际会制造阅读负担；只展示模型总结，又会让人无法判断可信度。比较稳的做法是默认展示被引用的关键证据，并提供“查看原文”和“查看被排除材料”的入口。对于隐私敏感内容，决策包里可以展示脱敏摘要和访问理由，只有具备权限的人才能展开原文。这样人工环节既能支持判断，也不会变成新的数据泄露通道。</p>
+<p>反馈归因要有 owner。一次拒绝可能来自 Agent 规划错误、检索缺证据、工具返回过旧、业务规则不清、用户原始需求模糊，也可能只是审批人偏好不同。如果所有反馈都丢进一个“模型不满意”桶里，团队很快会失去改进方向。可以在后台把反馈分配给提示词、检索、工具、策略、产品文案和人工培训几个队列，每周看高频项。真正有价值的 Human-in-the-loop，不是让人永远站在流程中间，而是不断减少那些本来可以由系统处理的打断。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>Human-in-the-loop 的评测重点不是“有没有问人”，而是“该问的时候问，不该问的时候别问，问的时候让人容易做对”。可以从触发准确性、决策质量、恢复可靠性和用户负担四个方向评估。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">指标</th><th scope="col">含义</th><th scope="col">期望方向</th><th scope="col">风险信号</th></tr></thead><tbody><tr><td>必要触发召回率</td><td>高风险或不确定场景是否被拦截</td><td>越高越好</td><td>事故后发现没有任何人工点</td></tr><tr><td>误触发率</td><td>低风险任务被打断的比例</td><td>越低越好</td><td>用户开始机械点击批准</td></tr><tr><td>决策完成时长</td><td>从发起请求到人响应的时间</td><td>按风险分层设 SLA</td><td>队列积压，任务长期等待</td></tr><tr><td>修改后通过率</td><td>人编辑一次后继续成功的比例</td><td>稳定提高</td><td>Agent 无法利用反馈</td></tr><tr><td>接管率</td><td>自动化被人终止并手工处理的比例</td><td>需要按场景解释</td><td>能力边界或产品入口设计有问题</td></tr><tr><td>过期批准率</td><td>批准时上下文已经变化的比例</td><td>接近零</td><td>缺少版本校验</td></tr></tbody></table></div>
+<p>测试样本要覆盖正常用户和异常用户。正常用户会给模糊目标、半完整背景、临时变更；异常用户会要求绕过流程、忽略审批、把外部客户当内部成员、把旧批准用于新动作。评测时不要只看模型最终回答，要看状态机是否进入正确等待点，决策包是否包含足够证据，人工回复后是否走了正确分支。</p>
+<p>人工环节还需要可用性测试。找真实岗位的人看决策包，记录他们能否在不读完整聊天记录的情况下判断。一个常见失败是开发者把所有 trace 都展示出来，信息很多，但没有决策焦点。另一个失败是只展示模型总结，不展示原始证据，用户无法相信它。好的决策包通常有三层：前五行说明要决定什么，中间展示影响和推荐，底部提供可展开证据。</p>
+<p>恢复路径必须做集成测试。模拟用户一小时后批准，期间资源版本变化；模拟审批人离职或没有权限；模拟通知发送成功但回调失败；模拟用户点击“编辑”并改动关键字段；模拟多人会签里一人拒绝。Agent 系统一旦引入等待，就会遇到分布式系统里的典型问题：重复消息、乱序事件、过期状态、幂等提交。不能只靠人工流程图保证。</p>
+<p>评测闭环还要检查反馈是否真的被使用。比如过去一周有二十次“语气过度承诺”的人工修改，下周的提示词、模板、策略或评测集是否更新？如果没有，Human-in-the-loop 就只是人工兜底，没有让系统学习。可以设一个反馈处理 SLA：高频拒绝类别每周归因，严重事故样本二十四小时内加入回归，低风险误触发每两周清理一次规则。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是橡皮图章。系统弹出确认太频繁，用户开始不看内容直接批准。这个问题通常不是用户不负责，而是产品把低风险动作也推给人。解决办法是按风险分层，减少无意义确认，把真正需要判断的字段高亮出来，并记录审批后的修改率和事故率。</p>
+<p>第二类失败是决策包不完整。用户只看到“Agent 想发送一封邮件”，但看不到收件人、正文、附件、证据和不可逆影响。这样的确认没有意义。工程上要为每类人工环节定义必填字段，缺字段时宁愿不发起审批，而是回到 Agent 收集信息。</p>
+<p>第三类失败是人选错了。发起人可能没有权限批准预算，值班工程师可能不了解客户承诺，团队负责人可能看不到技术细节。Review Queue 需要基于角色和资源路由，不能默认“谁发起谁负责”。对于高风险动作，还要支持多人会签和审计。</p>
+<p>第四类失败是等待状态不可恢复。Agent 进程重启后忘了自己在等什么，用户批准后系统找不到对应步骤，只能重新开始。所有等待都要有持久化检查点，回调要幂等，恢复时要验证版本。等待是 Human-in-the-loop 的常态，不是异常分支。</p>
+<p>第五类失败是旧批准被复用。用户批准的是给内部团队的草稿，Agent 后续却把内容改成客户邮件；或者用户批准的是 A 文件修改，恢复后资源变成 B 文件。批准必须绑定动作哈希、资源版本和过期时间。任何关键字段变化，都需要重新确认。</p>
+<p>第六类失败是人工反馈被自由文本吞掉。用户写“这个太冒进，保守一点”，模型下一轮也许理解，也许不理解。更好的方式是让 UI 同时提供结构化选项，例如“降低承诺强度”、“移除时间表”、“仅内部可见”，自由文本作为补充。结构化部分进入状态机，自由文本进入上下文。</p>
+<p>第七类失败是没有成本意识。每次打断都在消耗人的注意力。一个低风险任务如果需要三次确认，用户会放弃使用。系统应该统计每类任务的人均等待时间、每次确认带来的质量提升、误触发原因，并把这些数据用于改进触发器。</p>
+<p>第八类失败是把人工环节当作安全免责。系统不能因为有人点过确认，就忽略基本校验。审批人也可能看漏，甚至没有足够信息。高风险动作仍然需要权限检查、审计、幂等和补偿方案。Human-in-the-loop 是防线之一，不是唯一防线。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<p>上线前可以按这份清单检查 Human-in-the-loop 是否真的可用。</p>
+<ul><li>已定义人工环节类型：澄清、审核、批准、选择、接管、标注。</li><li>每类环节都有明确触发条件、目标角色、超时时间和状态转换。</li><li>决策包包含任务摘要、待决问题、证据、影响范围、推荐选项和可选动作。</li><li>用户响应以结构化事件写入系统，自由文本只作为补充信息。</li><li>等待状态持久化保存，包含 run id、step id、决策包 ID、检查点和过期时间。</li><li>审批或编辑提交时会校验用户身份、角色权限、资源版本和动作哈希。</li><li>通知队列支持转派、升级、重复通知抑制和工作时间策略。</li><li>Agent 恢复后能区分继续执行、重新规划、停止动作和人工接管。</li><li>确认页展示业务影响，而不是只展示底层工具名。</li><li>低风险自动化路径不会被无意义确认打断。</li><li>高风险动作不能因为通知失败、状态丢失或审批过期而默认继续。</li><li>人工反馈有分类字段，并进入回归样本、提示词改进或策略优化流程。</li><li>看板能展示触发率、误触发率、等待时长、接管率、过期批准和修改后通过率。</li><li>已测试重复回调、乱序回调、超时审批、资源变更和多人会签拒绝。</li><li>已有清晰的人工接管界面，接管人能看到已完成步骤和剩余阻塞点。</li></ul>
+<p>这份清单的重点是把“人参与一下”变成稳定协议。只有协议稳定，人工环节才能在规模变大以后继续工作，而不是靠几个熟悉系统的人临场判断。</p>
+<h2 id="总结">总结</h2>
+<p>Human-in-the-loop 不是自动化失败后的尴尬补丁，而是 Agent 产品进入真实业务时必须具备的决策机制。它承认有些事情需要人类上下文、组织授权和责任判断，也承认人的注意力有限，不能被无意义打断。好的设计会把人工参与放在风险、歧义和责任真正集中的地方。</p>
+<p>工程上，要把人工环节做成状态机、决策包、队列、回调、审计和评测闭环，而不是聊天框里的几句追问。人给出的每个选择都应该能改变运行路径，每次等待都应该能恢复，每次拒绝和编辑都应该能进入学习系统。这样 Agent 才会越用越稳，而不是越用越依赖人工兜底。</p>
+<p>我判断一个 Human-in-the-loop 设计是否成熟，通常看三个问题：用户是否清楚自己在决定什么，系统是否能在等待后可靠恢复，团队是否能从人工反馈里减少下一次不必要的打断。如果这三个问题都有答案，人工环节就不是退步，而是把 Agent 从“看起来聪明”推向“可以负责”的关键工程能力。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

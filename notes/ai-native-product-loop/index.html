@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Native 产品迭代 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="AI Native 产品要把模型输出、用户反馈和工程指标放进同一循环。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="AI Native 产品迭代">
+  <meta property="og:description" content="AI Native 产品要把模型输出、用户反馈和工程指标放进同一循环。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/ai-native-product-loop.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link active" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>AI Native 产品迭代</span></nav>
+          <div class="note-kicker">NOTES / LLM / 066</div>
+          <h1>AI Native 产品迭代</h1>
+          <p>AI Native 产品要把模型输出、用户反馈和工程指标放进同一循环。</p>
+          <div class="note-tag-row"><span>AI Native</span><span>Product</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/ai-native-product-loop.svg" alt="标题图" loading="lazy"><figcaption>AI Native 产品迭代 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多团队第一次做 AI Native 产品时，会把注意力放在“模型能不能回答”上。这个起点没有错，问题是它很容易把产品迭代压缩成 prompt 调参。一个对话框接上大模型，放几段系统提示词，再接一个知识库检索，演示时确实很亮眼。可是进入真实用户手里之后，产品会暴露完全不同的问题：用户不是在测试模型，而是在完成工作；用户不关心模型懂不懂概念，只关心结果能不能进入下一步流程；用户也不一定会点赞或点踩，他可能直接删掉一段、改掉一个标题、重新上传一份材料，或者退出页面去找同事确认。</p>
+<p>传统软件的迭代对象通常比较明确。按钮点击率低，就改入口；表单错误多，就改校验和文案；接口慢，就优化缓存和索引。AI Native 产品的迭代对象更复杂，因为中间多了一个会生成、会解释、会选择工具、会组织上下文的概率层。这个概率层不是孤立存在的，它同时受到用户输入、上下文装配、模型版本、工具描述、记忆策略、结构化输出约束、权限规则和界面反馈影响。如果团队仍然只看最终回答，就会错过真正有价值的信号。</p>
+<p>以一个知识库写作助手为例。用户上传访谈记录、会议纪要和几篇参考文章，希望系统生成一篇内部技术复盘。第一个版本可能能写出一篇结构完整的文章，但上线后会出现更细的问题：模型把受访者的猜测写成结论；引用来源不够明确；用户反复修改同一段语气，却没有任何反馈回流；系统推荐的标题看起来漂亮，但不符合团队已有的分类体系；某些长文生成成本很高，却没有明显提升成稿率。此时继续追问“模型为什么不聪明”没有太大意义，更重要的是问：产品有没有把用户编辑行为、模型运行轨迹、内容质量评测、成本延迟和真实发布结果放在同一个循环里。</p>
+<p>AI Native 产品不能只靠一次性需求评审推进。它需要持续收集真实任务里的行为证据，再把这些证据转成可复现样本、可解释指标和可发布改动。这个循环要同时服务产品经理、工程师、设计师、运营和模型工程同学。产品同学需要知道哪些任务场景值得深挖；工程同学需要知道失败发生在检索、规划、生成、工具调用还是交互层；运营同学需要知道用户到底在哪些地方不信任系统；模型工程同学需要知道哪些样本可以进入评测集。没有这套循环，团队会在局部优化里打转：今天改 prompt，明天换模型，后天加按钮，最后没有人能说明产品能力是否真的提高。</p>
+<p>我理解的 AI Native 产品迭代，不是把所有功能都交给模型，也不是把所有决策都自动化。它更像一套产品和工程共同维护的学习系统。这个系统把每次模型输出看作一个可追踪事件，把每次用户修改看作一个弱标签，把每次工具调用看作一个可审计动作，把每次发布看作一个受控实验。团队要做的不是追求“模型一次生成完美答案”，而是让产品能稳定地从真实使用中变好。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>AI Native 产品循环可以拆成五类对象：任务、运行、反馈、样本和版本。任务是用户真正想完成的工作，例如生成复盘、整理客户线索、排查线上告警、起草销售邮件。运行是系统围绕一次任务产生的完整轨迹，包括输入、上下文、模型输出、工具调用、用户编辑和最终交付物。反馈是用户或业务系统对运行结果的显式或隐式评价。样本是从运行中沉淀出的可复现单元。版本则记录 prompt、模型、工具、界面和策略的组合。</p>
+<p>这五类对象要被放进同一个数据模型里，而不是散落在埋点、日志、客服记录和评测表格之间。只有这样，产品团队才能回答几个关键问题：什么任务最常发生失败；失败发生时用户做了什么修正；修正后的结果是否真的被采用；本次改动修复了哪些样本，又破坏了哪些样本；成本和延迟是否换来了业务质量提升。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">对象</th><th scope="col">记录内容</th><th scope="col">产品价值</th><th scope="col">工程价值</th></tr></thead><tbody><tr><td>任务</td><td>用户目标、入口、业务场景、风险等级</td><td>判断产品是否覆盖真实工作</td><td>决定策略、权限和兜底</td></tr><tr><td>运行</td><td>输入、上下文、模型响应、工具结果、耗时、成本</td><td>观察用户实际路径</td><td>复现问题和定位环节</td></tr><tr><td>反馈</td><td>点赞点踩、编辑差异、撤销、复制、发布、人工标注</td><td>判断结果是否被信任</td><td>转换成训练或评测信号</td></tr><tr><td>样本</td><td>最小输入、期望行为、失败标签、证据材料</td><td>支撑需求排序</td><td>支撑回归测试</td></tr><tr><td>版本</td><td>模型、prompt、schema、工具、界面、发布批次</td><td>比较迭代收益</td><td>支撑灰度和回滚</td></tr></tbody></table></div>
+<p>这里最容易被低估的是“反馈”。很多产品只做一个赞踩按钮，但赞踩太粗。用户给差评时，团队不知道是哪一段错、错因是什么、是否影响最终完成任务；用户不给差评时，也不代表满意。更可靠的反馈来自工作流本身。用户把系统生成的标题删除，说明标题策略可能不合适；用户保留大纲但重写正文，说明结构能力可用但表达不可靠；用户反复追问引用出处，说明信任链断了；用户直接复制结果进入下游系统，说明输出格式和质量达到了某个可用阈值。</p>
+<p>第二个核心概念是“模型行为不是产品结果”。模型生成了一段正确内容，只说明本轮生成成功，不说明用户任务完成。一个智能客服可以回答得很自然，却没有真正减少人工工单；一个代码助手可以给出可编译代码，却没有融入项目约定；一个写作助手可以生成长文，却让用户花更多时间删改。AI Native 产品的指标要穿过模型输出，落到任务完成率、人工接管率、用户编辑负担、结果采纳率、返工率、风险拦截率和单位任务成本上。</p>
+<p>第三个概念是“迭代要以版本组合为单位”。在传统产品里，一个功能开关可能只对应前端或后端变更。在 AI Native 产品里，同一个功能版本可能由模型版本、系统 prompt、检索策略、上下文窗口、工具白名单、输出 schema、界面交互和评测集共同决定。只记录代码提交不够，必须记录运行时使用的完整组合。否则线上发现结果变差时，团队很难判断是模型供应商更新、检索召回变化、prompt 修改，还是界面引导改变了用户输入。</p>
+<p>第四个概念是“产品循环要连接离线评测和线上行为”。离线评测能让改动在发布前接受回归检查，但它永远不完整。线上行为能暴露真实长尾，但它噪声大、不可控。健康的循环应该让线上失败进入样本池，让样本池驱动离线评测，让评测结果约束发布，再通过灰度观测确认真实收益。这个循环越短，产品进化越快；这个循环越透明，团队越少靠争论做判断。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>可以把 AI Native 产品迭代画成一条带回路的链路：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">真实用户任务
+  -&gt; 任务建模：目标、场景、风险、输入材料
+  -&gt; 运行编排：上下文装配、模型规划、工具执行、结果生成
+  -&gt; 交互观察：编辑、追问、撤销、复制、发布、人工接管
+  -&gt; 信号归因：成功、失败、部分可用、成本异常、延迟异常
+  -&gt; 样本沉淀：最小复现、期望行为、证据、标签
+  -&gt; 离线评测：质量、稳定性、成本、延迟、风险
+  -&gt; 版本发布：小流量、影子运行、A/B、回滚
+  -&gt; 生产观测：业务指标、运行 trace、用户反馈
+  -&gt; 下一轮产品判断</code></pre></div>
+<p>这张图里有两个重要边界。第一个边界在“运行编排”和“交互观察”之间。系统生成结果之后，不要急着把它当成结束事件。AI Native 产品的真实价值往往发生在结果被用户加工之后。用户是否愿意继续编辑、是否把结果交给下游、是否要求模型解释来源，这些行为都应该和运行 trace 关联。第二个边界在“信号归因”和“样本沉淀”之间。不是所有反馈都要进入评测集，只有能说明产品能力边界、能复现、能指导改动的反馈才值得样本化。</p>
+<p>从工程视角看，可以把系统分成四层：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">体验层
+  输入引导、草稿编辑、引用查看、人工确认、反馈控件
+
+编排层
+  任务识别、上下文选择、模型调用、工具计划、输出校验
+
+学习层
+  trace 归档、编辑差异、反馈归因、样本管理、评测运行
+
+发布层
+  版本注册、灰度策略、实验分桶、指标看板、回滚控制</code></pre></div>
+<p>体验层负责让用户在工作流里自然留下信号，而不是被迫填写问卷。编排层负责把模型能力变成可控流程，不把所有逻辑塞进 prompt。学习层负责把一次次运行变成产品资产。发布层负责让每次改动可以比较、可以暂停、可以回滚。四层之间要用明确的事件和版本号连接。</p>
+<p>一个比较实用的事件流如下：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">TaskCreated(task_id, user_id, scenario, risk_level)
+RunStarted(run_id, task_id, app_version, model_version, prompt_version)
+ContextBuilt(run_id, sources, dropped_sources, token_budget)
+ModelCompleted(run_id, output_id, latency_ms, input_tokens, output_tokens)
+ArtifactRendered(run_id, artifact_id, schema_version)
+UserEdited(artifact_id, patch_summary, edited_fields, edit_distance)
+UserAccepted(artifact_id, target_system, accepted_at)
+FeedbackLabeled(run_id, label, reason, owner)
+EvalCaseCreated(case_id, from_run_id, expected_behavior)
+ReleaseCompared(version_a, version_b, metric_delta)</code></pre></div>
+<p>这些事件不一定都要在第一天做全，但事件名和含义应该早一点稳定下来。早期即使只记录关键字段，也比事后从零补埋点强。尤其是 <code>run_id</code>、<code>app_version</code>、<code>prompt_version</code>、<code>model_version</code> 和 <code>artifact_id</code>，它们是追踪产品行为的骨架。没有这些骨架，后续所有分析都会变成模糊印象。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>下面用“写作助手”说明一个可落地的数据结构。这个助手的目标不是替用户写完所有内容，而是帮助用户把素材整理成可编辑初稿，并把用户编辑行为回流到评测和产品迭代里。核心表可以这样设计：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type Task struct {
+    ID          string
+    UserID      string
+    Scenario    string // postmortem, proposal, weekly, research_note
+    RiskLevel   string // low, medium, high
+    CreatedAt   time.Time
+}
+
+type AIRun struct {
+    ID             string
+    TaskID         string
+    AppVersion     string
+    PromptVersion  string
+    ModelVersion   string
+    ContextVersion string
+    Status         string
+    InputTokens    int
+    OutputTokens   int
+    LatencyMS      int
+    CostMicroUSD   int64
+}
+
+type Artifact struct {
+    ID            string
+    RunID         string
+    SchemaVersion string
+    Title         string
+    Sections      []Section
+    Citations     []Citation
+    QualityHints  []string
+}
+
+type UserEditSignal struct {
+    ArtifactID    string
+    FieldPath     string
+    Operation     string // keep, rewrite, delete, reorder, ask_source
+    BeforeHash    string
+    AfterHash     string
+    HanDelta      int
+    CreatedAt     time.Time
+}</code></pre></div>
+<p>这个结构有几个取舍。第一，<code>AIRun</code> 不直接保存大段上下文正文，而是保存版本、统计和可回放引用。正文可以进入对象存储，避免日志膨胀。第二，<code>Artifact</code> 使用结构化段落，不只保存最终 Markdown。这样才能知道用户改的是标题、摘要、论据还是结论。第三，<code>UserEditSignal</code> 不需要保存所有原文差异，很多场景只需要字段路径、操作类型、编辑距离和哈希。涉及隐私或商业内容时，差异摘要比全文留存更稳妥。</p>
+<p>生成初稿时，编排层不要只返回一段文本。更好的做法是让模型输出一个结构化草稿，再由渲染层转换为用户可编辑界面。例如：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;intent&quot;: &quot;technical_postmortem&quot;,
+  &quot;confidence&quot;: 0.82,
+  &quot;outline&quot;: [
+    {
+      &quot;heading&quot;: &quot;故障时间线&quot;,
+      &quot;purpose&quot;: &quot;还原关键事件顺序&quot;,
+      &quot;evidence_ids&quot;: [&quot;meeting-17&quot;, &quot;log-42&quot;]
+    },
+    {
+      &quot;heading&quot;: &quot;根因分析&quot;,
+      &quot;purpose&quot;: &quot;区分直接原因和系统性原因&quot;,
+      &quot;evidence_ids&quot;: [&quot;incident-brief&quot;, &quot;deploy-9&quot;]
+    }
+  ],
+  &quot;risk_flags&quot;: [&quot;missing_owner_confirmation&quot;],
+  &quot;needs_human_review&quot;: true
+}</code></pre></div>
+<p>这个例子里，模型不是直接写成品，而是先给出意图、置信度、大纲、证据和风险提示。产品可以基于这些字段做交互：证据不足的段落显示引用入口，高风险内容要求人工确认，置信度低的任务提示用户补充材料。这样做会牺牲一点生成速度，但换来更好的可解释性和更低的返工成本。</p>
+<p>反馈处理要避免“看到用户编辑就训练模型”的冲动。用户编辑可能有很多原因：事实错误、语气不合适、组织结构不符合团队习惯、个人偏好、临时业务变化。工程上应该先做归因分层。一个简单可行的规则是：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">信号</th><th scope="col">可能含义</th><th scope="col">入库动作</th></tr></thead><tbody><tr><td>标题被重写且正文保留</td><td>标题风格或分类不准</td><td>进入标题评测样本</td></tr><tr><td>引用被反复查看</td><td>可信度不足或证据表达不清</td><td>检查证据排序和引用展示</td></tr><tr><td>某段被整段删除</td><td>内容无用、重复或越界</td><td>标记段落级失败</td></tr><tr><td>用户追问“依据是什么”</td><td>结论缺少可见证据</td><td>加入引用完整性评测</td></tr><tr><td>生成后直接发布</td><td>任务可能高质量完成</td><td>作为正样本候选</td></tr><tr><td>用户放弃并人工重写</td><td>产品没有减少工作量</td><td>进入高优先级复盘</td></tr></tbody></table></div>
+<p>样本沉淀可以由人工和自动流程共同完成。自动流程负责找到可疑运行，例如高编辑距离、低采纳率、多次重试、高成本低采纳、风险提示被忽略。人工流程负责为这些运行打标签，写期望行为，决定是否进入回归集。样本格式要尽量贴近工程回放：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">case_id: writing-incident-043
+scenario: technical_postmortem
+input_refs:
+  - meeting-17
+  - incident-brief
+expected:
+  must_include:
+    - &quot;区分直接原因和系统性原因&quot;
+    - &quot;引用部署记录作为证据&quot;
+  must_not_include:
+    - &quot;未被确认的客户影响数字&quot;
+  risk_flags:
+    - missing_owner_confirmation
+labels:
+  - citation
+  - factuality
+  - high_risk
+source_run_id: run_9d12</code></pre></div>
+<p>发布时，要把版本组合注册成一个明确对象，而不是在配置文件里散落几项字段：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type ProductVersion struct {
+    ID             string
+    Model          string
+    PromptVersion  string
+    SchemaVersion  string
+    RetrievalPlan  string
+    ToolPolicy     string
+    UIExperiment   string
+    EvalSuite      string
+    RolloutPercent int
+}</code></pre></div>
+<p>每次发布前，用同一批评测样本比较新旧版本；发布后，用真实任务按分桶比较任务完成率、编辑负担和单位成本。版本对象让团队能讨论具体组合，而不是含糊地说“新模型好像更好”。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>AI Native 产品评测不能只测模型回答。它至少要覆盖四层：任务级结果、结构化行为、交互负担和运行成本。任务级结果关注用户是否完成工作；结构化行为关注模型是否按契约输出；交互负担关注用户为了得到可用结果付出多少修改；运行成本关注延迟、token 和工具调用是否可接受。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">指标</th><th scope="col">计算方式</th><th scope="col">适用阶段</th><th scope="col">注意点</th></tr></thead><tbody><tr><td>任务完成率</td><td>用户接受、发布或进入下游流程的比例</td><td>线上观测</td><td>需要排除用户中途离开的非产品原因</td></tr><tr><td>编辑距离</td><td>初稿到最终稿的差异比例</td><td>线上和离线</td><td>要按字段分层，不能只看全文</td></tr><tr><td>引用命中率</td><td>结论能追溯到证据的比例</td><td>离线评测</td><td>需要人工抽检，避免形式化引用</td></tr><tr><td>结构合规率</td><td>schema 校验和业务规则通过率</td><td>CI 和灰度</td><td>合规不代表内容好</td></tr><tr><td>返工率</td><td>用户重试或重新生成的比例</td><td>线上观测</td><td>要区分探索式重试和失败重试</td></tr><tr><td>单位任务成本</td><td>完成一个被采纳任务的平均成本</td><td>灰度比较</td><td>不能只看单次请求成本</td></tr><tr><td>人工接管率</td><td>需要人工继续处理的比例</td><td>高风险流程</td><td>有时升高代表风控更稳</td></tr></tbody></table></div>
+<p>离线评测要把样本分成几组。第一组是黄金样本，代表必须长期稳定通过的核心场景。第二组是失败回归样本，来自线上事故和用户高价值反馈。第三组是边界样本，覆盖输入缺失、材料冲突、超长上下文、敏感信息和低置信度任务。第四组是成本样本，用来观察长材料、复杂工具链和多轮生成的资源消耗。不要把所有样本混成一个总分，否则团队只会追求平均值，忽略关键场景。</p>
+<p>评测结果要能直接指导改动。比如一次版本比较得到下面的结果：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">版本 A: model-x + prompt-17 + schema-3
+版本 B: model-y + prompt-18 + schema-3
+
+核心样本通过率: 91% -&gt; 94%
+引用完整性: 78% -&gt; 86%
+高风险误放行: 3 case -&gt; 1 case
+平均首字延迟: 1.2s -&gt; 1.8s
+单位采纳成本: +18%
+标题重写率: 42% -&gt; 39%</code></pre></div>
+<p>这个结果不能简单解读为 B 更好。要看产品目标。如果当前最大的风险是无证据结论，那么引用完整性提升和高风险误放行下降可能值得接受延迟增长。如果当前场景是高频低风险写作，成本和首字延迟可能更重要。评测不是为了给模型排榜，而是为了支持产品取舍。</p>
+<p>线上评测也要谨慎。A/B 测试对 AI Native 产品有用，但不能机械照搬普通界面实验。模型输出有不确定性，用户任务难度也不均匀。分桶时要按场景、用户类型和风险等级分层；指标上要同时看正向收益和负向风险；对高风险动作要先做影子运行或人工审核。对于写作助手这种结果可编辑的产品，可以先让新版本只生成候选大纲，不直接替换成稿流程，然后观察用户是否主动采用。</p>
+<p>测试还要覆盖工程边界。模型超时、上下文为空、引用材料冲突、schema 校验失败、工具不可用、用户撤销操作、版本回滚时正在运行的任务，这些都应该有集成测试。AI Native 产品的失败不总是内容错，很多时候是流程断。一个模型回答再好，如果用户正在编辑时被新版本重置草稿，产品体验也会失败。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是“反馈失真”。团队以为赞踩代表质量，结果真正有价值的编辑和采纳行为没有被记录。用户不点差评，不代表系统可用；用户点好评，也可能只是因为回答礼貌。解决办法是把反馈嵌入工作流，记录编辑、撤销、复制、发布、追问和人工接管，并把这些信号按任务场景解释。</p>
+<p>第二类失败是“样本污染”。线上失败进入样本池后，如果没有最小复现和标签，评测集会变成混杂日志。过多低价值样本会拖慢评测，也会让团队误以为覆盖很充分。每个样本都应该有来源运行、失败原因、期望行为和所属场景。对于只反映个人偏好的样本，不要轻易放进核心回归集，可以进入偏好分析或个性化策略。</p>
+<p>第三类失败是“指标代理化”。团队为了提升编辑距离指标，可能让模型生成更短内容；为了降低人工接管率，可能让系统冒险自动执行；为了降低成本，可能牺牲引用完整性。AI Native 产品指标必须成组使用，不能让单一指标支配产品方向。尤其是涉及事实、权限和外部动作的产品，要把风险指标放在发布门禁里。</p>
+<p>第四类失败是“版本不可解释”。同一天内 prompt、模型、检索和界面同时变化，线上指标波动后无人能归因。这类问题在早期特别常见，因为团队觉得改动小，没有必要登记版本。等产品进入多用户、多场景、多模型阶段，缺少版本组合会让每次排障都变成猜测。最小做法是每次运行记录完整版本号，并在发布看板上展示分桶配置。</p>
+<p>第五类失败是“过度自动化”。AI Native 不等于完全自动。对高风险任务，系统应该清楚地区分建议、草稿、候选动作和已执行动作。用户要能看到依据、修改结果、确认副作用。很多产品失败不是因为模型能力差，而是因为过早把模型建议变成外部动作，导致用户失去控制感。</p>
+<p>第六类失败是“产品和评测脱节”。评测样本看起来很专业，但和真实用户任务不一致。比如写作助手评测只看文章是否通顺，却不看是否减少用户整理材料的时间；客服助手评测只看回答是否正确，却不看是否减少转人工后的重复沟通。评测设计要从产品任务倒推，而不是从模型能力出发。</p>
+<p>第七类失败是“忽略冷启动”。没有足够真实反馈时，团队容易用内部人员样本替代用户样本。内部样本通常更规范、更懂产品、更愿意容忍问题。冷启动阶段可以使用专家样本，但要明确它只是初始约束。上线后要尽快建立真实运行到样本池的通道，并优先观察新用户和低频用户的失败。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>元数据完整：每次运行都记录 <code>task_id</code>、<code>run_id</code>、<code>app_version</code>、<code>prompt_version</code>、<code>model_version</code>、<code>schema_version</code> 和用户分桶。</li><li>任务定义清楚：核心场景、非目标场景、高风险场景都有明确说明，界面不会诱导用户把系统当成无限制代理。</li><li>输出可验证：关键结果使用结构化 schema，重要结论带证据引用，风险字段能触发人工确认或降级。</li><li>反馈可回流：编辑、撤销、重试、采纳、发布、人工接管和显式评价都能关联到运行轨迹。</li><li>样本池可维护：每个评测样本有来源、场景、失败标签、期望行为和负责人，核心样本与探索样本分开管理。</li><li>离线评测通过：核心样本、失败回归样本、边界样本和成本样本都有对比结果，新增版本没有破坏发布门禁。</li><li>灰度策略明确：新版本先进入影子运行、小流量或低风险场景，高风险动作保留人工审核。</li><li>观测看板可用：任务完成率、编辑负担、采纳率、返工率、成本、延迟、风险拦截和异常分布可以按版本查看。</li><li>回滚路径简单：模型、prompt、工具策略和界面实验都能按版本回退，正在运行的任务不会因为回滚丢失草稿。</li><li>隐私边界明确：用户材料、编辑差异和反馈标签有留存策略，敏感内容不会无意进入训练或外部分析系统。</li></ul>
+<h2 id="总结">总结</h2>
+<p>AI Native 产品迭代的核心，不是更快地写 prompt，而是更认真地经营产品学习循环。模型输出只是循环中的一个事件，真正应该被管理的是用户任务、运行轨迹、工作流反馈、评测样本和版本组合。把这些对象连起来，团队才能从真实使用里获得可复现、可比较、可发布的改进。</p>
+<p>这套循环看起来比普通功能迭代重，但它解决的是 AI Native 产品最根本的问题：系统行为会变化，用户任务很复杂，模型成功不等于产品成功。早期可以从最小骨架开始，只记录关键版本和关键反馈，只维护少量高价值样本；随着用户量和风险上升，再补齐评测、灰度、观测和回滚。不要等到线上结果不可解释时才补工程纪律。</p>
+<p>好的 AI Native 产品会让用户感觉模型在理解工作，而不是在展示聪明。做到这一点，靠的不是一次完美生成，而是持续把模型行为、用户反馈和工程指标放进同一个闭环。产品每次失败都应该留下证据，每次改动都应该能被评测，每次发布都应该能被观测。这样迭代才不会停留在感觉层面，而会真正变成团队可以长期积累的能力。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

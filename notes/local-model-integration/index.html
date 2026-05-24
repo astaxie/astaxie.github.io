@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>本地模型接入体验 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="本地模型接入要关注发现、配置、性能和失败提示。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="本地模型接入体验">
+  <meta property="og:description" content="本地模型接入要关注发现、配置、性能和失败提示。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/local-model-integration.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link active" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>本地模型接入体验</span></nav>
+          <div class="note-kicker">NOTES / LLM / 065</div>
+          <h1>本地模型接入体验</h1>
+          <p>本地模型接入要关注发现、配置、性能和失败提示。</p>
+          <div class="note-tag-row"><span>Local Model</span><span>LLM</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/local-model-integration.svg" alt="标题图" loading="lazy"><figcaption>本地模型接入体验 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>本地模型接入看起来是一个配置问题：让用户填一个地址，选一个模型名，发一条兼容 OpenAI 的请求，能返回文本就算成功。但真正做成桌面 AI 或团队内部工具时，很快会发现体验问题远比接口问题多。用户不知道自己机器上有没有推理服务，不知道端口是什么，不知道哪个模型适合写代码、哪个适合总结，不知道上下文长度是否够，也不知道一次卡顿是模型在加载、显存不够、服务崩了，还是应用请求格式不对。</p>
+<p>本地模型的吸引力很清楚：数据不必默认出站，离线可用，成本可控，适合在企业内网和个人知识库里长期使用。问题也同样清楚：硬件差异巨大，模型能力不稳定，提供方接口细节不一致，首次加载慢，流式输出容易中断，工具调用和结构化输出支持程度参差不齐。一个云模型失败时，通常可以归因给网络、额度或服务端错误；一个本地模型失败时，可能是用户的内存、显存、量化格式、上下文参数、模型模板、推理后端和应用配置共同造成的。</p>
+<p>如果应用把这些差异都暴露给用户，用户会被迫成为推理工程师；如果应用把这些差异全部隐藏，出错时又没有办法自救。好的本地模型接入体验应该介于两者之间：默认路径足够简单，自动发现和推荐尽量多做；高级设置可以展开，但不挡住普通用户；错误信息要能指导下一步，而不是只说“请求失败”；性能评测要可重复，不能靠用户主观感觉。</p>
+<p>桌面 AI 里本地模型还会和云模型、插件、知识库、文件系统能力混在一起。用户可能希望“写日常草稿用本地小模型，复杂推理手动切到云模型；项目代码只进本地模型；公开资料可以用云端总结；嵌入模型在本地跑；重排模型走内网服务”。这意味着本地模型接入不是一个 provider 下拉框，而是模型能力、数据策略、任务路由和用户预期管理的组合工程。</p>
+<p>我做这类接入时，会先把目标定得很具体：用户第一次打开应用，能自动发现常见本地服务；没有服务时，能看到清楚的安装或连接指引；连接成功后，应用能探测模型列表和能力；发送第一条请求前，应用能跑一个轻量健康检查；真实使用中，应用能根据任务类型提示模型是否合适；失败时，用户能知道是服务不可达、模型未下载、上下文过长、内存不足、输出格式不支持，还是需要切换模型。做到这些，才算不是“把 API 接上了”，而是把本地模型带进产品体验。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>本地模型接入的核心对象不是“模型名”，而是“端点、模型、能力、运行状态和任务约束”的组合。端点描述服务在哪里；模型描述可调用对象；能力描述它能不能流式输出、能不能工具调用、上下文多长、是否支持 JSON；运行状态描述当前是否加载、响应多快、资源占用多少；任务约束描述某类任务需要什么能力和预算。把这些对象拆开，应用才能在不同后端之间保持稳定体验。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">概念</th><th scope="col">工程含义</th><th scope="col">用户感知</th><th scope="col">常见问题</th></tr></thead><tbody><tr><td>Endpoint</td><td>本地或内网推理服务地址、协议、认证方式</td><td>“我连上了哪个服务”</td><td>端口变了、服务没启动、跨域或认证失败</td></tr><tr><td>Model</td><td>具体模型标识、上下文、量化、模板、用途标签</td><td>“我选了哪个模型”</td><td>模型名相同但能力不同</td></tr><tr><td>Capability</td><td>流式、工具调用、JSON、vision、embedding、rerank</td><td>“这个模型能做什么”</td><td>应用假设能力，运行时才报错</td></tr><tr><td>Runtime State</td><td>是否加载、冷启动耗时、tokens/s、内存占用</td><td>“为什么现在很慢”</td><td>用户把加载慢误认为崩溃</td></tr><tr><td>Task Profile</td><td>聊天、总结、代码、检索增强、结构化抽取</td><td>“这个任务适不适合本地跑”</td><td>用小模型承担复杂推理</td></tr><tr><td>Fallback Policy</td><td>失败后重试、降级、切云、询问用户</td><td>“出错后怎么继续”</td><td>自动切云破坏数据预期</td></tr></tbody></table></div>
+<p>能力探测是本地模型体验的基础。不要只相信模型名或用户配置。某些服务虽然兼容 OpenAI Chat Completions，但不支持工具调用；某些模型可以返回 JSON，但在长上下文下格式稳定性很差；某些服务的 embedding 接口和 chat 接口分开；某些后端支持模型热加载，某些必须先手动拉起。应用应该维护一份探测结果，并给结果加上时间戳和来源：来自服务 API、来自一次试探请求、来自用户手动标记，还是来自内置模型库。</p>
+<p>本地模型的另一个关键概念是“冷启动”。用户第一次发送请求时，模型可能正在从磁盘加载到内存或显存，几十秒没有 token 输出。若 UI 只显示一个普通 loading，用户会以为应用卡死。运行时应该区分连接服务、排队、加载模型、生成首 token、持续生成这些阶段，并把阶段反馈给 UI。对开发者来说，首 token 延迟和生成速度是两个指标；对用户来说，它们分别对应“等不等得到”和“会不会太慢”。</p>
+<p>数据策略也要和本地模型绑定。很多用户选择本地模型是为了隐私，但应用可能仍然把遥测、错误日志、标题生成、嵌入计算、联网插件或自动更新请求发到外部。产品文案不能只说“使用本地模型”，工程上要明确哪些任务在本地完成，哪些任务会出站，出站时是否需要确认。本地模型接入做不好，会让用户以为安全，实际上只是聊天补全在本地。</p>
+<p>还要承认模型质量差异。一个 7B 量化模型可以很好地改写短文，也可能在复杂工具调用中频繁漏字段。接入层不应该把所有模型包装成同一种能力。更实用的做法是让模型卡片展示推荐用途和已测能力：适合快速问答、适合代码补全、适合中文总结、适合长文档、适合结构化抽取、不建议用于自动执行工具。用户选模型时看到的是工作语义，而不是一串陌生文件名。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>本地模型接入可以拆成六个模块：发现、登记、探测、路由、执行、观测。发现模块找可用服务；登记模块保存用户连接和模型偏好；探测模块确认能力；路由模块根据任务和策略选择模型；执行模块处理流式输出、重试和取消；观测模块记录性能与失败原因。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">应用启动
+  |
+  v
+Local Discovery
+  |-- 扫描常见端口
+  |-- 读取用户配置
+  |-- 检查内网端点
+  |-- 识别服务类型
+  |
+  v
+Model Registry
+  |-- endpoint
+  |-- model list
+  |-- user aliases
+  |-- capability cache
+  |
+  v
+Capability Probe
+  |-- chat smoke test
+  |-- streaming test
+  |-- context window test
+  |-- JSON/tool support test
+  |-- embedding/rerank test
+  |
+  v
+Task Router
+  |-- 数据策略
+  |-- 任务 profile
+  |-- 模型能力
+  |-- 性能预算
+  |
+  v
+Inference Gateway
+  |-- 请求归一化
+  |-- prompt 模板
+  |-- 流式解析
+  |-- 取消与超时
+  |-- 错误映射
+  |
+  v
+UI Feedback / Metrics / Failure Hints</code></pre></div>
+<p>这张图里，<code>Model Registry</code> 是体验的中心。它不能只是保存用户填过的 URL，而要保存端点类型、认证方式、最近健康状态、模型列表、模型别名、能力探测结果和用户选择。用户不想每次都记住 <code>llama3.1:8b-instruct-q4</code> 这种名字，应用可以允许把它命名为“本地快速中文模型”，同时保留真实模型 ID 供请求使用。</p>
+<p><code>Capability Probe</code> 要轻量，但不能省略。第一次发现模型时，可以发送几类小请求：一句简短中文问答测试 chat；一个很小的 JSON schema 测试结构化输出；一个 <code>stream=true</code> 请求测试流式；一个超过普通短 prompt 的上下文测试估算窗口；对 embedding 端点发送一小段文本测试维度。探测失败不一定意味着模型不能用，但要把能力标为 unknown 或 unsupported，不要让上层盲目调用。</p>
+<p><code>Task Router</code> 不应该擅自把任务从本地切到云端。它可以建议切换，可以在用户预先设置的策略里自动降级，但涉及数据出站时必须尊重策略。比如用户把某个工作区标记为“只用本地模型”，那么本地模型不可用时，路由结果应该是“等待服务启动、选择其他本地模型、或用户手动改策略”，而不是偷偷调用云模型完成任务。</p>
+<p><code>Inference Gateway</code> 负责把不同服务的接口差异藏起来。上层只关心 <code>messages</code>、<code>tools</code>、<code>response_format</code>、<code>stream</code>、<code>temperature</code> 这些统一字段，网关根据端点类型转换请求。如果某个后端不支持工具调用，网关不要硬凑一个无效参数，而应该在路由阶段就阻止该任务，或者把工具任务拆成“模型生成候选计划，应用本地解析和确认”的保守路径。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>一个可维护的本地模型接入，应该从 provider adapter 做起。每个后端实现同一个接口：列模型、健康检查、能力探测、发送聊天请求、发送 embedding 请求、取消请求、解释错误。不要让业务代码到处判断 “如果是 Ollama 就这样，如果是 LM Studio 就那样”。一旦判断散开，后面加内网推理服务、llama.cpp server 或企业网关时会很痛。</p>
+<p>下面是一个简化的数据结构，用来表达端点、模型和能力。真实项目里可以加密保存 token，把探测结果放入本地数据库，并用版本号处理字段演进。</p>
+<div class="code-block"><pre class="line-numbers language-typescript" data-language="TypeScript"><code class="language-typescript">type ProviderKind = &quot;ollama&quot; | &quot;lmstudio&quot; | &quot;llamacpp&quot; | &quot;openai_compatible&quot; | &quot;enterprise_gateway&quot;;
+
+interface LocalEndpoint {
+  id: string;
+  kind: ProviderKind;
+  baseUrl: string;
+  auth: { type: &quot;none&quot; | &quot;bearer&quot; | &quot;custom_header&quot;; keyRef?: string };
+  createdAt: string;
+  lastSeenAt?: string;
+  health: &quot;unknown&quot; | &quot;ok&quot; | &quot;offline&quot; | &quot;auth_failed&quot; | &quot;misconfigured&quot;;
+}
+
+interface ModelCapability {
+  chat: boolean;
+  streaming: boolean;
+  jsonMode: &quot;native&quot; | &quot;prompted&quot; | &quot;unsupported&quot; | &quot;unknown&quot;;
+  toolCalling: &quot;native&quot; | &quot;emulated&quot; | &quot;unsupported&quot; | &quot;unknown&quot;;
+  embedding: boolean;
+  vision: boolean;
+  maxContextTokens?: number;
+  measuredTokensPerSecond?: number;
+  measuredFirstTokenMs?: number;
+  confidence: &quot;reported&quot; | &quot;probed&quot; | &quot;user_marked&quot;;
+}
+
+interface RegisteredModel {
+  id: string;
+  endpointId: string;
+  providerModelId: string;
+  displayName: string;
+  family?: string;
+  quantization?: string;
+  sizeLabel?: string;
+  recommendedFor: Array&lt;&quot;chat&quot; | &quot;summary&quot; | &quot;coding&quot; | &quot;rag&quot; | &quot;extraction&quot; | &quot;drafting&quot;&gt;;
+  capability: ModelCapability;
+  lastProbeAt?: string;
+}</code></pre></div>
+<p>发现服务时，要把“自动发现”和“用户明确配置”分开。自动发现可以扫描常见本地地址，例如 <code>127.0.0.1</code> 上的若干端口，也可以读取应用自己的历史配置。扫描必须短超时、低频率，避免启动时拖慢应用。发现到候选服务后，先发健康检查，而不是直接拉完整模型列表；健康检查成功再识别 provider 类型和版本。用户手动添加的端点即使暂时离线，也应该保留，并在 UI 中显示“上次可用时间”和“重试连接”。</p>
+<p>模型列表也要做差异同步。端点返回的模型可能被用户删除、改名或重新下载。Registry 里应保存两类字段：服务上报字段和用户本地字段。服务上报字段跟随刷新变化；用户本地字段包括别名、推荐用途、默认任务、排序和隐藏状态，不应因为服务刷新丢失。这样用户把某个模型命名为“会议纪要模型”后，下一次刷新不会变回原始 ID。</p>
+<p>请求执行要处理取消。桌面用户经常会发现模型选错、问题问错、输出太慢，然后点停止。网关应该把取消信号传到 provider adapter，能断 HTTP 就断 HTTP，能调用后端取消接口就调用，不能取消也要停止消费流并释放 UI 状态。停止按钮如果只是隐藏 loading，后台还在生成，会浪费资源，也会让下一次请求排队。</p>
+<p>流式输出解析要有容错。兼容 OpenAI 的本地服务可能在 SSE 里返回空行、心跳、非标准结束标记，或者在中途抛出 JSON 错误。网关应该把这些差异映射成统一事件：<code>started</code>、<code>first_token</code>、<code>delta</code>、<code>usage</code>、<code>completed</code>、<code>cancelled</code>、<code>failed</code>。UI 不应该直接解析 provider 原始流，否则每个后端都会把界面拖进细节。</p>
+<p>错误映射是体验关键。不要把底层错误原样抛给用户，如 <code>ECONNREFUSED</code>、<code>socket hang up</code>、<code>invalid_request_error</code>。接入层应该把错误归类成用户能行动的原因：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">错误类别</th><th scope="col">检测方式</th><th scope="col">用户提示重点</th><th scope="col">工程处理</th></tr></thead><tbody><tr><td>服务未启动</td><td>连接拒绝、超时、健康检查失败</td><td>启动本地推理服务或检查端口</td><td>提供重试和打开设置</td></tr><tr><td>模型不存在</td><td>provider 返回 unknown model</td><td>下载模型或刷新模型列表</td><td>清理默认模型引用</td></tr><tr><td>认证失败</td><td>401、403、自定义错误码</td><td>检查 token 或内网权限</td><td>标记 endpoint auth_failed</td></tr><tr><td>上下文过长</td><td>请求 token 估算超过窗口</td><td>缩短材料或换长上下文模型</td><td>触发压缩和分块</td></tr><tr><td>内存不足</td><td>后端返回 load failed、OOM</td><td>关闭其他模型或换小模型</td><td>降低并发，记录冷启动失败</td></tr><tr><td>格式不支持</td><td>JSON/tool 调用解析失败</td><td>换支持结构化输出的模型</td><td>路由避开该能力</td></tr><tr><td>生成中断</td><td>流式连接断开</td><td>可重试或保留已生成内容</td><td>保存 partial output</td></tr></tbody></table></div>
+<p>上下文窗口要提前估算。本地模型经常没有准确返回最大上下文，或者用户用启动参数改过。应用可以从模型声明、探测结果和用户设置里得到一个保守值，再用 tokenizer 或近似估算请求长度。超过预算时，不要等 provider 报错。对于 RAG 或长文档总结，先做压缩、分块或让用户选择更长上下文模型。提示要具体：“当前任务预计需要约一万二千 token，你选择的模型保守窗口为八千 token，已建议切换到某某模型或启用分段总结。”</p>
+<p>结构化输出要降级。很多本地模型不稳定地生成 JSON，尤其在长上下文和中文任务里。不要把一次解析失败直接当任务失败。可以采用三步：首先使用后端原生 JSON mode；没有原生能力时使用严格提示词和停止词；解析失败后用本地修复器或再次请求“只修复 JSON”；仍失败则返回可读文本并告诉上层此模型不适合该任务。这个过程要记录到能力评分里，连续失败后降低模型在结构化任务中的优先级。</p>
+<p>性能评测要贴近真实任务，而不是只跑一句“你好”。我会给每个模型维护几组轻量基准：短问答首 token、中文长文摘要、代码解释、RAG 带上下文问答、JSON 抽取。每组记录首 token、总耗时、输出 token、tokens/s、解析成功率和用户取消率。不要在用户机器上跑重负载 benchmark；可以在空闲时、用户同意后或首次选择模型时跑小样本。评测结果用于排序和提示，而不是用来羞辱用户硬件。</p>
+<p>配置界面要区分普通模式和高级模式。普通模式显示“已发现服务、可用模型、推荐用途、健康状态、设为默认”；高级模式才展示 base URL、header、上下文覆盖、并发数、超时、prompt 模板、停止词和 provider 兼容开关。很多产品把所有字段摊在一个表单里，结果普通用户不敢动，高级用户也找不到关键项。好的配置是把常见路径压短，把诊断信息藏在可展开区域。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>本地模型接入的测试要同时覆盖 provider 差异、用户体验和真实性能。单元测试可以保证 adapter 的请求转换正确，但不能证明用户能顺利连上模型。建议建立一套分层测试：mock provider、协议兼容测试、真实端点冒烟测试、UI 流程测试、性能基准和故障注入。</p>
+<p>mock provider 用来模拟各种边界条件：模型列表为空、流式输出中断、返回非法 JSON、首 token 延迟很高、usage 字段缺失、模型加载失败、认证失败。它不需要生成聪明回答，只需要稳定复现协议行为。每次修网关逻辑，都先跑 mock provider，避免因为本机后端版本不同导致测试不稳定。</p>
+<p>协议兼容测试关注请求和响应形状。比如 chat 请求是否正确带上 <code>stream</code>，工具调用字段在不支持的 provider 上是否被移除，JSON mode 是否按 provider 约定转换，取消信号是否能中断连接。这里要保存若干黄金样本，但不要把 provider 的全部私有字段暴露给业务层。测试目标是证明 adapter 隔离有效。</p>
+<p>真实端点冒烟测试可以做成可选，因为 CI 环境未必有本地模型。开发机或发布前测试时，至少跑三类场景：列出模型并选择一个；发送短流式聊天并收到首 token；发送一个小 JSON 抽取任务并验证解析。如果接入企业内网模型，还要加认证过期、代理、证书和 DNS 失败测试。</p>
+<p>性能评测最好固定输入。以下是一组轻量样本，能覆盖常见体验：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">样本</th><th scope="col">输入规模</th><th scope="col">观察指标</th><th scope="col">说明</th></tr></thead><tbody><tr><td>短问答</td><td>一句话</td><td>首 token、总耗时</td><td>反映日常聊天是否跟手</td></tr><tr><td>中文摘要</td><td>两千字</td><td>tokens/s、摘要完整性</td><td>反映写作和知识库场景</td></tr><tr><td>代码解释</td><td>一个函数</td><td>事实错误、输出结构</td><td>反映开发者场景</td></tr><tr><td>RAG 问答</td><td>五段证据</td><td>引用命中、上下文使用</td><td>反映知识系统接入</td></tr><tr><td>JSON 抽取</td><td>一段工单文本</td><td>解析成功率、字段漏填</td><td>反映自动化工作流</td></tr></tbody></table></div>
+<p>评测结果不要只看速度。本地小模型速度快，但可能在事实、引用和结构化上不稳定；大模型质量好，但冷启动慢。UI 可以把结果表达成“快速”“平衡”“更适合长文”“结构化稳定”等用户语言，同时允许高级用户查看具体数值。对团队内部工具，还可以把评测样本换成公司自己的文档、代码和工单，得到更贴近场景的模型选择。</p>
+<p>故障注入很有价值。手动关闭本地服务、删除默认模型、占满内存、断开网络代理、让 provider 返回半截 SSE、把上下文调小、使用错误 token，然后看应用是否给出正确提示，是否保留已生成内容，是否能恢复连接。很多本地模型体验差，不是模型差，而是这些故障路径从未被设计。</p>
+<p>还要测数据策略。把一个工作区设置为“仅本地模型”，然后故意让本地模型离线，确认应用不会自动切到云端；把一个公开资料任务设置为“允许云端降级”，确认 UI 会展示切换提示；把 embedding 配置为本地，确认索引构建不会调用远端 embedding。测试本地模型接入时不测数据策略，会漏掉用户最在意的承诺。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是“能连上但不能用”。健康检查通过，模型列表也返回了，但一发真实请求就失败。原因可能是模型需要下载、后端懒加载失败、上下文参数过大、聊天模板不匹配。解决办法是健康检查后追加小型 chat probe，把端点健康和模型可用分开显示。</p>
+<p>第二类失败是能力误判。应用看到接口兼容 OpenAI，就假设支持工具调用和 JSON mode，结果自动化流程中途崩掉。解决办法是为每个能力建立探测和置信度，不支持的能力在路由阶段阻断；对 unknown 能力使用保守路径，不把高风险任务交给它。</p>
+<p>第三类失败是冷启动无反馈。用户点发送后长时间没有输出，以为应用死了，重复点击或强制退出。解决办法是把执行阶段拆开显示：连接中、模型加载中、等待首 token、生成中。若历史数据显示该模型冷启动常超过某阈值，可以在选择模型时提前提示。</p>
+<p>第四类失败是上下文过长后粗暴截断。为了让请求成功，应用从尾部砍掉材料，导致模型漏掉关键约束或引用。解决办法是任务层做有策略的压缩：保留用户问题、系统规则和高分证据，对低相关材料摘要或分块，而不是盲目截断。截断发生时要记录，并在回答里说明材料范围。</p>
+<p>第五类失败是自动降级破坏信任。用户选择本地模型，服务离线后应用为了完成任务自动调用云模型。即使结果正确，用户也会认为产品不可信。解决办法是把降级策略显式化，涉及出站时必须由用户或组织策略预先允许，并在任务时间线里记录。</p>
+<p>第六类失败是配置污染。用户为了调试改了上下文、模板、端口和 header，后来忘了恢复，应用持续异常。解决办法是配置版本化和可重置：高级设置显示“已偏离默认值”，提供一键恢复；每次请求记录实际配置摘要，排障时能看见。</p>
+<p>第七类失败是 benchmark 误导。应用用一句短问答测出某模型很快，于是推荐它处理长文档和结构化任务，结果质量很差。解决办法是按任务 profile 评测和推荐，不用单一分数代表模型好坏。模型选择要回答“适合什么”，而不是回答“谁第一”。</p>
+<p>第八类失败是资源争用。桌面上同时跑多个模型、浏览器、IDE 和视频会议，本地推理速度突然下降。应用如果只报告“模型慢”，用户无法处理。解决办法是记录并发请求、冷启动、取消率和后端资源错误；必要时限制并发，提示关闭其他本地模型，或建议换小模型。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>自动发现常见本地推理服务，并使用短超时，避免拖慢应用启动。</li><li>用户手动添加的端点会持久保存，即使当前离线也不丢失配置。</li><li>Endpoint、Model、Capability、Runtime State 分开建模，不把模型名当作全部状态。</li><li>模型列表刷新不会覆盖用户别名、排序、推荐用途和默认任务设置。</li><li>每个模型有健康检查和轻量 chat probe，端点可达不等于模型可用。</li><li>能力探测覆盖流式、JSON、工具调用、上下文、embedding 和 vision 等实际调用点。</li><li>任务路由尊重数据策略，本地不可用时不会未经允许自动切到云端。</li><li>网关统一 provider 差异，上层业务不直接拼各后端私有请求。</li><li>流式输出映射成统一事件，UI 不解析 provider 原始协议。</li><li>停止生成会传递取消信号，并释放后台请求和 UI 状态。</li><li>错误被映射为可行动原因，包括服务未启动、模型不存在、认证失败、上下文过长和内存不足。</li><li>首 token 延迟、生成速度、取消率、解析成功率和冷启动失败有指标记录。</li><li>上下文长度在发送前估算，超预算时提供压缩、分块或换模型建议。</li><li>结构化输出失败有降级路径，并会降低该模型在相关任务中的优先级。</li><li>配置界面区分普通和高级模式，高级偏离默认值有明显提示和恢复入口。</li><li>本地模式下的遥测、错误报告、标题生成、embedding 和插件调用都受同一数据策略约束。</li><li>发布前用 mock provider 覆盖协议异常、半截流、非法 JSON、认证失败和服务离线。</li><li>可选真实端点冒烟测试覆盖列模型、短流式聊天和小型结构化抽取。</li><li>性能评测按任务 profile 展示，不用单一速度分数推荐所有场景。</li><li>诊断面板能导出脱敏连接状态、模型能力、最近错误和配置摘要。</li></ul>
+<h2 id="总结">总结</h2>
+<p>本地模型接入不是把一个 OpenAI-compatible URL 填进配置页。它是一套围绕发现、登记、探测、路由、执行、观测和诊断的产品工程。用户真正需要的是：我能不能连上，哪个模型适合当前任务，为什么现在慢，出错后怎么修，哪些数据留在本地，什么时候会离开本机。</p>
+<p>工程上要把端点、模型、能力和任务拆开建模。端点可达不代表模型可用，模型存在不代表支持工具调用，支持流式不代表结构化稳定，速度快也不代表适合长文档。只有把这些差异显式表达出来，路由、提示、评测和错误恢复才有基础。</p>
+<p>本地模型的价值不只在隐私和成本，也在让 AI 应用更贴近个人工作环境。但本地环境天然复杂，不能把复杂度全部丢给用户。好的接入体验，是默认能跑、失败能懂、设置能改、策略可信、评测可复现。做到这个程度，本地模型才会从“高级用户玩具”变成桌面 AI 和知识工具里的稳定能力。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文档切分如何影响 GraphRAG | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="切分粒度会影响实体抽取、关系质量和最终回答的可引用性。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="文档切分如何影响 GraphRAG">
+  <meta property="og:description" content="切分粒度会影响实体抽取、关系质量和最终回答的可引用性。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/chunking-for-graph-rag.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link active" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>文档切分如何影响 GraphRAG</span></nav>
+          <div class="note-kicker">NOTES / RAG / 003</div>
+          <h1>文档切分如何影响 GraphRAG</h1>
+          <p>切分粒度会影响实体抽取、关系质量和最终回答的可引用性。</p>
+          <div class="note-tag-row"><span>Chunking</span><span>GraphRAG</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/chunking-for-graph-rag.svg" alt="标题图" loading="lazy"><figcaption>文档切分如何影响 GraphRAG 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>RAG 系统里，文档切分常被当成一个前置小步骤：按 800 token 切一段，重叠 100 token，塞进向量库。这个做法在普通语义检索里可以跑起来，但到了 GraphRAG，切分会直接影响实体抽取、关系识别、社区发现和引用质量。切错了，后面再调 embedding、图数据库和大模型都只是补救。</p>
+<p>原因很简单：GraphRAG 不只要找“相似片段”，还要从片段里抽出对象和对象之间的关系。如果一个 chunk 只包含关系的一半，例如前一段写“检索服务改为本地优先”，后一段才解释“因为浏览器自动化需要权限隔离”，抽取器可能只看到两个孤立事实，关系边就丢了。反过来，如果 chunk 太大，里面有太多实体和议题，模型会抽出大量弱关系，图谱噪声上升，引用也会变得粗糙。</p>
+<p>切分还决定答案能否被用户检查。GraphRAG 的最终回答可以引用实体、关系和社区摘要，但关键事实最好回到原文。chunk 如果跨越多个标题、多个列表、多个决策，引用时用户打开一大段材料，很难判断答案用的是哪句话。chunk 如果太碎，引用很精确，却失去上下文，用户看不到条件和限制。切分本质上是在“可抽取、可召回、可引用、可更新”之间找平衡。</p>
+<p>我更倾向于把 chunk 视为知识系统的最小证据单元，而不是向量库的固定长度窗口。最小证据单元要尊重文档结构：标题层级、段落、列表、表格、代码块、引用、时间线和决策块。它应该足够完整，能支持一个实体或一条关系的证据；也要足够小，能被检索和引用准确定位。GraphRAG 的切分策略不是一次性脚本，而是需要随文档类型、评测样本和线上失败不断调整的管线。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>切分策略可以从四个维度看：结构边界、语义完整性、证据粒度和增量稳定性。结构边界是文档天然的组织方式，例如 Markdown 标题、HTML section、表格行、代码 fenced block。语义完整性是一个 chunk 是否包含足够上下文，能让抽取器理解实体和关系。证据粒度是引用回跳时是否清楚。增量稳定性是文档局部修改后，chunk ID 和偏移是否尽量不变。</p>
+<p>固定 token 切分最大的问题是无视结构。它可能把一个表格切成两半，把代码块和说明分开，把“问题”和“解决方案”拆开。GraphRAG 需要的关系往往跨越标题和段落，但不会无限远。比如 ADR 中“Context”“Decision”“Consequences”之间关系很紧；事故复盘中“Impact”“Root Cause”“Mitigation”之间关系很紧；会议纪要中同一个 agenda item 下的讨论和结论关系很紧。切分应优先保留这些局部结构。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">切分维度</th><th scope="col">目标</th><th scope="col">常见策略</th><th scope="col">GraphRAG 影响</th></tr></thead><tbody><tr><td>结构边界</td><td>不破坏原文组织</td><td>按标题、列表、表格、代码块切</td><td>提高抽取稳定性</td></tr><tr><td>语义完整性</td><td>保留关系上下文</td><td>父标题、前后段落、小摘要</td><td>降低漏边和错边</td></tr><tr><td>证据粒度</td><td>方便引用检查</td><td>小窗口、句子 offset</td><td>提高可信度</td></tr><tr><td>增量稳定性</td><td>减少重建成本</td><td>内容 hash、路径加标题锚点</td><td>降低索引抖动</td></tr><tr><td>类型适配</td><td>匹配文档形态</td><td>ADR、复盘、API 文档分策略</td><td>提升高价值场景</td></tr></tbody></table></div>
+<p>GraphRAG 还需要区分“检索 chunk”和“抽取窗口”。检索 chunk 面向在线召回，通常希望短一些、引用精确一些。抽取窗口面向离线实体关系抽取，可以更大，甚至包含父标题、前后相邻段落和文档元数据。不要强迫这两者完全一样。一个工程上常用的做法是保存 canonical chunk 作为引用单元，再为抽取生成 expanded window，抽取出的关系 evidence 仍然落回具体 canonical chunk。</p>
+<p>另一个重要概念是 parent context。很多短片段单独看不出含义，例如“这个方案会降低首字延迟，但增加索引更新复杂度”。它的“这个方案”指向上级标题或前文。切分时应该把标题路径、前导摘要、父级 section 名称作为 metadata 带给抽取器和检索器。这样不必把 chunk 做得很大，也能让模型理解语境。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一条适合 GraphRAG 的切分管线可以分成解析、结构建模、候选切分、窗口扩展、ID 稳定化和质量评估。下面这张流程图强调：切分不是单纯把文本切开，而是把文档结构转成可追踪的证据层。</p>
+<figure class="mermaid-block" data-mermaid-block><template data-mermaid-source>flowchart TD
+  A[原始文档] --&gt; B[格式解析 Markdown/HTML/PDF]
+  B --&gt; C[结构树 标题/段落/表格/代码]
+  C --&gt; D[候选证据 chunk]
+  D --&gt; E[合并过短片段]
+  D --&gt; F[拆分过长片段]
+  E --&gt; G[生成抽取窗口]
+  F --&gt; G
+  G --&gt; H[实体关系抽取]
+  D --&gt; I[向量索引]
+  H --&gt; J[关系 evidence 回写 chunk]
+  I --&gt; K[在线召回]
+  J --&gt; K
+  K --&gt; L[答案引用回跳]</template><div class="mermaid-render" role="img" aria-label="Mermaid 图表" aria-busy="true">图表加载中...</div></figure>
+<p>解析阶段要尽量保留结构。Markdown 可以用语法树解析，HTML 可以保留 h1 到 h6、li、table、pre，PDF 则要尽量恢复标题和页码。解析结果不是一串纯文本，而是一棵文档树。每个节点有 type、text、children、start_offset、end_offset、heading_path。后续切分可以基于这棵树做决策，而不是对纯文本做正则切割。</p>
+<p>候选 chunk 的生成规则要按文档类型调整。技术笔记通常按二级或三级标题切，过长时再按段落拆。API 文档要让 endpoint、参数表、返回值和示例尽量同处一个窗口。事故复盘要让影响、根因、缓解和后续动作分别成为稳定证据，但抽取窗口可以跨这些小节。会议纪要要按议题切，而不是按发言人切，否则关系容易碎掉。</p>
+<p>窗口扩展是 GraphRAG 的关键。假设 canonical chunk 是某个小节下的一段，抽取窗口可以包含 heading path、上一段、下一段、同级列表项和文档摘要。在线引用仍然指向 canonical chunk，但抽取器有更完整语境。这样能同时兼顾“关系抽取需要上下文”和“引用需要精确”。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>实现上不要直接写一个 <code>split(text string) []string</code>。更好的接口是让 splitter 接收文档对象，输出带元数据的 chunk 列表和抽取窗口列表。每个 chunk 至少包含 document_id、chunk_id、heading_path、content、start_offset、end_offset、content_hash、token_count、chunk_type、parent_id。chunk_id 可以用 document stable id、heading anchor、局部序号和内容 hash 组合，避免文档前面加一段话后所有 ID 都变化。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type Chunk struct {
+    DocumentID  string
+    ChunkID     string
+    HeadingPath []string
+    Type        string
+    Text        string
+    StartOffset int
+    EndOffset   int
+    ContentHash string
+    ParentID    string
+}
+
+type ExtractionWindow struct {
+    WindowID   string
+    ChunkIDs   []string
+    PromptText string
+    Scope      string
+}</code></pre></div>
+<p>切分参数要可配置，但不要只暴露 token 数。建议按文档类型配置：最大 token、最小 token、是否合并列表、表格最大行数、代码块是否单独成块、是否附加父标题、窗口前后扩展段落数。配置变更要有版本，因为同一批文档用不同切分版本会产生不同实体和关系。chunk 里记录 splitter_version，后续评测才能解释质量变化。</p>
+<p>对于 Markdown，实践中可以按下面的顺序处理。先用解析器得到标题树；再把叶子 section 下的段落、列表、表格和代码块作为 block；然后按 block 组合成 chunk，保证不跨越高层标题；遇到超长 section，再按段落拆，并把标题路径复制到每个 chunk。表格要特别处理，不能把表头和行分开。代码块通常不适合作为实体关系抽取的主要来源，但对接口、配置、错误码检索很重要，所以可以作为独立 chunk，并和前后说明建立 sibling 关系。</p>
+<p>PDF 和幻灯片更麻烦。它们的结构不可靠，切分前最好做版面恢复和页内块排序。对于扫描版材料，OCR 的错误会影响实体抽取，所以要给 chunk 加 text_quality 分数。低质量 chunk 可以进入向量召回，但不直接写强关系。否则一个 OCR 错字可能把服务名抽错，后面实体消歧很难处理。</p>
+<p>增量更新时，切分稳定性很重要。如果每次保存文档都重新编号 chunk，实体 evidence、引用链接、用户反馈都会失效。可以先按 heading anchor 和 block hash 匹配旧 chunk，内容轻微变化时保留 chunk_id 并更新版本；结构大改时才生成新 chunk_id。删除的 chunk 不要立刻物理删除，先标记 inactive，让历史答案和评测样本还能回放。</p>
+<h2 id="文档类型策略">文档类型策略</h2>
+<p>切分策略真正落地时，最容易犯的错是希望一个参数适配所有材料。团队知识库里有设计文档、接口文档、事故复盘、会议纪要、周报、代码注释和产品需求，它们承载关系的方式完全不同。GraphRAG 要抽的是关系，不只是文本，所以切分器必须理解文档类型。类型识别可以来自路径、front matter、标题模式，也可以来自轻量分类器，但不要让所有文档都走同一条固定 token 流水线。</p>
+<p>ADR 或架构决策文档的核心关系通常在 Context、Decision、Consequences 三块之间。切分时可以让每块成为独立证据，同时给抽取窗口包含相邻块。这样系统既能引用“最终决策”那一段，也能在抽关系时看到原因和后果。ADR 里的状态字段也很重要，Proposed、Accepted、Deprecated 会影响关系是否参与线上回答。一个废弃 ADR 可以保留历史解释价值，但不能作为当前事实的高权重证据。</p>
+<p>事故复盘的切分要围绕时间线。Impact、Detection、Root Cause、Mitigation、Follow-up 分别适合成为证据块，但关系抽取需要把它们连成 IncidentEvent。不要把整篇复盘切成几个等长块，否则根因和缓解动作可能断开。事故类文档还要保留时间戳、影响范围和指标单位。用户问“为什么延迟升高影响了检索质量”时，系统需要从时间线里找因果，而不是只找包含“延迟”和“检索”的片段。</p>
+<p>API 文档则不同。它最重要的是结构完整：endpoint、参数表、错误码、返回示例、权限要求。表格和代码示例要和说明保持局部连接。一个参数行本身可能很短，但离开表头就没有意义；一个返回示例很长，但离开 endpoint 就无法引用。对 API 文档，切分器应把 endpoint 作为 parent，下面的参数、示例和错误码作为子 chunk，在线召回时可以按需展开 parent。</p>
+<p>会议纪要最难，因为它常常混合讨论、决定和待办。按发言人切通常没用，按议题切更合适。每个议题下可以进一步标记 discussion、decision、action item。GraphRAG 抽取关系时，decision 和 action item 的权重要高于普通 discussion。否则一次开放讨论里的猜测会被写成事实关系。对于会议纪要，抽取 prompt 也要特别强调“只有明确结论才能形成强关系”。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">文档类型</th><th scope="col">推荐切分锚点</th><th scope="col">抽取窗口</th><th scope="col">特别注意</th></tr></thead><tbody><tr><td>ADR</td><td>Context、Decision、Consequences</td><td>相邻决策块</td><td>状态和废弃时间</td></tr><tr><td>事故复盘</td><td>时间线和复盘小节</td><td>事件全链路</td><td>根因与缓解不要断开</td></tr><tr><td>API 文档</td><td>endpoint 和表格</td><td>parent endpoint</td><td>表头、示例、权限</td></tr><tr><td>会议纪要</td><td>议题和结论</td><td>同议题范围</td><td>区分讨论和决定</td></tr><tr><td>周报</td><td>项目和时间窗口</td><td>同项目条目</td><td>避免跨项目连边</td></tr></tbody></table></div>
+<p>文档类型策略还会影响成本。对 API 文档，embedding chunk 可以多一些，因为用户常查具体参数；对架构综述，chunk 可以稍大，因为问题更偏背景理解；对会议纪要，强关系抽取要保守，宁可多保留原文引用。把这些策略写成配置和测试，而不是散落在代码条件里，后续团队才敢继续加新文档类型。</p>
+<h2 id="实战补充一次切分事故的复盘">实战补充：一次切分事故的复盘</h2>
+<p>切分问题通常不会以“切分器坏了”的形式暴露，而是表现为回答变长、引用变粗、关系变多。一个典型事故是团队把 Markdown splitter 从按标题切换成固定 token 切分，原因是长文档里有些 section 太大，向量召回不够精确。上线后短问题的召回确实变好，但 GraphRAG 的关系质量开始下降：会议纪要里不同议题被切到同一个窗口，抽取器把“讨论了权限策略”和“决定重做浏览器回放”连成因果；ADR 的 Context 和 Decision 被拆开，系统只能看到决策，找不到理由。</p>
+<p>排查时不要先改模型，而要把切分版本带进 trace。对比旧版和新版的同一篇文档，可以看到 chunk 数量增加了，但 heading_path 缺失，表格表头重复不完整，很多 relation evidence 指向的 chunk 只包含半句话。更关键的是，弱关系比例从可控范围突然上升，社区发现出现几个包含多个项目的混合社区。这说明固定 token 不只是改变召回粒度，还改变了图谱结构。</p>
+<p>修复方案不是回到原点，而是把两种需求分开。在线检索需要更细的引用窗口，离线抽取需要完整的语义窗口。最终做法是保留结构化 canonical chunk，把过长 section 拆成段落级证据；同时为抽取生成 extraction window，自动附加父标题、相邻段落和同一决策块的摘要。向量索引用细 chunk，关系抽取用扩展窗口，关系 evidence 落回细 chunk。这样短问题召回和关系完整性可以同时改善。</p>
+<p>这类事故还暴露了一个团队协作细节：切分配置不应该由检索工程单独决定。内容作者知道文档结构，平台工程知道解析限制，RAG 工程知道抽取和引用需求。每次 splitter 版本变更前，应该让三方共同看黄金文档 diff，尤其关注未修改区域的 chunk_id 稳定率、关键关系是否还在窗口内、表格和列表是否完整。切分看似底层，其实会影响写作规范和知识库可维护性。</p>
+<p>上线后我会给切分层加几个报警。第一，某个 splitter 版本产生的平均 chunk 数突然上升或下降。第二，关系候选里的 evidence 文本过短比例上升。第三，同一文档内跨标题关系比例异常。第四，引用点击后用户停留时间很短又反馈无帮助。最后一个指标不完全精确，但常常能提示引用窗口过大或证据不可读。GraphRAG 的切分质量应该进入日常观测，而不是只在离线评测里看一次。</p>
+<p>还有一个实践细节是为内容作者提供预览。作者提交长文前，可以看到这篇文章会被切成哪些 chunk、每个 chunk 的标题路径是什么、哪些表格被拆分、哪些段落会进入同一个抽取窗口。很多问题在写作阶段就能修掉，例如标题层级不清、列表过长、一个小节里混入多个决策。切分器越透明，内容质量越容易协同提升。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>切分策略要用评测驱动，不要凭感觉。第一类指标是结构保真：标题路径是否正确，表格是否完整，代码块是否闭合，列表是否被打散。第二类指标是抽取质量：关键实体召回率、关系证据命中率、无证据关系比例。第三类指标是检索质量：问题能否召回正确 chunk，召回 chunk 是否太长或太短。第四类指标是引用体验：用户点开引用后，能否在可见区域找到答案依据。</p>
+<p>可以准备一批“切分黄金文档”：一篇 ADR、一篇事故复盘、一篇 API 文档、一篇会议纪要、一篇长篇技术笔记。人工标注每篇文档的推荐 chunk 边界、关键实体、关键关系和引用片段。每次调整 splitter，都在这批文档上跑 diff：新增了哪些 chunk，哪些 chunk ID 变化，哪些关键关系丢了，平均 token 是否变化。这个 diff 比单纯看数量有用得多。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">指标</th><th scope="col">计算方式</th><th scope="col">好的信号</th><th scope="col">风险信号</th></tr></thead><tbody><tr><td>chunk 稳定率</td><td>未修改区域 ID 保持比例</td><td>大于 95%</td><td>小改导致全量重建</td></tr><tr><td>关键关系命中</td><td>标注关系 evidence 是否在窗口内</td><td>稳定上升</td><td>上下文太短</td></tr><tr><td>弱关系比例</td><td>无明确 evidence 的关系占比</td><td>可控</td><td>chunk 太大或 prompt 过宽</td></tr><tr><td>引用精度</td><td>答案句对应引用位置</td><td>用户能快速定位</td><td>chunk 跨多个议题</td></tr><tr><td>token 利用率</td><td>最终上下文有效证据占比</td><td>高证据密度</td><td>大量标题和重复内容</td></tr></tbody></table></div>
+<p>线上可以通过 trace 分析切分问题。若用户问题相关实体没有被抽到，先看抽取窗口是否包含完整上下文；若关系路径缺失，检查关系两端是否被切在不同窗口；若答案引用很长，检查 canonical chunk 是否过大；若召回大量同主题但无答案片段，检查切分是否把摘要、目录、重复导航内容也入库了。</p>
+<p>LLM judge 可以用于评价“引用是否足够支持答案句”，但不要让它替代硬检查。offset 是否存在、chunk 是否 active、文档权限是否匹配、证据文本是否在 chunk 中，这些都应该由程序判定。GraphRAG 的可靠性来自很多小硬约束，而不是最后再让模型判断一遍。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一个失败模式是过度重叠。很多团队为了避免切断上下文，把 overlap 设得很大。短期看召回变好了，长期看会产生大量重复实体和重复关系，社区发现也会被重复边影响。GraphRAG 里更好的做法是显式保存 neighbor 或 parent context，而不是把相同文本复制到多个 chunk。</p>
+<p>第二个失败模式是跨主题大 chunk。一篇周报里可能同时有模型升级、成本预算、浏览器自动化和客户反馈。如果按固定长度切成一个大块，抽取器会把不相关实体连起来。后面图谱出现“模型升级影响客户反馈”这种弱关系，在线回答很难过滤。切分时要尊重标题和议题边界，必要时宁可多几个小 chunk。</p>
+<p>第三个失败模式是表格切坏。表格在技术知识库里很重要，里面有参数、责任人、状态、指标。把表头和数据行分开后，抽取器不知道某个值属于哪个字段。处理表格时可以把小表整体保留，大表按行组切，但每个 chunk 都复制表头和标题路径。引用时还要保留行号或原始表格坐标。</p>
+<p>第四个失败模式是忽略文档元数据。很多关系不在正文里，而在路径、文件名、作者、提交时间、标签和 front matter 里。例如 <code>source: NOTES/RAG</code>、date、tags 可能决定文档归属和时效。切分管线要把这些元数据带给抽取器和检索器，但最终引用仍然指向正文证据，避免把标签推断成事实。</p>
+<p>第五个失败模式是切分版本不可追踪。上线后发现答案质量下降，却不知道是模型变了、embedding 变了，还是 splitter 参数变了。每个 chunk、embedding、关系候选、社区摘要都要记录切分版本。没有版本，GraphRAG 的评测就很难复现。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>splitter 基于文档结构树，不直接对纯文本按固定 token 切。</li><li>canonical chunk 用于引用，extraction window 用于实体关系抽取，两者职责分离。</li><li>chunk 记录 heading_path、offset、content_hash、splitter_version、parent_id 和 chunk_type。</li><li>表格、代码块、列表、引用块有专门规则，不被随意截断。</li><li>每种文档类型有独立配置：ADR、复盘、API 文档、会议纪要、技术笔记不共用一个参数。</li><li>增量更新尽量保持未修改 chunk 的 ID，删除内容先 inactive，再按生命周期清理。</li><li>评测覆盖结构保真、关键实体召回、关系 evidence、引用精度和 token 利用率。</li><li>trace 能展示问题召回到的 chunk、抽取窗口、关系 evidence 和引用 offset。</li><li>重叠文本有上限，优先使用 parent/neighbor metadata 补上下文。</li><li>每次 splitter 版本变更都跑黄金文档 diff，并记录对图谱节点和边的影响。</li></ul>
+<h2 id="总结">总结</h2>
+<p>文档切分不是 RAG 的体力活，而是 GraphRAG 的证据设计。chunk 太碎，关系抽不出来；chunk 太大，噪声和引用成本上升；chunk 不稳定，增量索引和历史反馈都会失效。好的切分策略要同时服务离线抽取、在线召回、答案引用和运维回放。</p>
+<p>实践上，从结构解析开始，把文档变成树；再按文档类型生成 canonical chunk；用 extraction window 补足抽取上下文；用稳定 ID 和版本管理支撑增量更新；最后用黄金文档和线上 trace 持续调参。GraphRAG 的很多质量问题，看上去是图谱或模型的问题，往往根子在切分。把这一步做扎实，后面的实体、关系和社区摘要才有可靠地基。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

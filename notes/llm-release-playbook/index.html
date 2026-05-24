@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM 应用发布手册 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="发布 LLM 应用要同时检查模型、数据、评测、成本和回滚。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="LLM 应用发布手册">
+  <meta property="og:description" content="发布 LLM 应用要同时检查模型、数据、评测、成本和回滚。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/llm-release-playbook.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link active" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>LLM 应用发布手册</span></nav>
+          <div class="note-kicker">NOTES / LLM / 070</div>
+          <h1>LLM 应用发布手册</h1>
+          <p>发布 LLM 应用要同时检查模型、数据、评测、成本和回滚。</p>
+          <div class="note-tag-row"><span>Release</span><span>LLM</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/llm-release-playbook.svg" alt="标题图" loading="lazy"><figcaption>LLM 应用发布手册 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>LLM 应用的发布不能只看服务有没有启动、接口有没有返回二百。传统后端发布时，我们关心的是代码路径、数据库迁移、接口兼容和资源容量；LLM 应用还多了几个不断变化的变量：模型版本、提示词版本、上下文装配策略、检索索引、工具描述、结构化输出 schema、采样参数、缓存策略、风控规则和评测集。任何一个变量变化，都可能让相同输入得到不同决策。发布不再是把一段代码推到线上，而是把一组行为假设推给真实用户。</p>
+<p>很多团队第一次上线 LLM 功能时会低估这个复杂度。一个客服总结助手在测试环境表现很好，上线后却把历史工单中的过期政策当成当前政策；一个代码审查助手能指出明显 bug，却在新模型版本下开始输出不存在的文件名；一个运营分析助手在小样本里回答得很完整，到了真实数据上成本突然翻倍，因为上下文拼接多了一段长表格；一个 Agent 能在演示里创建任务，但灰度时对重复请求没有幂等保护，用户刷新页面就生成了两个工单。这些问题不一定来自模型能力差，更多时候来自发布流程没有把模型行为当成可管理的生产资产。</p>
+<p>LLM 发布的难点在于“变化来源分散，失败形态隐蔽”。提示词改一行，可能影响工具选择；检索重排阈值变一点，可能让证据缺失；模型升级后，结构化输出更流畅，但某个枚举字段开始使用同义词；缓存命中率提高后，用户看到的是旧策略生成的回答；成本预算看似正常，但失败重试消耗集中在少数长尾请求上。更麻烦的是，这些问题很多不会以异常形式出现。模型会给出一段自然、礼貌、看似合理的答案，日志里没有 panic，用户却已经被错误建议影响了业务判断。</p>
+<p>发布手册的价值，就是把这些隐蔽风险变成一组可以检查、可以阻断、可以回滚的工程动作。它不是为了拖慢迭代，而是为了让迭代更可持续。LLM 应用的早期探索当然需要快，但一旦它进入用户工作流，尤其是会读企业数据、调用内部工具、影响客户沟通或生成可复制内容，就必须有比“我试了几个例子还行”更硬的门槛。发布手册应该让团队在每次变更前回答清楚：这次到底改了什么，影响哪些能力，评测有没有覆盖，成本会不会失控，失败能不能降级，出事后能不能回到上一个稳定版本。</p>
+<p>我更倾向于把 LLM 应用发布拆成“行为发布”，而不是“模型发布”。模型只是其中一层。一次发布可能没有换模型，只改了系统提示词；也可能没有改 prompt，只更新了知识库索引；还可能只是把 <code>temperature</code> 从零调到零点二，或者把工具描述中的一个参数说明写得更明确。对用户来说，这些都是行为变化。发布手册要围绕行为变化管理风险，而不是围绕某个技术组件自我安慰。</p>
+<p>一个实际例子是企业知识库问答系统。它的主流程包括用户问题归一化、权限过滤、混合检索、上下文重排、引用拼接、模型生成、答案审查和反馈收集。某次发布只改了重排策略，把“按语义相似度优先”改成“语义分加时间新鲜度”。这看起来是检索优化，不涉及模型。但评测后发现，历史制度解释类问题变差了，因为一些旧制度虽然时间早，却是仍然有效的主文档；新鲜度权重让会议纪要排到制度原文前面。没有发布手册，这类问题很容易被归因成“模型最近不稳定”。有了手册，就会在发布前要求对核心问题、冲突知识、引用准确性和新旧文档关系做回归。</p>
+<p>发布手册还要处理组织协作。LLM 应用通常跨产品、算法、后端、前端、安全、运营和业务团队。提示词可能由产品改，模型网关由平台维护，知识库由业务上传，工具接口由后端提供，评测样本由运营标注。如果没有统一发布单，大家看到的只是自己负责的一小段。上线前的真实风险来自组合。发布手册的作用是把组合风险落到一个共同界面上：版本清单、变更说明、评测报告、灰度策略、观测指标、回滚入口和负责人。</p>
+<p>所以这篇文章讨论的不是一个宏大的流程管理制度，而是一个工程团队真正可以执行的 LLM 发布 playbook。它应该足够具体，能写进仓库，能进入 CI，能绑定发布平台，也能在事故复盘时拿出来对照。好的手册有两个特征：一是发布前能阻止明显风险，二是发布后能缩短定位时间。只要做到这两点，它就不是形式主义。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>LLM 应用发布首先要定义“发布单元”。在传统服务里，发布单元通常是一个镜像、一个二进制或一组配置。LLM 应用里，发布单元应该是行为相关资产的组合，包括代码版本、模型版本、prompt 版本、schema 版本、工具目录版本、检索索引版本、评测集版本、策略版本和运行参数。只有把这些一起记录，线上 trace 才能解释“这次回答到底由什么东西生成”。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">发布资产</th><th scope="col">常见变化</th><th scope="col">主要风险</th><th scope="col">发布前检查</th></tr></thead><tbody><tr><td>模型版本</td><td>升级能力、切换供应商、调整路由</td><td>输出风格变化、成本变化、延迟变化</td><td>模型对比评测、预算压测、长尾样本回归</td></tr><tr><td>Prompt 版本</td><td>修改任务说明、工具说明、拒答规则</td><td>行为漂移、目标冲突、格式不稳</td><td>golden set、结构化输出校验、人工抽检</td></tr><tr><td>Schema 版本</td><td>增删字段、调整枚举、升级 JSON Schema</td><td>下游解析失败、旧客户端不兼容</td><td>契约测试、迁移策略、兼容窗口</td></tr><tr><td>上下文策略</td><td>检索阈值、重排、压缩、引用格式</td><td>缺证据、证据冲突、上下文超预算</td><td>召回评测、引用评测、token 预算评估</td></tr><tr><td>工具目录</td><td>新增工具、参数变更、权限策略</td><td>越权、误写、重复副作用</td><td>沙箱执行、幂等测试、确认策略检查</td></tr><tr><td>缓存策略</td><td>缓存键、TTL、语义缓存</td><td>旧答案、跨用户泄露、评测污染</td><td>缓存隔离测试、失效测试、权限维度检查</td></tr><tr><td>评测集</td><td>新增事故样本、调整评分器</td><td>误判发布质量、指标不可比</td><td>样本版本冻结、评分器校准、变更说明</td></tr></tbody></table></div>
+<p>第二个概念是风险分级。不是所有 LLM 功能都需要同样重的发布流程。一个个人草稿润色工具和一个自动发送客户邮件的 Agent，风险完全不同。分级的关键不是模型大小，而是业务后果。可以从四个维度判断：是否读取敏感数据，是否执行写操作，是否影响外部用户，是否替代人工决策。风险越高，发布门槛越强，灰度越慢，回滚越容易触发。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">风险等级</th><th scope="col">典型场景</th><th scope="col">发布门槛</th><th scope="col">运行约束</th></tr></thead><tbody><tr><td>R0</td><td>内部辅助草稿、无外部副作用</td><td>冒烟评测、基本成本限制</td><td>明确标记为草稿</td></tr><tr><td>R1</td><td>知识库问答、总结、分类建议</td><td>回归集、引用校验、权限过滤</td><td>答案需可追溯</td></tr><tr><td>R2</td><td>生成业务材料、影响内部流程</td><td>人工抽检、灰度、错误预算</td><td>关键动作需确认</td></tr><tr><td>R3</td><td>自动写入系统、外发消息、财务或法务建议</td><td>安全评审、沙箱演练、强回滚</td><td>默认人工审批，严格审计</td></tr></tbody></table></div>
+<p>第三个概念是发布闸门。发布闸门不是一句“测试通过”，而是一组针对 LLM 行为的门槛。最基础的闸门包括：关键样本不能回归，结构化输出必须满足 schema，拒答和澄清策略不能被绕过，敏感数据不能出现在不该出现的字段，成本和延迟不能超过预算，工具调用不能违反权限，引用必须能回到原文。闸门要分成阻断项和提醒项。阻断项失败就不能发，提醒项可以带着说明发布，但要有负责人和观察指标。</p>
+<p>第四个概念是灰度。LLM 灰度不只是把百分之一流量打到新版本。更有用的灰度包括影子运行、只读运行、人工审核运行和小流量真实运行。影子运行让新版本读取同样请求但不影响用户，方便比较输出；只读运行允许模型规划但禁止工具写入；人工审核运行让高风险动作先进入队列；小流量真实运行再观察业务指标和反馈。灰度阶段要记录对比结果，而不是只看系统有没有报错。</p>
+<p>第五个概念是回滚。LLM 回滚比传统代码回滚更细。你可能只需要回滚模型路由，不需要回滚代码；也可能只需要回滚 prompt，不需要回滚检索索引；还可能需要清理语义缓存，避免旧答案继续命中。发布手册里必须写清楚每个资产的回滚方法、预计耗时和数据影响。没有回滚演练的发布，不应该进入高风险场景。</p>
+<p>第六个概念是可观测性绑定。发布不是完成在部署按钮按下的那一刻，而是完成在新版本通过观察窗口之后。每个发布都应该绑定 trace 标签，例如 <code>release_id</code>、<code>app_version</code>、<code>prompt_version</code>、<code>model_version</code>、<code>index_version</code>。线上指标要按版本切分，否则你看到的平均成功率会掩盖灰度版本的失败。对于 LLM 应用，关键指标至少包括 schema 失败率、重试率、拒答率、澄清率、工具错误率、人工接管率、用户负反馈率、平均 token、P95 延迟和单位请求成本。</p>
+<p>最后是变更说明。LLM 应用的发布说明不能只写“优化回答效果”。这种说明在事故里没有任何价值。更好的说明应该包含：本次变更的动机、改动资产、预期收益、已知风险、评测结论、灰度计划、回滚策略、观测窗口和负责人。说明不是写给管理者看的，是写给下一位排查线上问题的工程师看的。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一套可执行的 LLM 发布流程，可以画成下面这条主线：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">变更提出
+  |
+  v
+发布清单生成：代码、模型、prompt、schema、工具、索引、策略、评测集
+  |
+  v
+本地验证：单元测试、契约测试、样本回放、成本估算
+  |
+  v
+离线评测：核心集、事故回归集、对抗集、长上下文集
+  |
+  v
+发布评审：风险分级、阻断项、人工抽检、回滚方案
+  |
+  v
+灰度阶段：影子运行 -&gt; 只读运行 -&gt; 人工审核 -&gt; 小流量
+  |
+  v
+生产观察：版本维度指标、trace 抽样、用户反馈、成本预算
+  |
+  v
+放量或回滚：达标放量，异常按资产级别回滚并补样本</code></pre></div>
+<p>这张图最容易被忽略的是“发布清单生成”。很多线上事故排查的第一小时都浪费在确认“当时到底跑的是哪个版本”。如果同一次发布里 prompt 来自对象存储、模型路由来自配置中心、知识索引来自向量库、工具 schema 来自后端代码，而 trace 里只记录了服务镜像，那么排查会非常痛苦。发布清单应该在发布前就固化，发布后写入每条请求的 trace。</p>
+<p>可以把发布系统拆成三个面：控制面、执行面和观察面。控制面管理发布单、版本资产、评测报告和审批状态；执行面把用户请求路由到指定版本，并执行模型调用和工具调用；观察面收集 trace、指标、反馈和成本。三者之间通过 <code>release_id</code> 串联。这样一来，当某个版本出现引用错误、成本上涨或工具误调用时，可以快速回到发布单，看它改了什么、谁批准、评测怎么过的、灰度在哪一步开始异常。</p>
+<p>更细一点，一次请求在灰度期间应该经过这样的版本决策：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">request
+  -&gt; identify tenant/user/risk level
+  -&gt; match release policy
+  -&gt; choose stable version and candidate version
+  -&gt; maybe run shadow candidate
+  -&gt; run stable response or candidate response
+  -&gt; compare outputs if shadow
+  -&gt; write trace with release_id and decision_reason</code></pre></div>
+<p>影子运行不是简单地复制请求调用新模型。它要尊重权限、上下文、工具和成本。对于只读任务，可以让候选版本完整生成答案，然后与稳定版本比较；对于有副作用的工具任务，候选版本只能调用 mock 工具或沙箱工具，不能真正写入生产系统。影子运行的输出不展示给用户，但可以进入评测报告。它尤其适合验证模型升级、prompt 重写和上下文策略调整。</p>
+<p>发布流程里还应该有一个“阻断矩阵”。不同风险等级对应不同阻断项。举例来说，R1 知识问答可以允许少量语言风格变化，但不能允许引用缺失；R2 业务材料生成可以允许总结措辞不同，但不能允许关键事实错；R3 自动写入必须把所有未经确认的写操作视为发布阻断。矩阵越具体，发布评审越少依赖个人感觉。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">阻断项示例
+  R1: schema 失败率 &gt; 1%，引用命中率下降 &gt; 3%，权限过滤失败任意一例
+  R2: 核心样本回归任意一例，高风险标签漏判任意一例，人工抽检严重问题任意一例
+  R3: 写工具无确认任意一例，幂等测试失败任意一例，回滚演练未完成</code></pre></div>
+<p>这不是说每个团队都要从第一天建立完整平台。早期可以用 Markdown 发布单、命令行评测和人工表格开始。但架构上要坚持三个原则：版本可追踪、评测可重复、回滚可执行。只要这三个原则在，流程可以逐步自动化；如果这三个原则不在，再漂亮的发布面板也只是装饰。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>工程落地的第一步，是给每次发布生成一个不可含糊的 <code>ReleaseManifest</code>。它不一定一开始就存在数据库里，放在仓库或对象存储都可以，但字段要足够覆盖行为资产。下面是一个 Go 风格的数据结构示例：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type ReleaseManifest struct {
+    ReleaseID       string            `json:&quot;release_id&quot;`
+    App             string            `json:&quot;app&quot;`
+    RiskLevel       string            `json:&quot;risk_level&quot;`
+    CodeRevision    string            `json:&quot;code_revision&quot;`
+    ModelRoutes     []ModelRoute      `json:&quot;model_routes&quot;`
+    PromptVersions  map[string]string `json:&quot;prompt_versions&quot;`
+    SchemaVersions  map[string]string `json:&quot;schema_versions&quot;`
+    ToolCatalogHash string            `json:&quot;tool_catalog_hash&quot;`
+    IndexVersions   map[string]string `json:&quot;index_versions&quot;`
+    PolicyVersion   string            `json:&quot;policy_version&quot;`
+    EvalSuite       EvalSuiteRef      `json:&quot;eval_suite&quot;`
+    RollbackPlan    RollbackPlan      `json:&quot;rollback_plan&quot;`
+    Owner           string            `json:&quot;owner&quot;`
+    CreatedAt       time.Time         `json:&quot;created_at&quot;`
+}
+
+type ModelRoute struct {
+    Task       string  `json:&quot;task&quot;`
+    Model      string  `json:&quot;model&quot;`
+    Weight     float64 `json:&quot;weight&quot;`
+    MaxTokens  int     `json:&quot;max_tokens&quot;`
+    Temperature float64 `json:&quot;temperature&quot;`
+}
+
+type EvalSuiteRef struct {
+    CoreSetVersion       string `json:&quot;core_set_version&quot;`
+    RegressionSetVersion string `json:&quot;regression_set_version&quot;`
+    ScorerVersion        string `json:&quot;scorer_version&quot;`
+    ReportURI            string `json:&quot;report_uri&quot;`
+}
+
+type RollbackPlan struct {
+    StableReleaseID string   `json:&quot;stable_release_id&quot;`
+    Steps           []string `json:&quot;steps&quot;`
+    CachePurgeKeys  []string `json:&quot;cache_purge_keys&quot;`
+    MaxMinutes      int      `json:&quot;max_minutes&quot;`
+}</code></pre></div>
+<p>这个 manifest 的重点不是字段多，而是它把“模型行为相关的东西”放在一个对象里。发布平台可以读取它，运行时可以把它注入 trace，评测系统可以把它作为基线，事故复盘可以回放它。字段可以随着团队成熟继续扩展，例如加入数据脱敏策略、输出安全策略、客户白名单、灰度比例和审计链接。</p>
+<p>第二步是把 prompt、schema 和工具目录版本化。不要只把 prompt 写在代码常量里，也不要让产品同学在管理后台直接改线上 prompt 而不留下版本。一个实用做法是把 prompt 文件放在仓库或配置仓库中，每次变更有 diff、有 reviewer、有版本号。运行时加载 prompt 时记录 <code>prompt_name</code> 和 <code>prompt_version</code>。schema 也类似，最好用 JSON Schema 或强类型结构定义，并在模型输出后做解析和业务校验。</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">prompt:
+  name: support_summary
+  version: 2026-03-14.3
+  task: summarize_ticket
+  required_schema: support_summary.v2
+  allowed_tools:
+    - ticket.get
+    - policy.search
+  forbidden:
+    - 输出未引用的政策条款
+    - 把内部备注写给客户</code></pre></div>
+<p>第三步是让发布前验证可以在本地和 CI 都运行。最低要求包括四类测试。契约测试检查 schema、枚举、字段兼容和下游解析。样本回放测试用固定输入和固定 fixture 跑核心样本。工具测试在沙箱里验证参数、权限、幂等和超时。成本测试估算 token、模型调用次数、重试次数和 P95 延迟。CI 不一定跑完整大评测，但至少要跑轻量阻断集。完整评测可以在发布候选生成后运行。</p>
+<p>第四步是实现灰度开关。开关不要只按百分比，还要按租户、用户、任务、风险等级和入口拆分。一个知识库应用可能先对内部员工开放新版本，再对低风险文档开放，再对所有文档开放。一个 Agent 应用可能先只开放只读计划，再开放人工确认写操作。灰度策略需要可解释，trace 里要记录这次请求为什么进入候选版本。</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;release_id&quot;: &quot;rel_2026_0314_02&quot;,
+  &quot;mode&quot;: &quot;shadow&quot;,
+  &quot;rules&quot;: [
+    {&quot;tenant&quot;: &quot;internal&quot;, &quot;task&quot;: &quot;kb_qa&quot;, &quot;percent&quot;: 100},
+    {&quot;tenant&quot;: &quot;beta_customers&quot;, &quot;task&quot;: &quot;kb_qa&quot;, &quot;percent&quot;: 10},
+    {&quot;risk&quot;: &quot;write_action&quot;, &quot;mode&quot;: &quot;review_required&quot;}
+  ],
+  &quot;fallback_release_id&quot;: &quot;rel_2026_0308_01&quot;
+}</code></pre></div>
+<p>第五步是设计回滚入口。回滚不能依赖“知道系统的人手动改几处配置”。至少要有一条命令或一个按钮，把候选版本流量切回稳定版本，并按计划清理相关缓存。如果这次发布改了索引，回滚要指定旧索引版本；如果改了 schema，回滚要确认旧客户端仍然能解析；如果改了模型路由，回滚要确认配额和速率限制还够。高风险系统还应该定期演练回滚，避免发布当天才发现旧 prompt 已被覆盖。</p>
+<p>第六步是把发布和可观测性接起来。每次模型调用都应该记录下面这些字段：<code>release_id</code>、<code>app_version</code>、<code>prompt_version</code>、<code>schema_version</code>、<code>model</code>、<code>input_tokens</code>、<code>output_tokens</code>、<code>latency_ms</code>、<code>cache_hit</code>、<code>context_refs</code>、<code>tool_calls</code>、<code>validation_errors</code>、<code>fallback_reason</code>。这些字段不需要都暴露给用户，但必须能在排查时聚合。没有版本维度的平均指标没有太大意义。</p>
+<p>一个可执行的发布单可以长这样：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">项目</th><th scope="col">内容</th></tr></thead><tbody><tr><td>发布目标</td><td>降低知识库问答中旧政策误引用，提升新政策召回</td></tr><tr><td>改动资产</td><td>reranker v5、prompt support_qa 2026-03-14.3、index policy_20260314</td></tr><tr><td>风险等级</td><td>R1，读取内部文档但无写操作</td></tr><tr><td>评测结论</td><td>核心集 248/248 通过，事故集 39/40 通过，一例转人工确认</td></tr><tr><td>成本影响</td><td>平均 token 增加 6.8%，P95 延迟增加 120ms</td></tr><tr><td>灰度计划</td><td>内部全量两小时，beta 租户百分之十一天，全量待观察</td></tr><tr><td>回滚策略</td><td>切回 rel_2026_0308_01，清理 qa_semantic_cache:policy:*</td></tr><tr><td>负责人</td><td>应用 owner、平台 owner、业务验收人</td></tr></tbody></table></div>
+<p>工程实现的重点是把这些内容变成系统事实，而不是文档愿望。发布单写完后，CI 应该能关联评测报告；运行时应该能加载发布策略；监控面板应该能按 release_id 展示；回滚工具应该能读取 manifest。这样发布手册才会真正进入日常工程，而不是停留在团队 wiki。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>LLM 发布前的评测要分层，不要指望一个总分解决所有问题。我通常把发布评测拆成六类：核心能力、事故回归、边界安全、上下文质量、工具行为和成本性能。每一类都服务不同问题。核心能力回答“主路径还好吗”，事故回归回答“修过的问题有没有回来”，边界安全回答“危险情况会不会乱答”，上下文质量回答“证据是否正确”，工具行为回答“行动是否合规”，成本性能回答“上线后是否扛得住”。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">评测类型</th><th scope="col">样本来源</th><th scope="col">关键指标</th><th scope="col">发布门槛</th></tr></thead><tbody><tr><td>核心能力集</td><td>产品定义的关键路径</td><td>任务成功率、字段正确率</td><td>不能低于稳定版本</td></tr><tr><td>事故回归集</td><td>历史线上失败和复盘</td><td>失败复现修复率</td><td>阻断级事故不能回归</td></tr><tr><td>边界安全集</td><td>对抗输入、敏感请求、越权场景</td><td>拒答率、澄清率、泄露率</td><td>任意泄露阻断</td></tr><tr><td>上下文质量集</td><td>检索和引用样本</td><td>证据召回、引用准确、冲突处理</td><td>引用错误不能增加</td></tr><tr><td>工具行为集</td><td>沙箱工具和 fixture</td><td>工具选择、参数、幂等、确认</td><td>高风险动作必须确认</td></tr><tr><td>成本性能集</td><td>长输入、批量请求、真实分布</td><td>token、延迟、重试、缓存命中</td><td>不超过预算阈值</td></tr></tbody></table></div>
+<p>核心能力集要稳定，不要每次发布都大改。它应该覆盖产品承诺的主要能力，例如知识问答、工单总结、意图分类、结构化提取、报告生成。每个样本要有明确评价方式。对于结构化输出，可以直接断言字段；对于开放文本，可以检查必要事实、禁止事实、引用和人工 rubric。核心集不是越大越好，关键是代表性和长期可比。</p>
+<p>事故回归集要持续增长。每次线上出现重要失败，都应该被转成最小可复现样本。转样本时要保留原始输入、当时上下文、相关文档版本、模型输出、人工正确答案和失败分类。不要只保存一句“这个问题答错了”。将来发布时，系统要能在固定条件下回放它。事故样本的价值不只在防止重复失败，还在帮助团队理解风险分布。</p>
+<p>边界安全评测要覆盖 prompt injection、数据越权、敏感信息、外部发送、财务法务医疗等高风险建议。一个常见误区是只在系统 prompt 里写“不要泄露敏感信息”，却不评测用户把恶意指令放进文档、日志或工具返回里的场景。发布前应该用包含嵌入指令的检索文档测试上下文隔离。模型应该把文档内容当作证据，而不是当作系统指令。</p>
+<p>上下文质量评测要和检索系统一起跑。对于 RAG 类应用，只评最终答案是不够的。要记录召回了哪些文档、重排后哪些片段进入上下文、答案引用了哪些证据、证据是否支持结论。发布如果改了索引、切分、重排或上下文压缩，必须跑这类评测。否则你可能看到答案流畅度提高，却没有发现引用链断了。</p>
+<p>工具行为评测要在沙箱中执行。对于会写入的 Agent，评测不能只看模型计划调用哪个工具，还要执行 mock 工具并验证参数。比如创建工单工具必须带租户、幂等键、风险等级和用户确认 ID；发送消息工具必须区分内部频道和外部客户；数据库查询工具必须检查权限过滤。工具评测的重点是副作用边界，而不是自然语言解释。</p>
+<p>成本性能评测经常被拖到上线后才发现问题，这是很危险的。LLM 成本不是平均 token 一项决定的，还包括模型路由、重试、长上下文、工具循环、缓存未命中和用户二次追问。发布前至少要估算每类任务的平均成本、P95 成本、失败重试成本和最大上下文成本。如果候选版本让平均质量提高一点，但成本翻倍，团队需要明确这是业务上愿意接受的取舍。</p>
+<p>评测报告最好给出“相对稳定版本”的对比，而不是孤立分数。下面是一个简化报告结构：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">release rel_2026_0314_02 vs rel_2026_0308_01
+
+核心集：248/248 -&gt; 248/248
+事故集：36/40 -&gt; 39/40
+引用准确率：94.2% -&gt; 96.8%
+schema 失败率：0.7% -&gt; 0.2%
+平均成本：0.018 元 -&gt; 0.021 元
+P95 延迟：2.1s -&gt; 2.3s
+阻断项：无
+提醒项：长文档样本 token 增加，需要灰度观察</code></pre></div>
+<p>人工评测也要结构化。评审者不应该只写“更好”或“还行”，而应该按事实正确性、证据充分性、行动建议、语气、风险提示给出分项结论。人工评测的样本量可以不大，但要覆盖高风险场景。对于 R2、R3 功能，发布前抽检不是浪费时间，而是把人类判断放在最应该出现的位置。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>LLM 发布的失败模式很多，最危险的是那些看起来像成功的失败。第一类是行为漂移。发布前团队只验证了几个主路径，模型在这些样本上回答更自然，但对边界输入开始过度自信。比如用户问“不确定是不是应该升级事故”，旧版本会澄清影响范围，新版本直接建议 P1。行为漂移通常来自 prompt 目标变化、模型升级或评测样本过窄。应对方法是把澄清、拒答、风险分级这些“非回答行为”纳入评测，而不是只奖励完成度。</p>
+<p>第二类是引用失真。RAG 应用发布后，答案仍然给出引用，但引用并不支持结论。造成原因可能是切分改变、重排策略改变、上下文压缩丢失限定条件，或者模型把两个文档的内容拼在一起。引用失真比没有引用更难发现，因为界面看起来很可靠。发布前要做 citation-level 检查，至少对关键结论验证引用片段是否包含支撑事实。</p>
+<p>第三类是结构化输出兼容失败。模型输出 JSON 通过了语法解析，但字段语义不符合下游约定。例如 <code>risk_level</code> 本来只能是 <code>low</code>、<code>medium</code>、<code>high</code>，新 prompt 让模型输出了 <code>critical</code>；或者 <code>confidence</code> 从零到一的小数变成了百分数字符串。很多时候这种问题不会在模型层报错，而是在下游统计、排序或规则引擎里放大。schema 要有强校验，发布要有兼容策略。</p>
+<p>第四类是工具副作用失控。新增工具后，模型可能在不需要时调用它，或者把只读查询和写入操作混在一起。更隐蔽的是重复副作用：模型第一次调用超时，重试后创建了重复资源；用户刷新页面后旧请求再次执行；灰度影子运行误接了生产写工具。所有写工具都要有幂等键、权限检查、确认策略和 dry-run 环境。发布手册必须把写工具作为高风险资产。</p>
+<p>第五类是缓存污染。语义缓存和响应缓存能降低成本，但发布时容易产生旧答案继续命中、新旧版本混用、跨权限缓存泄露等问题。缓存键必须包含影响输出的版本和权限维度，例如 prompt version、model route、index version、tenant、user role、policy version。发布回滚时也要考虑是否清理缓存，否则你以为回滚了，用户仍然看到候选版本答案。</p>
+<p>第六类是评测污染。团队为了让发布通过，不自觉地把评测样本写进 prompt，或者只针对失败样本手工调参，导致评测分数上升但泛化变差。另一种污染是 LLM judge 和被测模型同源，评审器偏好被测模型的表达。应对方法是保留盲测样本、限制 prompt 中出现评测答案、定期人工校准评分器，并把线上失败持续引入回归集。</p>
+<p>第七类是成本阶跃。一次小改动可能让模型多调用一个工具、多做一次重写、上下文多放两千 token。单次请求成本增加看似不多，叠加高峰流量和重试后会变成明显账单。成本失败不只是钱的问题，也会拖慢响应并触发限流。发布前要看分位数和长尾，不要只看平均值。</p>
+<p>第八类是观察盲区。发布后用户反馈变差，但 trace 里没有足够信息定位。比如没有记录候选版本、没有记录检索片段、没有记录工具参数、没有记录 schema 校验错误。观察盲区会把小事故拖成大事故。发布手册要把观测字段作为发布门槛，如果新版本没有可追踪性，就不应该进入真实流量。</p>
+<p>还有一种组织层面的失败：没有明确 owner。LLM 应用跨团队时，模型输出错了归算法，工具写错了归后端，知识库过期归业务，用户体验归产品。事故里最怕这种推诿。发布单必须有一个应用 owner 对端到端行为负责，同时列出各资产 owner。责任不是为了追责，而是为了让问题有人能快速决策。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<p>下面这份 checklist 可以按风险等级裁剪，但高风险项目不要轻易删除。它的目的不是制造流程，而是让发布前的关键问题显性化。</p>
+<ul><li>发布单已生成，包含 <code>release_id</code>、代码版本、模型版本、prompt 版本、schema 版本、工具目录版本、索引版本、策略版本和评测集版本。</li><li>本次变更的动机、范围、预期收益、已知风险和负责人已写清楚，不能只写“优化效果”。</li><li>风险等级已确认，读取敏感数据、执行写操作、影响外部用户和替代人工决策的场景已单独标记。</li><li>核心能力集已通过，并与上一个稳定版本做对比，没有未解释的主路径回归。</li><li>历史事故回归集已通过，所有阻断级事故样本没有重新失败。</li><li>结构化输出 schema 校验通过，下游兼容性和字段枚举变化已验证。</li><li>检索、引用和上下文装配已评测，关键结论可以回到原文证据。</li><li>Prompt injection、敏感信息、越权访问和拒答场景已覆盖。</li><li>所有写工具都有权限检查、幂等键、确认策略、超时和重试边界。</li><li>影子运行或只读灰度计划已配置，高风险副作用不会在影子模式写入生产系统。</li><li>成本预算已评估，平均成本、P95 成本、P95 延迟、重试次数和缓存命中率都有基线。</li><li>线上 trace 已包含 release、prompt、model、schema、index、tool、cost、latency 和 validation 字段。</li><li>监控面板可以按 release_id 切分，负反馈率、人工接管率、schema 失败率、工具错误率和成本都有阈值。</li><li>回滚方案已演练或至少可执行，知道如何回滚模型、prompt、索引、策略和缓存。</li><li>灰度入口、放量规则、观察窗口和停止条件已确认。</li><li>人工验收样本已完成，高风险结果有业务 owner 签字或明确接受。</li><li>发布后的样本回流路径已准备，线上失败可以转成事故回归样本。</li></ul>
+<p>如果团队刚开始做，可以把 checklist 放在 PR 模板或发布单模板里。等流程稳定后，再把其中能自动化的项目接入 CI 和发布平台。不要一开始就追求全自动。LLM 发布里有些判断必须由人做，例如风险是否可接受、业务语气是否合适、某个成本提升是否值得。但凡能由程序验证的事情，尽量不要交给人记忆。</p>
+<p>一个实用的上线节奏是：先在开发环境跑轻量阻断集，再在 staging 跑完整评测和沙箱工具，再对内部用户影子运行，再小流量灰度，再逐步放量。每一步都要有进入条件和退出条件。退出条件尤其重要，例如负反馈率高于稳定版本百分之二十、schema 失败率超过阈值、成本超过预算、工具错误率异常、出现任意敏感泄露，都应该暂停放量或回滚。</p>
+<p>发布后也不要马上关掉观察。LLM 问题常常在长尾流量里出现，尤其是跨语言、长上下文、混合附件、权限复杂和用户恶意输入。观察窗口至少覆盖一个业务周期。对于内部工具，可能是一到两天；对于客户面产品，可能需要更长。观察期结束后，发布单要补充最终结论：是否全量、是否回滚、发现了哪些新样本、后续要修什么。</p>
+<h2 id="总结">总结</h2>
+<p>LLM 应用发布的核心，不是把模型包得更神秘，而是把概率性行为纳入工程纪律。每次发布都应该回答五个问题：改了哪些行为资产，评测覆盖了哪些风险，灰度如何限制影响，线上如何观察，出问题如何回滚。只要这五个问题回答不清楚，发布就还没准备好。</p>
+<p>好的发布手册会让团队更快，而不是更慢。因为它减少了靠感觉争论的时间，减少了线上事故排查的时间，也减少了反复修同一类问题的时间。它把 prompt、模型、数据、工具、评测、成本和回滚放进同一个系统，让每次改动都能被比较和复盘。LLM 应用越靠近真实业务，这套手册越重要。</p>
+<p>最后要记住，发布手册不是一次写完的文档，而是随着事故和经验不断更新的工程资产。每次失败都应该推动 checklist 更具体，评测集更贴近真实，trace 更容易解释，回滚更短。能做到这一点，LLM 应用才会从 demo 走向长期可维护的生产系统。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

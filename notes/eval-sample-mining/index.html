@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>从日志里挖评测样本 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="日志里的失败路径是最好的评测样本来源。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="从日志里挖评测样本">
+  <meta property="og:description" content="日志里的失败路径是最好的评测样本来源。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/eval-sample-mining.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link active" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>从日志里挖评测样本</span></nav>
+          <div class="note-kicker">NOTES / EVAL / 084</div>
+          <h1>从日志里挖评测样本</h1>
+          <p>日志里的失败路径是最好的评测样本来源。</p>
+          <div class="note-tag-row"><span>Logs</span><span>Evals</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/eval-sample-mining.svg" alt="标题图" loading="lazy"><figcaption>从日志里挖评测样本 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多团队第一次做 AI 评测时，会从“设计一批标准问题”开始。这个方向没有错，但如果只靠产品经理和工程师在会议室里想样本，很容易得到一组干净、礼貌、上下文完整、意图明确的题目。真实用户不会这样使用系统。真实输入里有半截句子、错别字、截图 OCR 残留、复制粘贴来的表格、多个目标混在一起的请求、带情绪的追问，以及被上游系统截断的上下文。评测集如果长期停留在理想输入，就会越来越像宣传材料，而不是生产防线。</p>
+<p>日志是最接近真实分布的材料。尤其对 Agent、RAG、客服助手、代码助手、表格问答这类系统来说，用户请求、检索命中、工具调用、模型输出、人工接管、重试和反馈都会在日志里留下痕迹。这里面最有价值的不是成功路径，而是失败路径。一次失败可能暴露一个 prompt 漏洞、一个检索切片缺口、一个工具 schema 设计问题、一个权限边界不清、一个模型在长上下文下的推理退化，甚至是产品流程给用户制造了错误预期。</p>
+<p>“从日志里挖评测样本”的核心目标，是把生产环境里已经发生过、或者差点发生的问题，沉淀成可重复执行的回归样本。它不是简单地把日志导出来喂给评测脚本，而是要经过脱敏、聚类、标注、归因、裁剪、版本化和门禁接入。没有这套过程，日志会变成一堆不可解释的噪声；有了这套过程，日志就会变成评测系统的燃料。</p>
+<p>我更倾向把评测样本看成工程资产，而不是测试附属品。一个样本至少应该回答四个问题：它来自什么真实场景，它想防止什么回归，它应该由什么指标判断，它失败后应该通知谁。只保存输入和期望输出是不够的，因为 AI 系统的失败经常不是单点错误。一个 RAG 回答错误，可能是 query rewrite 把意图改偏了，也可能是召回漏了，也可能是 rerank 把错误片段排到了前面，也可能是生成阶段没有引用证据。日志挖样本就是把这种链路信息保留下来，避免团队只看最终答案。</p>
+<p>还有一个常见误区，是把用户反馈当成唯一来源。用户点踩当然重要，但大多数失败不会被反馈。用户可能直接关掉页面，可能换一种问法重试，可能人工复制答案后自己修，可能因为不信任而停止使用。系统日志可以提供更早的信号，比如同一会话连续改写问题、模型多次重试、工具返回空结果、输出被安全过滤、前端解析失败、人工客服接管、用户在答案出现后立刻搜索同一个主题。把这些行为信号和显式反馈结合起来，才有机会挖到真正有价值的样本。</p>
+<p>对小团队来说，这件事不需要一开始就做成复杂平台。可以先从每天的错误日志、人工工单和低分反馈中挑样本，写进一个 Markdown 或 JSONL 评测集。关键是建立固定节奏：每天看失败，每周归并样本，每次模型或 prompt 变更前跑回归，每次事故复盘必须补样本。评测集不是一次性建设，它应该像线上告警规则一样，跟着业务和系统一起成长。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>第一类概念是事件。日志里不能只有一条纯文本请求，而要有链路事件。一个完整样本通常来自多个事件：用户输入、上下文装配、检索请求、检索结果、工具调用、模型响应、后处理、前端渲染、用户动作和人工反馈。每个事件都应该有 <code>trace_id</code>、<code>session_id</code>、<code>tenant_id</code>、时间戳、组件名、输入摘要和输出摘要。没有 trace 串联，后面只能靠猜。</p>
+<p>第二类概念是失败信号。失败不等于异常。异常只是最容易发现的一种失败。更重要的是弱信号，例如答案被用户连续追问纠错、工具调用参数被服务端拒绝、模型输出 JSON 修复次数过多、检索结果相似度低但仍然生成了肯定回答、引用文档和答案事实不一致、用户在同一页面触发人工接管。失败信号要可配置，因为不同产品的失败形态不同。</p>
+<p>第三类概念是样本候选。不是每条异常日志都值得进入评测集。样本候选需要经过筛选，去掉重复、无业务意义、上下文缺失、纯网络抖动和无法复现的问题。一个好的候选样本要有稳定触发条件，能代表一类问题，且有明确可判定的期望。评测集不是垃圾桶，不能把所有糟糕日志都倒进去。</p>
+<p>第四类概念是脱敏和最小化。生产日志里经常有用户姓名、手机号、邮箱、订单号、合同内容、代码仓库地址、内部文档、支付信息和企业数据。挖样本必须先做脱敏，再做最小化。脱敏是把敏感实体替换成结构等价的占位符；最小化是删除和失败无关的上下文。两个动作都要保留问题本质。例如“张三的 2025 年 12 月账单为什么多扣了 19.8 元”可以变成“用户 A 的某月账单为什么多扣了金额 X”，但不能删掉“多扣”和“账单月份”这两个关键要素。</p>
+<p>第五类概念是归因标签。样本不是只有分类标签，还要有失败归因。常见归因包括检索漏召回、检索误召回、上下文压缩丢信息、工具参数错误、权限判断错误、结构化输出不合法、事实幻觉、拒答过度、拒答不足、格式不稳定、延迟超时、成本异常。归因可以帮助团队把评测结果映射到负责模块，而不是所有失败都丢给模型。</p>
+<p>第六类概念是评测切片。日志挖出来的样本要按业务功能、用户类型、输入形态、风险等级和失败归因切片。切片决定门槛。低风险闲聊可以接受语气变化，财务解释必须可追溯，代码修改必须能跑测试，权限相关样本必须零容忍。没有切片，平均分会掩盖最危险的退化。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">概念</th><th scope="col">工程含义</th><th scope="col">常见字段</th><th scope="col">不做的后果</th></tr></thead><tbody><tr><td>链路事件</td><td>保存一次请求在各组件里的执行痕迹</td><td><code>trace_id</code>、组件、耗时、输入摘要、输出摘要</td><td>只能看到坏答案，无法定位是哪一段坏</td></tr><tr><td>失败信号</td><td>用规则或模型发现可疑请求</td><td>点踩、重试、接管、解析失败、低置信召回</td><td>样本来源依赖人工记忆</td></tr><tr><td>候选样本</td><td>等待人工确认和脱敏的原始材料</td><td>原始输入、关键上下文、失败说明、证据</td><td>评测集混入大量噪声</td></tr><tr><td>标注记录</td><td>说明期望行为和判定方式</td><td>期望答案、禁止行为、裁判类型、风险等级</td><td>后续没人知道为什么收录</td></tr><tr><td>回归样本</td><td>进入 CI 或发布门禁的稳定样本</td><td>版本、owner、切片、阈值、过期时间</td><td>事故复盘无法转化为长期防线</td></tr></tbody></table></div>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一套可落地的日志挖样本流程，可以拆成八个阶段：采集、归一化、候选发现、脱敏、聚类去重、人工标注、评测集入库、门禁执行。这里最重要的边界是，生产日志不能直接进入评测集；中间必须有一个候选区和审核区。这样既能保护隐私，也能保证样本质量。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">线上请求链路
+  |
+  |-- 用户输入、检索、工具、模型、反馈、接管事件
+  v
+日志采集与归一化
+  |
+  |-- trace 串联
+  |-- 字段标准化
+  |-- 低价值字段裁剪
+  v
+失败信号发现
+  |
+  |-- 规则触发：异常、重试、解析失败、超时
+  |-- 行为触发：追问、点踩、人工接管
+  |-- 模型触发：答案与证据冲突、置信度低
+  v
+候选样本池
+  |
+  |-- 脱敏
+  |-- 最小化上下文
+  |-- 聚类去重
+  v
+人工标注与归因
+  |
+  |-- 期望行为
+  |-- 失败原因
+  |-- 风险等级
+  |-- 评测方式
+  v
+版本化评测集
+  |
+  |-- JSONL / YAML / 数据库
+  |-- owner 和变更历史
+  v
+CI 与发布门禁
+  |
+  |-- prompt 变更
+  |-- 模型升级
+  |-- 检索参数调整
+  v
+报告、告警、样本再挖掘</code></pre></div>
+<p>这个流程可以先用离线批处理实现。每天从日志仓库里拉取前一天的候选事件，按规则打分，生成待标注列表。人工每次只处理得分最高的几十条。随着系统成熟，可以把一部分环节变成近实时，比如高风险权限失败立即进入审核队列，模型输出和证据冲突立即通知负责同学。</p>
+<p>架构里有三个数据边界要特别清楚。第一，原始日志区只允许少数人访问，并设置保留周期。第二，候选样本区保存脱敏后的上下文和必要证据，可以给评测维护者使用。第三，正式评测集只保存最小化样本和判定标准，应该能进入代码仓库或评测平台。这样做的好处是，评测可以被工程流程消费，而不必每次触碰生产敏感数据。</p>
+<p>一个比较实用的候选样本评分公式如下：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">candidate_score =
+  3 * explicit_negative_feedback
++ 2 * human_handoff
++ 2 * parser_failure
++ 2 * evidence_conflict
++ 1 * repeated_rewrite
++ 1 * low_retrieval_confidence
++ 1 * latency_timeout
++ risk_level_bonus
+- duplicate_penalty</code></pre></div>
+<p>这个公式不需要很复杂，关键是可解释。被选中的样本要能说明为什么被选中。后续如果发现某类失败漏掉了，就加一个信号；如果某类候选太吵，就调低权重或加去重规则。工程上不要过早追求一个“智能样本挖掘模型”，先把信号、流程和标注闭环跑起来。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>实现可以从一个清晰的数据结构开始。下面是我在 Go 服务里常用的事件抽象。它不追求记录所有细节，而是把评测需要的字段固定下来。具体大字段可以放对象存储，事件里只保留引用。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type TraceEvent struct {
+    TraceID      string            `json:&quot;trace_id&quot;`
+    SessionID    string            `json:&quot;session_id&quot;`
+    TenantID     string            `json:&quot;tenant_id&quot;`
+    UserHash     string            `json:&quot;user_hash&quot;`
+    Component    string            `json:&quot;component&quot;`
+    EventType    string            `json:&quot;event_type&quot;`
+    TimestampMS  int64             `json:&quot;timestamp_ms&quot;`
+    LatencyMS    int64             `json:&quot;latency_ms&quot;`
+    InputDigest  string            `json:&quot;input_digest&quot;`
+    OutputDigest string            `json:&quot;output_digest&quot;`
+    ObjectRef    string            `json:&quot;object_ref&quot;`
+    Tags         map[string]string `json:&quot;tags&quot;`
+    Metrics      map[string]float64 `json:&quot;metrics&quot;`
+}
+
+type EvalCandidate struct {
+    CandidateID   string            `json:&quot;candidate_id&quot;`
+    TraceID       string            `json:&quot;trace_id&quot;`
+    SourceSignals []string          `json:&quot;source_signals&quot;`
+    RiskLevel     string            `json:&quot;risk_level&quot;`
+    FailureHint   string            `json:&quot;failure_hint&quot;`
+    RedactedInput string            `json:&quot;redacted_input&quot;`
+    ContextRefs   []string          `json:&quot;context_refs&quot;`
+    Evidence      []string          `json:&quot;evidence&quot;`
+    Score         float64           `json:&quot;score&quot;`
+    Labels        map[string]string `json:&quot;labels&quot;`
+}</code></pre></div>
+<p><code>TraceEvent</code> 是线上观测事实，<code>EvalCandidate</code> 是评测候选。二者要分开，因为候选会经过脱敏和人工处理。生产事件里可能有完整上下文，候选里只保存评测需要的最小内容。<code>InputDigest</code> 和 <code>OutputDigest</code> 用来快速排查重复，<code>ObjectRef</code> 指向受控存储，避免把大文本塞进日志系统。<code>Tags</code> 保存模型、prompt 版本、检索策略、工具名、用户入口等维度，后续切片分析会依赖这些字段。</p>
+<p>候选发现可以先用规则引擎。规则不必引入复杂依赖，一个配置文件就够。比如：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">rules:
+  - name: json_parse_failed
+    when:
+      event_type: postprocess_error
+      tags.error_kind: json_parse
+    score: 2
+    labels:
+      failure_type: schema_invalid
+
+  - name: cited_doc_not_used
+    when:
+      event_type: answer_check
+      metrics.evidence_overlap_lt: 0.15
+    score: 2
+    labels:
+      failure_type: evidence_conflict
+
+  - name: repeated_user_rewrite
+    window:
+      session_events: 4
+      same_intent: true
+    score: 1
+    labels:
+      failure_type: unclear_answer</code></pre></div>
+<p>这里的重点不是语法，而是让规则可审查。评测样本一旦进入门禁，就会影响发布效率。如果候选来源不可解释，团队很快会对样本失去信任。规则配置还可以和业务 owner 绑定：知识库问答的 evidence 规则归 RAG owner，工具调用规则归 Agent owner，安全规则归平台 owner。</p>
+<p>脱敏要分两层做。第一层是确定性实体脱敏，例如邮箱、手机号、身份证、订单号、IP、访问令牌。这类可以通过正则、字典和校验位识别。第二层是语义脱敏，例如人名、公司名、项目代号、合同条款、客户内部系统名。这类可以用命名实体识别模型辅助，但高风险样本仍然需要人工确认。脱敏替换要保持一致性，同一个实体在同一个样本里要替换成同一个占位符，否则多轮对话的逻辑会被破坏。</p>
+<p>一个实用的脱敏结果示例：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;input&quot;: &quot;客户 A 问：为什么 2026-01 的账单比 2025-12 多了 AMOUNT_1？他提到订单 ORDER_1 已取消。&quot;,
+  &quot;context&quot;: [
+    &quot;ORDER_1 状态：已取消，取消时间晚于计费快照时间。&quot;,
+    &quot;账单规则：月初生成快照，取消在快照后生效到下月。&quot;
+  ],
+  &quot;expected&quot;: &quot;说明差异来自计费快照时间，不应说订单仍有效；需要给出下月账单会回退或抵扣的条件。&quot;
+}</code></pre></div>
+<p>这个样本保留了失败本质：模型容易把“已取消”直接解释成“本月不该扣费”，忽略计费快照。它删除了客户姓名、真实订单号和金额，但仍然可以评测业务推理是否正确。</p>
+<p>去重也不能只做文本相似度。用户可能用不同说法问同一个问题，也可能同一个输入因为不同检索结果导致不同失败。推荐使用三层去重：输入语义去重、失败归因去重、链路状态去重。输入语义相似但失败归因不同的样本可以都保留；输入不同但归因相同、覆盖同一规则的样本可以只留代表样本。这样评测集不会膨胀得太快。</p>
+<p>正式入库时，我建议用 JSONL 保存机器可执行部分，用 Markdown 保存人类说明。JSONL 适合 CI 跑，Markdown 适合复盘和维护。一个回归样本可以长这样：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;id&quot;: &quot;rag-billing-snapshot-001&quot;,
+  &quot;source&quot;: &quot;log-mining&quot;,
+  &quot;created_at&quot;: &quot;2026-02-28&quot;,
+  &quot;owner&quot;: &quot;billing-ai&quot;,
+  &quot;risk&quot;: &quot;high&quot;,
+  &quot;slice&quot;: [&quot;rag&quot;, &quot;billing&quot;, &quot;multi-hop&quot;, &quot;policy&quot;],
+  &quot;input&quot;: &quot;客户 A 问为什么某月账单比上月多了 AMOUNT_1，订单 ORDER_1 已取消。&quot;,
+  &quot;context&quot;: [
+    &quot;订单取消时间晚于账单快照时间。&quot;,
+    &quot;计费规则要求以月初快照为准。&quot;
+  ],
+  &quot;expected_behavior&quot;: [
+    &quot;必须解释账单快照规则。&quot;,
+    &quot;不得断言本月扣费一定错误。&quot;,
+    &quot;如果提到退款，必须说明条件。&quot;
+  ],
+  &quot;judge&quot;: {
+    &quot;type&quot;: &quot;rubric&quot;,
+    &quot;pass_threshold&quot;: 0.8
+  }
+}</code></pre></div>
+<p>标注流程要尽量轻。每个候选样本让标注者回答四个问题即可：这个问题是否真实有代表性，应该期待什么行为，不能出现什么行为，失败归因是什么。不要让标注者写长篇论文，否则流程会很快停摆。高风险样本再加第二人复核，普通样本单人确认即可。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>日志挖出来的样本进入评测后，要先验证它们自身是否稳定。一个样本如果每次裁判结果都不同，或者期望行为写得模糊，就不适合做发布门禁。样本稳定性测试至少包括三件事：固定基准版本重复跑三次，观察评分方差；让两个人独立审核期望行为，确认没有歧义；把样本放到最近一次线上版本上跑，确认它确实能复现历史问题或覆盖目标风险。</p>
+<p>评测指标要根据样本归因选择。结构化输出样本用 schema pass rate；证据冲突样本用引用覆盖和事实一致性；工具调用样本用参数正确率、工具选择正确率和重试次数；安全样本用高危失败数；多轮任务样本用最终任务完成率。不要试图用一个总分解释所有事情。总分可以作为概览，但发布判断必须看切片。</p>
+<p>下面是一个样本挖掘质量的评测表：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">指标</th><th scope="col">计算方式</th><th scope="col">健康信号</th><th scope="col">风险信号</th></tr></thead><tbody><tr><td>候选命中率</td><td>人工确认样本数 / 候选数</td><td>30% 到 70%</td><td>低于 10% 说明规则太吵</td></tr><tr><td>去重压缩率</td><td>原候选数 / 聚类后候选数</td><td>2 到 10 倍</td><td>接近 1 说明重复控制不足</td></tr><tr><td>回归复现率</td><td>基准失败样本 / 新增样本</td><td>高风险样本应较高</td><td>大量样本在基准也无法判断</td></tr><tr><td>标注一致率</td><td>两人标注一致样本 / 双标样本</td><td>高于 85%</td><td>标准模糊或业务规则不清</td></tr><tr><td>门禁贡献度</td><td>发布前拦截问题次数</td><td>持续有贡献</td><td>长期为零要检查样本新鲜度</td></tr></tbody></table></div>
+<p>评测还要覆盖样本生命周期。新样本刚加入时可以处于观察状态，只出报告不阻断发布。连续几次评测稳定后，再提升为门禁样本。过期样本要降级或归档。例如某个工具接口已经下线，相关样本就不应继续阻断发布；某条业务规则改了，样本期望也必须更新。评测集如果只增不减，会把团队拖进历史负担里。</p>
+<p>我建议每周输出一份“样本健康报告”，内容包括新增样本数量、来源分布、失败归因分布、各切片通过率、最常失败样本、被归档样本和门禁拦截记录。报告不需要花哨，但要能指导工程投入。比如连续三周新增样本都集中在“检索误召回”，那就说明 RAG 召回和 rerank 需要专项治理，而不是继续调生成 prompt。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一种失败模式是日志缺字段。很多系统上线时只记录最终 prompt 和最终答案，不记录检索候选、工具参数和中间状态。等到出问题时，团队只能猜模型为什么这么答。解决办法是在链路设计阶段就定义观测事件，不要等事故后补日志。对 AI 应用来说，日志字段就是未来评测样本的原材料。</p>
+<p>第二种失败模式是样本污染隐私。直接把生产对话复制进仓库，是非常危险的做法。即使仓库是私有的，访问范围也可能比生产数据权限大得多。必须做脱敏、最小化和访问分层。高风险行业还要保留脱敏审计记录，说明谁处理了样本、删除了哪些字段、为什么保留某些上下文。</p>
+<p>第三种失败模式是只挖投诉样本。投诉样本很重要，但它偏向愿意反馈的用户和明显失败的场景。很多系统性问题不会产生投诉，比如答案看似合理但事实错、权限边界轻微泄漏、模型过度自信、工具成本异常。要把行为信号和自动检查也纳入候选发现。</p>
+<p>第四种失败模式是样本不可判定。有些候选日志看起来很糟，但缺少业务规则、缺少上下文或期望不明确。这类样本不应该硬塞进门禁。可以先进入“需要规则澄清”的队列，推动产品和业务把规则说清楚。评测不是替业务做决定，它只能执行已经定义的判断标准。</p>
+<p>第五种失败模式是重复样本太多。一次线上事故可能产生几百条相似日志，如果全部入库，评测会变慢，报告也会被同一类问题刷屏。应该保留代表样本和少量变体，并用标签记录覆盖范围。真正需要的是覆盖失败空间，不是保存每一次失败。</p>
+<p>第六种失败模式是把日志挖样本变成追责工具。工程团队如果觉得每条日志都会被拿来追责，就会倾向于少记录、模糊记录或绕开流程。更健康的文化是把样本当成系统学习材料。事故样本进入回归集，是为了让同类问题不再发生，而不是证明某个人做错了。</p>
+<p>第七种失败模式是样本长期不刷新。AI 产品的输入分布会变。新功能上线、新客户接入、新模型替换、用户习惯变化，都会让旧评测集变得不够代表真实风险。日志挖样本必须持续运行，并定期检查评测集和近期生产失败的重合度。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<p>在真正上线日志挖样本流程前，还要把运营节奏定下来。很多团队技术链路搭好了，但没有固定的人看候选池，结果几周后候选越积越多，评测集却没有增长。我的建议是把它当成值班的一部分：每天只看最高风险的十到二十条，每周做一次归并，每月清理过期样本。这个节奏比一次性集中标注几百条更可持续，也更容易让负责模块的人保持对线上失败的敏感度。</p>
+<p>样本运营还需要一个明确的升级通道。普通失败可以进入周会讨论，高风险权限和安全失败要当天确认，影响核心收入链路的样本要进入发布门禁。不同风险等级的响应时间要写清楚，否则候选池会变成没人负责的列表。评测平台可以很简单，但 owner 不能缺席。每个样本至少要有一个业务 owner 和一个工程 owner，前者确认期望行为，后者确认修复位置和验证方式。</p>
+<p>还有一个细节是样本解释。评测报告不要只显示“样本失败”，而要显示这条样本为什么存在、历史上是哪次日志触发、期望保护什么边界。这样做会让发布审批更容易沟通。工程师看到失败样本时，能判断它是必须修的高风险回归，还是需要更新期望的旧业务规则。样本背后的故事越清楚，评测门禁越像工程防线，而不是一个突然冒出来的阻塞器。</p>
+<ul><li>日志链路已经包含 <code>trace_id</code>、模型版本、prompt 版本、检索策略、工具调用、后处理结果和用户反馈。</li><li>原始日志、候选样本、正式评测集有清楚的数据边界和访问权限。</li><li>脱敏规则覆盖手机号、邮箱、证件号、订单号、密钥、URL、企业名称、人名和自由文本敏感信息。</li><li>候选发现规则可配置、可审查，并能解释每个候选为什么被选中。</li><li>候选样本有聚类去重机制，避免同一事故产生大量重复门禁。</li><li>人工标注界面或流程足够轻量，每个样本至少记录期望行为、禁止行为、失败归因、风险等级和 owner。</li><li>新增样本先进入观察状态，稳定后再进入阻断门禁。</li><li>高风险样本有双人复核，低风险样本有抽检机制。</li><li>每次模型、prompt、检索和工具 schema 变更前，都会跑相关切片的回归评测。</li><li>评测报告按切片展示，不只展示平均分。</li><li>样本有过期和归档规则，业务规则变化时能更新期望。</li><li>事故复盘模板里包含“是否新增或更新评测样本”这一项。</li><li>门禁失败时能定位到负责模块，而不是只显示“模型回答错误”。</li><li>样本挖掘本身有健康指标，包括候选命中率、标注一致率、门禁贡献度和样本新鲜度。</li></ul>
+<h2 id="总结">总结</h2>
+<p>日志里的失败路径是最好的评测样本来源，因为它来自真实用户、真实上下文和真实系统边界。手工构造样本可以覆盖预期功能，但只有生产日志能持续暴露系统在复杂输入、长尾业务和工程集成上的弱点。一个成熟的 AI 评测体系，不能只问“模型在标准题上得几分”，还要问“上周线上差点出事故的路径，这周还会不会失败”。</p>
+<p>把日志变成评测样本，需要工程纪律。先把链路事件记录完整，再用失败信号找候选，然后脱敏、最小化、聚类、标注、版本化，最后接入 CI 和发布门禁。每一步都不神秘，但每一步都要认真做。尤其是脱敏和归因，决定了这套系统能不能长期运行。</p>
+<p>这件事的长期价值在于形成组织记忆。每一次用户点踩、人工接管、解析失败、工具误调和安全拦截，都不只是一次过去的问题，而是未来发布前的一道防线。评测集越贴近真实失败，模型升级和 prompt 改动就越有底气。对 AI 工程来说，日志不是事后排障的尾气，而是持续改进系统的矿脉。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

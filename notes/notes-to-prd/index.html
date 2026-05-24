@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>从技术笔记到 PRD | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="技术探索沉淀到 PRD 后，团队才能围绕同一目标迭代。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="从技术笔记到 PRD">
+  <meta property="og:description" content="技术探索沉淀到 PRD 后，团队才能围绕同一目标迭代。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/notes-to-prd.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link active" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>从技术笔记到 PRD</span></nav>
+          <div class="note-kicker">NOTES / WORKFLOW / 096</div>
+          <h1>从技术笔记到 PRD</h1>
+          <p>技术探索沉淀到 PRD 后，团队才能围绕同一目标迭代。</p>
+          <div class="note-tag-row"><span>PRD</span><span>Workflow</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/notes-to-prd.svg" alt="标题图" loading="lazy"><figcaption>从技术笔记到 PRD 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多产品失败并不是因为团队没有思考，而是因为思考停留在技术笔记里。工程师调研了模型能力，写下了一堆实验记录；产品同学访谈了用户，整理了若干痛点；设计同学画了几个交互草图；运营同学补充了上线后的指标假设。每个人手里都有材料，但材料没有被压缩成一个可以执行、可以评审、可以验收的产品需求文档。最后进入开发时，团队讨论的不是怎么把事情做好，而是“我们到底要做哪一个版本”。</p>
+<p>技术笔记天然是探索性的。它可以记录很多不确定判断：某个 API 的响应延迟怎样，某个模型是否稳定，某个场景用户有没有付费意愿，某个实现方案能不能绕开权限限制。这些记录对个人非常有价值，但它们还不是团队共同的决策输入。笔记里的信息通常按时间顺序堆叠，结论分散在段落中，很多前提没有显式写出，风险也可能只用一句“后面再看”带过。开发同学读完后未必知道第一期要做什么，测试同学读完后未必知道怎样验收，业务同学读完后也未必知道哪些承诺已经被排除。</p>
+<p>PRD 的价值不是把笔记重新排版成正式文档，而是把探索材料变成可执行协议。这个协议至少回答四个问题：为什么现在要做，用户真正要完成哪件事，系统第一期交付的边界在哪里，交付后怎样判断它真的有效。对 AI 工作流和知识库类产品来说，这个转换尤其重要，因为探索阶段会产生大量看似合理的想法：自动总结、智能标签、GraphRAG、上下文压缩、多代理协作、浏览器自动化、文档生成、评测面板。每个想法单独看都不错，但一个版本只能承担有限风险。PRD 必须把散点收束成一条主线。</p>
+<p>我在做工具和知识系统时，经常看到一种模式：团队先写“方案”，然后把方案当成“需求”。方案里讨论了数据库、队列、模型、向量索引、权限系统和 UI 组件，但没有明确用户在什么触发条件下使用它，也没有说明哪些行为不做。方案越详细，越容易让人误以为需求已经清楚。等到实现一半，大家才发现核心矛盾没有被解决：是给个人提高写作效率，还是给团队形成可复用知识资产；是自动生成 PRD，还是辅助人把笔记整理成 PRD；是追求一次生成漂亮文档，还是追求持续维护和版本追踪。</p>
+<p>从技术笔记到 PRD 的关键，是把“我发现了什么”转换成“团队本轮要承诺什么”。这中间需要抽象、裁剪、排序、验收和追踪。抽象是把零散事实变成问题模型；裁剪是明确不做什么；排序是找出第一期最小闭环；验收是把主观判断变成可检查条件；追踪是让后来者能知道这个 PRD 为什么这样写。一个好的 PRD 不会抹掉探索过程，反而会把探索中的关键证据、失败尝试和决策依据留下来，让后续迭代少走弯路。</p>
+<p>这里还有一个现实约束：团队里不是每个人都会完整阅读所有笔记。工程团队需要结构化接口，设计团队需要场景和交互边界，业务团队需要目标和指标，测试团队需要验收和失败样本，管理者需要优先级和资源判断。如果 PRD 只是把笔记堆在一起，它不能承担协作职责。真正有用的 PRD 要像一个中间层，把探索材料翻译成不同角色都能消费的工程对象。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>从笔记到 PRD，可以先区分四类材料：事实、洞察、决策和承诺。事实是可回看的材料，例如用户访谈原话、埋点数据、日志、性能测试结果、竞品截图、模型调用样本。洞察是对事实的解释，例如用户不是缺少模板，而是缺少把零散材料收敛成决策的过程。决策是在多个选项中选择一个方向，例如第一期只做“笔记整理为 PRD 草案”，不做自动创建任务。承诺是团队会交付并验收的内容，例如支持从 Markdown 笔记中抽取目标、用户、范围、非目标、验收标准和风险清单。</p>
+<p>这四类材料不能混写。事实如果没有来源，后面就无法复核；洞察如果没有事实支撑，就会变成观点；决策如果不记录被放弃的选项，后面会反复争论；承诺如果没有验收条件，开发完成后也没人知道是不是达标。PRD 的工程化过程，就是把笔记中混杂的句子拆到这四个槽位，再按产品目标重新组织。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">材料类型</th><th scope="col">来源</th><th scope="col">在 PRD 中的位置</th><th scope="col">常见问题</th><th scope="col">应对方式</th></tr></thead><tbody><tr><td>事实</td><td>访谈、日志、实验、工单、代码原型</td><td>背景、证据、附录</td><td>来源不清，样本太少</td><td>标记来源、时间、样本范围</td></tr><tr><td>洞察</td><td>分析、归纳、复盘</td><td>问题定义、用户场景</td><td>把猜测写成结论</td><td>写出置信度和反例</td></tr><tr><td>决策</td><td>评审、权衡、取舍</td><td>范围、非目标、方案选择</td><td>被放弃选项消失</td><td>记录取舍原因</td></tr><tr><td>承诺</td><td>版本计划、验收标准</td><td>需求条目、指标、测试</td><td>语义模糊</td><td>写成可检查条件</td></tr></tbody></table></div>
+<p>第二个核心概念是“需求不是功能列表，而是行为边界”。例如“支持 AI 生成 PRD”是一个功能说法，但它没有边界。更可执行的描述是：“当用户输入一组技术笔记、用户访谈摘录和原型说明时，系统生成一份结构化 PRD 草案，包含问题背景、目标用户、核心场景、范围、非目标、验收标准、风险和开放问题；每个关键结论必须回链到至少一条原始笔记；系统不直接把草案发布为最终需求，必须经过人工确认。”这个描述里有触发条件、输入、输出、质量要求和非目标，工程团队才能据此设计数据结构和流程。</p>
+<p>第三个核心概念是“证据链”。AI 参与写作后，最容易出现的问题不是文档不完整，而是文档看起来过于完整。模型可以把模糊笔记润色成流畅段落，但段落里的判断未必来自真实材料。PRD 是团队承诺，不是散文。每一个会影响排期、架构和上线风险的结论，都应该能回到原始笔记、访谈、数据或评审记录。证据链不要求每句话都有引用，但关键结论必须可追溯。工程上可以把 PRD 中的需求条目和笔记片段建立映射，后续当笔记被更新或证据被推翻时，需求条目也能被标记为需要复核。</p>
+<p>第四个核心概念是“非目标”。很多 PRD 写失败，是因为只列目标，不列非目标。技术笔记阶段常常会发现很多可能性，如果不显式排除，它们会在评审、开发和测试阶段不断回来。非目标不是消极内容，而是范围管理工具。比如从技术笔记到 PRD 的工具，第一期可以明确不做：自动排期、不替代产品负责人审批、不生成完整 UI 设计稿、不连接生产任务系统、不根据单篇笔记推断商业战略。这样开发边界清楚，测试边界也清楚。</p>
+<p>第五个核心概念是“验收先行”。PRD 如果写完才想怎么验收，很容易发现需求描述太软。技术笔记里常见的表达是“提升效率”“减少沟通成本”“让知识沉淀更容易”。这些方向没错，但不能直接开发。需要转换成可验证的验收项：生成结果必须包含指定章节；每个需求条目必须有来源链接或标记为推断；空材料不能生成虚假结论；冲突笔记必须被列入开放问题；同一组输入在固定版本下输出结构稳定；人工编辑后的 PRD 能保存版本差异。验收项越早写，需求越早暴露模糊点。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>可以把从笔记到 PRD 的过程画成一条“证据驱动的收敛流水线”：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">原始材料
+  |
+  |-- 技术笔记：实验、接口、架构草图、失败记录
+  |-- 用户材料：访谈、工单、反馈、行为数据
+  |-- 业务材料：目标、约束、指标、时间窗口
+  v
+材料归一化
+  |
+  |-- 去重、按主题聚类、标记来源、抽取事实
+  v
+问题建模
+  |
+  |-- 用户是谁、任务是什么、现在为什么做不好
+  v
+范围收敛
+  |
+  |-- 本期目标、非目标、风险、开放问题
+  v
+PRD 草案
+  |
+  |-- 需求条目、验收标准、指标、证据链
+  v
+评审与修订
+  |
+  |-- 工程评审、设计评审、业务评审、测试评审
+  v
+可执行 PRD
+  |
+  |-- 进入 issue、原型、技术方案、测试计划</code></pre></div>
+<p>这条流程的重点不在“生成文档”，而在每一步的信息损失要可控。材料归一化会丢掉重复表达，但不能丢掉反例；问题建模会抽象用户场景，但不能把不同用户混成一个模糊画像；范围收敛会裁掉功能，但必须记录为什么裁掉；草案生成会组织语言，但不能删除证据链；评审修订会改变优先级，但必须保留版本差异。</p>
+<p>在架构上，我倾向把系统拆成四层：材料层、分析层、文档层和协作层。材料层保存原始笔记和来源元数据，尽量不改写事实。分析层负责抽取主题、事实、冲突、问题和候选需求。文档层负责把分析结果组织成 PRD 的稳定结构，并维护需求条目与证据之间的映射。协作层处理评审意见、版本变更、任务拆分和上线后的反馈回流。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">┌─────────────────────────────────────────────┐
+│ 协作层：评审、评论、版本、issue、上线反馈      │
+├─────────────────────────────────────────────┤
+│ 文档层：PRD 章节、需求条目、验收标准、证据链    │
+├─────────────────────────────────────────────┤
+│ 分析层：主题聚类、冲突识别、范围建议、风险提取  │
+├─────────────────────────────────────────────┤
+│ 材料层：Markdown、访谈、日志、截图、原型、数据   │
+└─────────────────────────────────────────────┘</code></pre></div>
+<p>这个分层可以避免一个常见错误：把 AI 写作能力直接接到最终文档。直接生成的文档往往流畅，但中间没有结构化分析结果，后续难以调试。比如某个需求条目被写进 PRD，团队想知道它来自哪段笔记、有没有反例、为什么优先级是 P0，如果系统只有最终 Markdown，就只能靠人工回忆。把分析层显式保存下来，后续可以对每个需求条目做追踪和复核。</p>
+<p>流程图里还需要一条回流路径。PRD 不是一次性产物。开发过程中会发现技术不可行，测试过程中会发现验收遗漏，上线后会发现用户根本不按预期使用。这些新事实应该回到材料层，再经过分析层影响下一版 PRD。否则 PRD 会变成发布前的仪式文件，而不是持续协作的工程对象。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>假设我们要实现一个内部工具，把团队的技术笔记转成 PRD 草案。我会先定义清楚数据结构，而不是先写 prompt。数据结构决定系统能追踪什么，也决定后续评测能检查什么。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type NoteSource struct {
+    ID        string
+    Path      string
+    Title     string
+    Author    string
+    CreatedAt string
+    Kind      string // tech_note, interview, incident, metric, prototype
+}
+
+type EvidenceSpan struct {
+    ID       string
+    SourceID string
+    Quote    string
+    Topic    string
+    Confidence float64
+}
+
+type ProductClaim struct {
+    ID          string
+    ClaimType   string // fact, insight, decision, risk, open_question
+    Text        string
+    EvidenceIDs []string
+    Status      string // accepted, disputed, inferred
+}
+
+type RequirementItem struct {
+    ID              string
+    Title           string
+    UserScenario    string
+    Description     string
+    Acceptance      []string
+    NonGoals        []string
+    EvidenceIDs     []string
+    Priority        string
+    RiskLevel       string
+    OpenQuestions   []string
+}
+
+type PRDDraft struct {
+    Slug          string
+    Version       int
+    Problem       string
+    TargetUsers   []string
+    Goals         []string
+    NonGoals      []string
+    Requirements  []RequirementItem
+    Metrics       []string
+    Risks         []string
+    EvidenceIndex map[string]EvidenceSpan
+}</code></pre></div>
+<p>这里有几个设计点。<code>EvidenceSpan</code> 保存原文片段，不保存模型改写后的摘要，原因是后面要能复核。<code>ProductClaim</code> 把事实、洞察、决策和风险分开，避免它们在 PRD 正文里混成一团。<code>RequirementItem</code> 强制每个需求条目带验收标准、非目标和证据。<code>PRDDraft</code> 不是最后给用户看的唯一文档，而是可编辑、可追踪的中间对象。最终 Markdown 可以从它渲染出来，但正文不应该只存在于大字符串里。</p>
+<p>实现流程可以分成六步。第一步是 ingest，把输入材料解析成 <code>NoteSource</code> 和候选 <code>EvidenceSpan</code>。Markdown 可以按标题和段落切分，访谈可以按问答切分，日志可以按事件切分，截图和原型可以先只保存引用。第二步是 classify，把证据片段按主题、材料类型和置信度标记。第三步是 synthesize，把相关证据合成 <code>ProductClaim</code>，并显式标记哪些是事实、哪些是推断。第四步是 scope，根据目标用户、业务约束和工程风险生成候选范围。第五步是 draft，把范围和需求条目组织成 PRD。第六步是 review，把人类修改、评论和批准状态写回结构化对象。</p>
+<p>一个具体例子更清楚。假设原始技术笔记里有三段材料：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">笔记 A：我们试了三种方式生成 PRD，直接让模型写完整文档最快，但经常漏掉非目标。
+访谈 B：产品同学说最费时间的是把会议纪要、实验记录和用户反馈对齐，不是润色句子。
+实验 C：当输入材料超过二十段时，模型容易把未确认想法写成已经决定的需求。</code></pre></div>
+<p>系统不应该直接输出“做一个自动 PRD 生成器”。更合理的中间结果是：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">抽取结果</th><th scope="col">类型</th><th scope="col">证据</th><th scope="col">对 PRD 的影响</th></tr></thead><tbody><tr><td>直接生成完整文档容易漏掉非目标</td><td>事实</td><td>笔记 A</td><td>需求中加入非目标检查</td></tr><tr><td>用户痛点是材料对齐，不是润色</td><td>洞察</td><td>访谈 B</td><td>产品定位为收敛工具</td></tr><tr><td>长输入会把想法误写为决定</td><td>风险</td><td>实验 C</td><td>输出必须区分推断和已确认</td></tr></tbody></table></div>
+<p>然后才生成需求条目：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">需求：证据驱动的 PRD 草案生成
+场景：产品负责人导入技术笔记、访谈摘录和实验记录，希望得到可评审的 PRD 草案。
+验收：
+1. 草案必须包含目标、非目标、需求条目、验收标准、风险和开放问题。
+2. 每个需求条目至少关联一条证据；没有证据的判断必须标记为推断。
+3. 当输入材料存在冲突时，系统不得自行消除冲突，必须放入开放问题。
+4. 用户可以在评审中把推断改为已确认，系统记录版本差异。
+非目标：
+1. 不自动创建开发任务。
+2. 不替代产品负责人审批。
+3. 不根据单一笔记生成商业优先级。</code></pre></div>
+<p>prompt 的位置也要放对。它是把结构化材料转换成候选文本的工具，不是系统的全部。可以把 prompt 拆成几个小职责：证据抽取 prompt、冲突识别 prompt、需求条目草拟 prompt、验收标准补全 prompt、开放问题生成 prompt。每个 prompt 都有独立输入输出和评测样本。这样某个环节变差时，可以定位是证据抽取坏了，还是草案组织坏了。</p>
+<p>对 AI 写作工具来说，人工编辑是核心流程，不是兜底流程。系统应该记录人改了什么。比如用户把“自动生成 PRD”改成“辅助整理 PRD 草案”，这不是简单文本 diff，而是产品定位发生变化。工程上可以把编辑动作映射到结构化字段：修改目标、删除需求、调整优先级、添加非目标、确认风险、关闭开放问题。后来复盘时，团队能看到哪些内容是模型提出的，哪些是人确认的，哪些是评审后被移除的。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>测试这类工具，不能只看生成的 Markdown 是否顺眼。它要验证信息是否被正确转化，边界是否被保留，风险是否被暴露，输出是否能支持协作。评测集至少要包含四类样本：清晰材料、含冲突材料、信息不足材料和噪声材料。</p>
+<p>清晰材料用于验证基础能力。输入里有明确用户、痛点、目标和实验结论，系统应该生成结构完整的 PRD。含冲突材料用于验证系统不会假装确定，例如一段访谈说用户需要自动发布，一段风险评审说不能自动发布，输出应该把它列为开放问题，而不是直接选择一边。信息不足材料用于验证系统会承认不知道，例如只有一段技术探索，没有用户证据，就不能生成“目标用户强烈需要”的结论。噪声材料用于验证抗干扰，例如输入里夹杂聊天、临时想法、过期方案和重复段落，系统应该聚焦有效证据。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">评测维度</th><th scope="col">检查方式</th><th scope="col">通过标准</th></tr></thead><tbody><tr><td>结构完整性</td><td>自动检查章节和字段</td><td>必填章节齐全，需求条目字段不缺</td></tr><tr><td>证据覆盖</td><td>检查需求条目引用</td><td>关键需求都有来源，推断被标记</td></tr><tr><td>冲突处理</td><td>人工样本加冲突事实</td><td>冲突进入开放问题，不被吞掉</td></tr><tr><td>范围控制</td><td>检查非目标和版本边界</td><td>不把二期能力写进一期承诺</td></tr><tr><td>验收质量</td><td>人工评审验收项</td><td>验收项可执行、可判定</td></tr><tr><td>稳定性</td><td>固定版本多次运行</td><td>结构和关键结论稳定</td></tr><tr><td>可编辑性</td><td>模拟评审修改</td><td>修改能落回结构化字段</td></tr></tbody></table></div>
+<p>自动化评测可以先做硬规则。比如检查每个 <code>RequirementItem</code> 是否有 <code>Acceptance</code>，每个非推断的需求是否有 <code>EvidenceIDs</code>，开放问题是否引用冲突证据，输出中是否出现禁用词，比如“必须自动上线”“无需人工确认”。硬规则覆盖不了所有语义，但能挡住很多低级错误。</p>
+<p>语义评测需要人工样本。可以为每个样本写一个期望轮廓，而不是唯一答案。例如：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">case: long-notes-with-conflict
+must_include:
+  - 非目标
+  - 开放问题
+  - 至少三个验收项
+must_not_include:
+  - 自动创建 Jira 任务
+  - 已确认商业优先级
+expected_open_questions:
+  - 是否允许系统发布最终 PRD
+  - 冲突材料以哪个来源为准</code></pre></div>
+<p>这种评测不会强迫模型逐字输出一致，但会检查产品行为是否正确。对 PRD 工具来说，行为正确比文笔漂亮重要。文笔可以人工改，需求边界错了会导致开发和测试全都走偏。</p>
+<p>还要评估“人类节省的时间”。这不能只用生成速度衡量。一个五秒生成的草案，如果评审要花三小时纠错，就是负收益。可以记录几个指标：从导入材料到首版草案的时间，人工删除的错误需求数量，人工补充的缺失风险数量，评审评论数量，草案进入开发前的版本次数，开发过程中因需求不清产生的返工次数。长期看，这些指标比模型输出 token 更接近真实价值。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是“把探索想法写成团队承诺”。技术笔记里经常有“可以考虑”“未来也许”“如果接入某系统就能”的句子。模型为了生成完整 PRD，可能把它们改写成需求。解决办法是要求每个需求条目标记确认状态，并且让推断内容默认进入开放问题或候选范围，而不是直接进入承诺范围。</p>
+<p>第二类失败是“证据链断裂”。生成文档看起来合理，但需求条目找不到来源。后面有人质疑优先级或范围时，团队只能重新翻笔记。解决办法是把证据 ID 作为结构化字段保存，并在渲染文档时显示或隐藏引用。内部评审版本可以显示证据，外部发布版本可以折叠证据，但不能丢掉映射。</p>
+<p>第三类失败是“非目标缺失”。没有非目标时，PRD 会不断膨胀。工程同学看到“生成 PRD”会顺手做导出、同步、任务拆分；业务同学会期待自动审批；设计同学会按完整工作台设计。解决办法是在草案阶段强制生成非目标，并在评审中逐条确认。</p>
+<p>第四类失败是“用户场景过宽”。比如把目标用户写成“所有需要写文档的人”。这种表述无法指导设计。应该拆到具体角色和场景：产品负责人整理探索材料，技术负责人把架构调研转为开发范围，创始团队把客户访谈转为最小版本计划。不同场景的 PRD 模板和验收重点不同。</p>
+<p>第五类失败是“AI 润色掩盖风险”。模型会倾向于把话说圆，把冲突写成折中。可工程决策需要暴露冲突。解决办法是给风险和开放问题独立章节，并要求系统保留不一致材料，而不是把它们融合成温和结论。</p>
+<p>第六类失败是“评审意见只留在评论里”。评审时大家在文档旁边留评论，但结构化需求没有更新，后续导出任务时仍然用旧内容。解决办法是把评论处理分成几种状态：已采纳、已拒绝、转开放问题、转二期、需要数据。评论关闭时必须关联一个结构化字段变更或一个明确拒绝原因。</p>
+<p>第七类失败是“PRD 和实现脱节”。PRD 写完后，工程方案、issue 和测试计划各自复制一份文本，之后不同步。解决办法是让需求条目拥有稳定 ID，issue、测试用例和上线指标引用同一个 ID。需求变化时，可以知道哪些下游对象需要复核。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<p>上线前我会用下面这份清单检查，而不是只看生成效果：</p>
+<ol><li>原始材料是否保留来源、时间、作者和材料类型。</li><li>PRD 草案是否包含问题背景、目标用户、目标、非目标、需求条目、验收标准、风险和开放问题。</li><li>每个关键需求是否能追溯到证据，缺证据内容是否明确标记为推断。</li><li>输入材料存在冲突时，系统是否把冲突放入开放问题，而不是自行消解。</li><li>是否有结构化数据模型保存需求条目、证据、评论和版本。</li><li>prompt、schema、模型版本和评测集版本是否记录在生成日志中。</li><li>是否有至少二十个真实或半真实样本覆盖清晰、冲突、不足和噪声材料。</li><li>是否有硬规则检查非目标、验收标准、证据引用和禁用承诺。</li><li>人工编辑是否会写回结构化字段，而不是只改最终 Markdown。</li><li>评审评论是否有状态流转，关闭评论是否需要明确处理结果。</li><li>导出的 issue、测试计划和指标是否引用需求条目 ID。</li><li>是否为失败生成 trace，记录输入、分析结果、草案版本和人工修改。</li><li>是否有权限边界，避免把敏感访谈或内部事故材料泄漏到不该出现的文档。</li><li>是否有降级方案，当 AI 输出质量不稳定时仍能使用人工模板继续推进。</li><li>是否定义上线后的反馈回流方式，把返工、误解和遗漏转成下一版样本。</li></ol>
+<p>这份清单看起来偏工程，但它决定工具能不能在真实团队里用。写 PRD 不是孤立写作任务，它连接材料收集、共识形成、开发排期、测试验收和上线复盘。任何一段断掉，文档都会重新退化为一次性文本。</p>
+<h2 id="总结">总结</h2>
+<p>从技术笔记到 PRD，本质上是把探索过程变成团队承诺的过程。技术笔记强调记录，PRD 强调协作；技术笔记允许发散，PRD 必须收敛；技术笔记可以保留大量猜测，PRD 必须区分事实、洞察、决策和承诺。AI 可以提高整理速度，但不能替团队承担决策责任。真正有用的 AI 工具，应该帮助我们保留证据、暴露冲突、明确边界、生成验收，而不是把一堆材料润色成看似完整的文档。</p>
+<p>工程上要避免直接从原始笔记跳到最终正文。更稳的路径是先建立材料层和分析层，把证据、主张、风险、开放问题和需求条目结构化，再渲染成 PRD。这样每个需求都能追溯，每个评审意见都能落地，每次版本变化都能被理解。PRD 不是写给归档系统看的，它是写给未来几周的协作看的。只要它能让团队少争论隐含前提、少返工、少把猜测当承诺，它就已经在工程上产生价值。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Eval Harness | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="Agent 测试需要模拟工具、固定环境和可回放轨迹。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="Agent Eval Harness">
+  <meta property="og:description" content="Agent 测试需要模拟工具、固定环境和可回放轨迹。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/agent-eval-harness.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link active" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>Agent Eval Harness</span></nav>
+          <div class="note-kicker">NOTES / EVAL / 080</div>
+          <h1>Agent Eval Harness</h1>
+          <p>Agent 测试需要模拟工具、固定环境和可回放轨迹。</p>
+          <div class="note-tag-row"><span>Agent</span><span>Evals</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/agent-eval-harness.svg" alt="标题图" loading="lazy"><figcaption>Agent Eval Harness 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多团队第一次给 Agent 做评测，会自然沿用问答系统的办法：准备一批问题，跑一遍模型，把最终回答拿去人工打分，或者交给另一个模型判断。这种方式对普通问答有一定价值，但放到 Agent 上很快失效。Agent 的错误经常不在最后一段文字里，而在中间路径里。它可能查了错误租户的数据，可能把只读任务变成写操作，可能在工具超时后没有重试，可能没有拿到用户确认就继续执行，也可能为了让最终回答看起来完整而编造了工具结果。最终文字如果写得客气、流畅、结构清楚，反而会把这些工程风险遮住。</p>
+<p>真正的 Agent 评测要回答的是“它有没有按可接受的方式完成任务”。这句话里有三个关键词：任务、方式、可接受。任务意味着测试样本不能只有一句 prompt，还要包含用户身份、权限、时间、上下文、工具返回、外部系统状态和期望产物。方式意味着不能只看答案，要看计划、工具选择、参数、重试、分支、停止条件和人工确认。可接受意味着系统允许多条合理路径，但要明确哪些行为永远不能发生，例如跨租户读取、调用生产写接口、泄漏隐私字段、跳过审批、把低置信证据说成确定结论。</p>
+<p>如果没有专门的 eval harness，Agent 评测会很容易退化成脆弱的演示脚本。开发者在本地跑一次，看起来成功；CI 上因为时间、检索索引、工具数据或模型随机性变化而失败；线上又因为权限和真实数据形态不同而走出另一条路径。结果是团队无法判断一次失败到底是模型退化、提示词改坏、工具 schema 变化、fixture 过旧，还是样本本身写得不清楚。评测本来应该增加信心，最后却变成噪声来源。</p>
+<p>Eval harness 的定位就是把这些变量收束起来。它提供一个可重复的运行壳：固定时间，固定用户，固定工具返回，固定权限边界，固定模型参数或模型网关配置，记录完整轨迹，然后用一组规则和评审器判断结果。它不负责证明 Agent 永远正确，也不负责覆盖所有真实世界变化。它负责让一批重要场景可以稳定回放，让团队在改模型、改 prompt、改工具、改运行时之前知道影响在哪里。</p>
+<p>这里还有一个现实问题：Agent 的质量不是单点指标。一个客服 Agent 可能最终回复正确，但多调用了三个昂贵工具；一个代码 Agent 可能修复了 bug，却改了不该改的文件；一个运营 Agent 可能生成了可用文案，却没有引用活动规则；一个内部助理可能成功创建任务，却没有把风险操作交给用户确认。不同场景的门槛不同，harness 必须允许多维断言，而不是所有样本都套一个“答案相似度”。</p>
+<p>我更愿意把 Agent eval harness 看成“可执行的质量契约”。产品把风险边界写成样本，工程把工具和环境写成 fixture，运行时把轨迹写成事件，评分器把可接受行为写成断言。每次发布前跑这些契约，团队就能讨论具体事实：哪个样本失败，哪个步骤偏离，哪个工具参数错，哪条策略没有触发。这样的讨论才有工程价值。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>一个可用的 Agent eval harness 至少要包含六个概念：评测用例、环境快照、工具替身、执行轨迹、判定器和报告。评测用例描述任务和期望；环境快照固定运行条件；工具替身模拟外部系统；执行轨迹记录 Agent 做过什么；判定器负责判断路径和产物；报告把结果聚合给开发、产品和运维看。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">概念</th><th scope="col">作用</th><th scope="col">容易做错的地方</th><th scope="col">工程判断</th></tr></thead><tbody><tr><td>评测用例</td><td>定义用户目标、输入、权限、预期产物</td><td>只写 prompt，不写上下文和禁止行为</td><td>用例要能独立解释任务发生的世界</td></tr><tr><td>环境快照</td><td>固定时间、租户、记忆、索引版本、模型参数</td><td>允许实时数据进入，导致结果漂移</td><td>能冻结的冻结，不能冻结的标明可变</td></tr><tr><td>工具替身</td><td>返回可控数据，模拟失败和延迟</td><td>mock 太干净，任何参数都返回正确结果</td><td>mock 要验证参数，也要模拟真实脏数据</td></tr><tr><td>执行轨迹</td><td>记录计划、调用、返回、策略、产物</td><td>只保存最终 answer，看不到中间错误</td><td>事件流比日志字符串更适合评分</td></tr><tr><td>判定器</td><td>检查硬约束、语义质量和成本</td><td>用 LLM judge 替代所有规则</td><td>硬规则先行，开放质量再交给评审</td></tr><tr><td>报告</td><td>对比版本、定位失败、辅助上线</td><td>只给总分，不能行动</td><td>每个失败要有证据和归因线索</td></tr></tbody></table></div>
+<p>评测用例不是普通测试里的 fixture 文件名集合，而是一个小型世界描述。它要说清楚谁在请求、请求发生在什么时间、用户拥有哪些权限、哪些工具可用、工具返回怎样的数据、哪些动作必须发生、哪些动作禁止发生、最终产物有哪些最低要求。Agent 的输入如果只是一句“帮我整理续约风险”，那这个任务在真实环境里有无数解释。只有把客户、合同、工单、权限和时间固定下来，评测才有可比性。</p>
+<p>工具替身是 harness 的核心。Agent 与普通生成任务最大的差异是它会行动。行动需要外部系统，而外部系统在测试里不能随便真实调用。好的工具替身不是简单返回一段 JSON，而是一个带约束的模拟服务：它能检查参数是否包含正确租户，能模拟分页，能返回部分失败，能记录调用顺序，能区分 dry-run 和 commit，能在高风险调用上要求确认 token。这样才能测出 Agent 是否真的尊重工具协议。</p>
+<p>执行轨迹要结构化。不要依赖模型在最终回答里自述“我查询了客户系统”。评测应该读取运行时产生的事件：<code>plan.created</code>、<code>tool.called</code>、<code>tool.result</code>、<code>policy.checked</code>、<code>user.confirmation.required</code>、<code>artifact.written</code>、<code>run.completed</code>。每个事件包含时间、父步骤、工具名、参数摘要、状态、错误类别和关联 artifact。结构化轨迹让评分器可以写确定性断言，也让失败排查不必从一大段自然语言里猜。</p>
+<p>判定器可以分为三类。第一类是硬规则，例如禁止工具是否被调用、租户是否一致、写操作是否经过确认、最终状态是否成功。第二类是产物规则，例如 Markdown 是否包含指定字段、代码 patch 是否只改允许路径、JSON 是否符合 schema、引用是否能追溯到工具返回。第三类是语义评审，例如摘要是否覆盖主要风险、建议是否可执行、语气是否适合客户。三类判定器不要混在一起，否则一次失败会变得很难解释。</p>
+<p>还有一个概念叫“可接受差异”。Agent 不是传统确定性函数，同一任务可能有多条好路径。Harness 不应该强迫每个步骤逐字相同，也不应该把某次黄金输出当成唯一正确答案。更好的做法是锁住关键约束：必须查合同和工单，不能发外部邮件，必须引用证据，必须在折扣建议前提醒审批，最终产物要包含风险、证据、建议和待确认项。这样既保留模型改进空间，又守住工程边界。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个实用的 Agent eval harness 可以按流水线理解：用例仓库提供样本，runner 创建隔离运行环境，tool proxy 拦截所有工具调用，Agent runtime 执行任务，trace collector 收集事件，scorer 读取轨迹和产物，reporter 输出版本对比。关键是评测必须经过与生产一致的 runtime，不能绕过权限、策略和工具网关直接调用模型。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用例仓库
+  |
+  |-- case.yaml / fixtures / expected assertions
+  v
+评测 Runner
+  |
+  |-- 冻结时间、设置用户、选择模型、创建临时工作区
+  v
+Agent Runtime
+  |
+  |-- 计划、检索、调用工具、生成产物、请求确认
+  v
+Tool Proxy
+  |
+  |-- 参数校验、fixture 返回、错误注入、调用记录
+  v
+Trace Collector
+  |
+  |-- 事件流、artifact、token、成本、状态迁移
+  v
+Scorers
+  |
+  |-- 硬断言、产物检查、语义评审、成本门槛
+  v
+评测报告
+  |
+  |-- 当前结果、相对基线变化、失败证据、上线结论</code></pre></div>
+<p>这张图里最容易被低估的是 Tool Proxy。很多团队在评测里直接把工具函数替换成本地函数，短期很快，长期会偏离生产。生产里工具调用通常要经过 schema 校验、权限检查、速率限制、审计、幂等键和错误分类。评测里如果绕过这些边界，就测不到 Agent 在真实协议下的表现。Tool Proxy 的职责是保留协议边界，同时把外部副作用变成可控 fixture。</p>
+<p>第二个关键点是临时工作区。很多 Agent 会读写文件、生成 patch、创建草稿、更新状态。评测不能让不同样本共享同一个目录或同一份数据库状态。Runner 应该为每个用例创建独立工作区，注入只读输入，收集输出 artifact，最后销毁或归档。这样样本之间不会互相污染，也能把失败现场保存下来。</p>
+<p>第三个关键点是报告不是简单 pass/fail。对工程团队最有用的是版本差异。例如同一个用例在基线版本通过，新版本失败；或者两者都通过，但新版本工具调用数从三次涨到九次；或者新版本不再触发人工确认，虽然最终产物仍然完整。报告应该把这些变化列出来，让上线讨论围绕具体风险展开。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>实现上可以从一个朴素的用例格式开始。不要一开始就发明过度抽象的 DSL。评测样本应该让工程师和产品同学都能读懂，同时足够结构化，方便 runner 执行。下面是一个“内部客户续约分析”的用例，重点不是字段名，而是它把任务世界、工具返回和判断规则放在同一个地方。</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">id: agent-renewal-risk-001
+title: 生成客户续约风险摘要
+now: &quot;2026-03-04T10:00:00+08:00&quot;
+user:
+  id: &quot;u_173&quot;
+  tenant: &quot;acme-cn&quot;
+  role: &quot;account_manager&quot;
+prompt: &quot;帮我整理星河制造下季度续约风险，先给我内部摘要，不要直接发给客户。&quot;
+environment:
+  memory_snapshot: &quot;empty&quot;
+  index_version: &quot;kb_20260304_0900&quot;
+  model_profile: &quot;release_candidate&quot;
+tools:
+  crm.customer.search:
+    assert_args:
+      tenant: &quot;acme-cn&quot;
+      name_contains: &quot;星河制造&quot;
+    response: &quot;fixtures/renewal/customer.json&quot;
+  contract.list:
+    assert_args:
+      customer_id: &quot;cus_8848&quot;
+    response: &quot;fixtures/renewal/contracts.json&quot;
+  ticket.search:
+    response: &quot;fixtures/renewal/tickets.json&quot;
+expect:
+  required_tools:
+    - &quot;crm.customer.search&quot;
+    - &quot;contract.list&quot;
+    - &quot;ticket.search&quot;
+  forbidden_tools:
+    - &quot;email.send&quot;
+    - &quot;crm.discount.apply&quot;
+  must_include:
+    - &quot;合同到期时间&quot;
+    - &quot;未关闭工单&quot;
+    - &quot;折扣审批&quot;
+  require_citations: true
+  max_tool_calls: 8</code></pre></div>
+<p>这个例子有几处设计很实际。<code>now</code> 固定了“下季度”的解释，<code>user</code> 固定权限和租户，<code>environment</code> 让模型和索引版本可追溯，<code>assert_args</code> 不只是返回 fixture，还会检查 Agent 是否查了正确客户，<code>forbidden_tools</code> 明确禁止对外发送和直接申请折扣，<code>max_tool_calls</code> 防止路径发散。评测不是为了让 Agent 背答案，而是为了让它在一个固定世界里做出合理行动。</p>
+<p>Runner 的数据结构可以很简单。核心是把样本、运行结果和评分结果分开。样本是稳定资产，运行结果是某个版本的产物，评分结果是对运行结果的解释。三者分开后，基线对比、失败重跑、报告归档都会清楚。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type EvalCase struct {
+    ID          string
+    Title       string
+    Now         time.Time
+    User        EvalUser
+    Prompt      string
+    Environment EvalEnvironment
+    Tools       map[string]ToolFixture
+    Expect      Expectations
+}
+
+type EvalRun struct {
+    RunID        string
+    CaseID       string
+    AgentVersion string
+    ModelProfile string
+    Events       []TraceEvent
+    Artifacts    []ArtifactRef
+    Usage        UsageSummary
+    Status       string
+}
+
+type CheckResult struct {
+    Name     string
+    Passed   bool
+    Severity string
+    Message  string
+    Evidence []string
+}</code></pre></div>
+<p>工具替身要按真实协议实现。假设生产工具调用统一经过 <code>ToolInvoker</code>，评测里就不要让 Agent 直接调用本地函数，而是替换 <code>ToolInvoker</code> 的实现。这个实现先记录调用事件，再校验工具是否在样本允许列表里，再校验参数，最后返回 fixture 或注入错误。对于写工具，它可以只接受 dry-run，或者要求样本里明确配置确认事件。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type HarnessToolInvoker struct {
+    Fixtures map[string]ToolFixture
+    Recorder TraceRecorder
+}
+
+func (h *HarnessToolInvoker) Invoke(ctx context.Context, call ToolCall) (ToolResult, error) {
+    h.Recorder.Record(&quot;tool.called&quot;, map[string]any{
+        &quot;tool&quot;: call.Name,
+        &quot;args&quot;: Redact(call.Args),
+    })
+
+    fixture, ok := h.Fixtures[call.Name]
+    if !ok {
+        return ToolResult{}, fmt.Errorf(&quot;unexpected tool: %s&quot;, call.Name)
+    }
+    if err := fixture.Assert(call.Args); err != nil {
+        return ToolResult{}, err
+    }
+    return fixture.Result(), nil
+}</code></pre></div>
+<p>这里的 <code>Assert</code> 很重要。没有参数断言的 mock 会让评测失真。Agent 查错客户、漏传租户、把日期范围传反，如果 mock 仍然返回正确数据，最终回答就可能通过。工具替身应该像严格的服务端一样拒绝不合约的请求，并把拒绝写进 trace。这样失败才会指向具体参数，而不是最后变成“回答质量不够”。</p>
+<p>时间和随机性也要被 harness 接管。Agent 里所有“今天”“本周”“最近三个月”都应该从注入的 clock 读取，而不是直接调用系统时间。模型温度、随机种子、重试策略也要在评测 profile 里固定。对于无法完全确定的模型输出，可以多跑几次，用“关键约束通过率”而不是逐字一致性判断稳定性。重要的是把不确定性显式化，不要让它偷偷进入 CI。</p>
+<p>产物检查要贴近任务类型。代码 Agent 要检查 diff 范围、测试结果、格式化、是否修改禁止路径；数据分析 Agent 要检查查询条件、聚合口径、图表字段；办公 Agent 要检查收件人、附件、审批状态；RAG Agent 要检查引用和证据。通用 harness 只提供事件、工具和报告框架，具体判定器应该按领域扩展。</p>
+<p>一组比较可靠的评分顺序是：先检查运行状态，再检查禁止行为，再检查必要行为，再检查产物结构，再检查语义质量，最后检查成本和延迟。这个顺序符合排障习惯。如果 Agent 已经调用了禁止工具，就没有必要再让 LLM judge 判断摘要好不好；如果产物 JSON 都不合法，也不必先讨论语气。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">检查阶段</th><th scope="col">示例断言</th><th scope="col">失败处理</th></tr></thead><tbody><tr><td>运行状态</td><td>run.completed，未 panic，未超时</td><td>标记基础设施或运行时失败</td></tr><tr><td>禁止行为</td><td>未调用生产写工具，未跨租户读取</td><td>阻断发布，必须修复</td></tr><tr><td>必要行为</td><td>调用合同、工单、客户工具</td><td>归因到计划或工具选择</td></tr><tr><td>产物结构</td><td>Markdown 字段齐全，JSON schema 通过</td><td>归因到输出约束或后处理</td></tr><tr><td>语义质量</td><td>风险排序合理，建议可执行</td><td>进入人工或模型评审</td></tr><tr><td>成本延迟</td><td>工具调用数、token、耗时未超预算</td><td>作为性能回归处理</td></tr></tbody></table></div>
+<p>报告层要支持基线对比。每次评测保存 <code>agent_version</code>、<code>prompt_version</code>、<code>model_profile</code>、<code>tool_schema_version</code> 和 <code>dataset_version</code>。当某个样本从通过变失败时，报告要显示变化发生在哪个阶段：工具参数不同、检索证据不同、策略事件缺失、最终产物缺字段。不要只给红色叉号。红叉没有证据，最后还是要人工翻日志。</p>
+<p>还要给样本生命周期留位置。线上事故转成样本后，先进入候选集；稳定复现并明确期望后，进入事故回归集；反复通过且覆盖核心能力后，可以进入核心集。不同集合在 CI 里的运行频率不同：提交时跑核心小集，合并前跑核心加事故集，每天跑完整集，发布前跑接近生产配置的灰度集。这样可以兼顾速度和覆盖。</p>
+<p>并发执行也要提前设计。评测集一大，单线程跑会拖慢发布，但并发太高又会让模型网关、fixture 服务和本地资源互相干扰。Runner 可以按样本声明的资源类型分组：纯文本样本可以高并发，文件写入样本使用独立临时目录，依赖同一模拟数据库的样本串行，调用真实只读服务的样本设置较低并发。并发策略要写进报告，因为同一个样本在资源饱和时失败，和 Agent 行为失败不是一回事。</p>
+<p>缓存策略也要谨慎。为了省钱，很多团队会缓存模型输出或工具返回。评测里可以缓存 fixture 读取和静态 artifact，但不要默认缓存被测模型结果，否则新版本可能实际没有被执行。确实需要缓存时，缓存键必须包含样本 ID、模型 profile、prompt 版本、工具 schema 版本、运行时版本和随机参数。报告里也要标明哪些结果来自缓存，哪些结果是真实运行。质量门禁通常应该使用真实运行结果，缓存更适合开发阶段的快速调试。</p>
+<p>最后，harness 要给人工评审留接口。自动规则能抓住边界问题，但开放任务仍然需要人判断。比较好的方式是把人工评审做成结构化表单，而不是让评审者写一段自由评论。表单可以包含目标完成度、证据充分性、风险提示、表达清晰度、是否需要澄清、是否可直接交付。人工结论写回 <code>CheckResult</code>，和自动评分一起进入报告。这样人的判断也能沉淀成数据，而不是散落在评审会议里。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>Eval harness 自身也要测试。它是质量门禁的一部分，不能默认可信。第一类测试是样本解析测试。缺字段、日期格式错误、工具名拼错、fixture 文件不存在、期望字段类型不对，都应该在运行前失败，并给出清楚错误。不要让样本错误伪装成 Agent 失败。</p>
+<p>第二类测试是工具替身测试。要构造正确参数、错误租户、缺少必填字段、未知工具、写工具未确认等场景，确认 proxy 会按预期返回结果或拒绝。尤其要测参数断言的负例。很多 harness 一开始只测正例，结果 mock 写得过宽，线上才发现 Agent 传错参数。</p>
+<p>第三类测试是评分器单元测试。可以手工构造 <code>EvalRun</code>，不启动真实 Agent，直接喂给评分器。比如构造一个包含 <code>email.send</code> 的事件流，确认禁止工具评分失败；构造一个调用了合同工具但状态为 timeout 的事件流，确认必要工具不算通过；构造一个产物有引用字段但引用 ID 不存在的 artifact，确认引用检查失败。评分器的边界越清楚，报告越可信。</p>
+<p>第四类是端到端回放测试。选择少量稳定样本，启动完整 Agent runtime，通过 Tool Proxy 跑完，断言 trace、artifact 和报告都能生成。这类测试数量不必多，但要覆盖完整链路。每次运行时事件模型变化、工具 schema 变化、策略系统变化，都应该有端到端样本暴露兼容性问题。</p>
+<p>评测指标不要只看通过率。通过率当然重要，但它会掩盖成本、稳定性和人工接管。一个发布候选如果通过率略升，但平均工具调用数翻倍，或者高风险任务人工确认率下降，就要谨慎。下面是一份更适合工程讨论的报告摘要：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">指标</th><th scope="col">当前候选</th><th scope="col">基线</th><th scope="col">门槛</th><th scope="col">解释</th></tr></thead><tbody><tr><td>核心样本通过率</td><td>96.8%</td><td>96.1%</td><td>95%</td><td>主路径保持可用</td></tr><tr><td>事故回归通过率</td><td>100%</td><td>100%</td><td>100%</td><td>已修问题不能回退</td></tr><tr><td>禁止工具触发次数</td><td>0</td><td>0</td><td>0</td><td>安全边界没有破</td></tr><tr><td>平均工具调用数</td><td>4.6</td><td>4.2</td><td>6 以下</td><td>成本可接受，但需观察</td></tr><tr><td>平均运行耗时</td><td>8.4s</td><td>7.9s</td><td>12s 以下</td><td>延迟未阻断</td></tr><tr><td>需要人工评审样本</td><td>18</td><td>21</td><td>只看趋势</td><td>开放质量仍需人工校准</td></tr></tbody></table></div>
+<p>还可以做 mutation testing。故意把样本里的租户改错、去掉必要工具、替换过期证据、关闭确认策略，看评分器能不能抓住。如果评分器抓不住这些人为注入的问题，就说明门禁不够强。Mutation 不需要每天跑，但在新增评分器或高风险领域样本时很有价值。</p>
+<p>最后要管理 flaky。Agent 评测中偶发失败不可避免，尤其是语义评审和外部模型调用。不要简单重跑到通过。每个 flaky 样本都应该标记原因：模型随机、fixture 不稳定、评审器漂移、运行时超时、样本期望过窄。短期可以隔离到观察集，长期要修复根因。评测系统如果长期允许“重跑就过”，它的上线门槛很快会失去信用。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一个失败模式是只评最终答案。Agent 走错路径但最终说得像成功，报告仍然通过。这会奖励语言包装，而不是可靠执行。解决办法是把工具调用、策略事件和 artifact 纳入硬断言。</p>
+<p>第二个失败模式是 mock 过于理想。fixture 数据干净、字段齐全、没有分页、没有权限裁剪、没有重复记录，Agent 在评测里表现很好，上线遇到真实数据就失败。解决办法是让 fixture 带脏数据，并用参数断言模拟真实服务端。</p>
+<p>第三个失败模式是样本写得太窄。把某次成功输出逐字当成黄金答案，模型稍微调整表达就失败。这会阻碍合理改进。解决办法是用结构和行为约束替代逐字匹配，只在法规、合同、代码等必须精确的场景使用严格比对。</p>
+<p>第四个失败模式是样本写得太宽。只要求“回答包含风险”，不要求查证据、不要求引用、不限制工具，Agent 靠猜也能过。解决办法是把关键工程动作写进 <code>required_tools</code>、<code>must_include</code>、<code>require_citations</code> 和禁止行为。</p>
+<p>第五个失败模式是评审器漂移。LLM judge 版本变化后，同一输出分数变化，团队误以为 Agent 质量变化。解决办法是把 judge 版本纳入报告，对关键样本保留人工标注，并且让硬规则承担安全门禁。</p>
+<p>第六个失败模式是评测和生产 runtime 分叉。评测跑的是简化链路，生产跑的是完整链路，结果评测无法发现权限、审计、幂等和策略问题。解决办法是让评测经过同一套 runtime，只替换外部副作用和数据源。</p>
+<p>第七个失败模式是报告不可行动。报告只显示总分下降，没有样本、事件和证据链接。解决办法是每个失败都必须包含评分器名称、严重程度、事件引用、artifact 引用和建议归因。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>样本 front door 已定义：新样本必须包含用户、时间、权限、工具 fixture、必要行为和禁止行为。</li><li>Runner 使用生产同源 Agent Runtime，评测没有绕过权限、策略、工具网关和后处理。</li><li>Tool Proxy 会校验参数、记录调用、模拟错误，并阻断未声明工具。</li><li>每个样本运行在独立工作区，文件、数据库状态和缓存不会跨样本污染。</li><li>时间、模型 profile、索引版本、prompt 版本和工具 schema 版本写入评测报告。</li><li>禁止工具、跨租户、未确认写操作、无证据确定结论都属于阻断级失败。</li><li>评分器有单元测试，至少覆盖正例、负例和边界例。</li><li>关键端到端样本能在 CI 中稳定回放，失败时保存 trace 和 artifact。</li><li>报告支持与基线对比，能列出新增失败、修复样本、成本变化和工具调用变化。</li><li>Flaky 样本有隔离和修复流程，不能靠无限重跑获得通过。</li><li>线上事故可以转入候选样本池，并经过标注后进入事故回归集。</li><li>发布门槛按集合和严重程度定义，而不是只看总通过率。</li></ul>
+<h2 id="总结">总结</h2>
+<p>Agent eval harness 的价值不在于制造一个漂亮分数，而在于把 Agent 的行为变成可回放、可比较、可审计的工程事实。它让团队看到任务是在什么环境里执行的，工具被怎样调用，策略是否触发，产物是否有证据，成本是否可接受。没有这些事实，Agent 评测很容易停留在“答案看起来不错”的阶段。</p>
+<p>真正可用的 harness 要把变量固定住，把副作用隔离掉，把轨迹记录下来，把判定拆成硬规则和开放评审。它既要允许模型用不同方式完成任务，也要明确不可违反的边界。这样的系统建设起来不轻，但它是 Agent 从 demo 走向生产的必要基础。只要团队开始把线上事故、人工接管和高风险场景沉淀成样本，评测就会从一次性验收变成持续改进的工程循环。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>流式输出的产品体验 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="流式输出要处理取消、重试、局部失败和状态反馈。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="流式输出的产品体验">
+  <meta property="og:description" content="流式输出要处理取消、重试、局部失败和状态反馈。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/streaming-ux.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link active" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>流式输出的产品体验</span></nav>
+          <div class="note-kicker">NOTES / LLM / 060</div>
+          <h1>流式输出的产品体验</h1>
+          <p>流式输出要处理取消、重试、局部失败和状态反馈。</p>
+          <div class="note-tag-row"><span>UX</span><span>Streaming</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/streaming-ux.svg" alt="标题图" loading="lazy"><figcaption>流式输出的产品体验 的工程图示。</figcaption></figure>
+<p>做 LLM 应用时，流式输出常常被当成一个前端效果：字一个一个冒出来，用户感觉系统没有卡住。这个理解太薄了。真正上线以后，流式输出会把后端调用、队列调度、权限检查、上下文构造、模型增量、工具调用、前端渲染、取消重试、埋点审计全部串在一起。它不是一个动画，而是一条跨越多层系统边界的交互协议。协议设计得好，用户会觉得产品是可信的，知道系统正在做什么，也知道自己什么时候可以介入。协议设计得差，用户看到的就是半截答案、重复文本、按钮失灵、刷新丢状态、复制内容不完整，以及最难排查的偶发性卡死。</p>
+<p>我更愿意把流式输出称为“持续交付答案”的产品形态。传统接口是一次请求一次响应，服务端在内部完成所有推理和整合，最后把完整结果返回给用户。流式接口则把一次响应拆成一串事件，让用户在系统工作时同步获得反馈。这个变化看起来只是传输方式变化，实际会改变很多工程假设。过去失败只有成功和失败两种状态，现在中间状态也要被设计。过去重试可以简单地重新发请求，现在重试可能要继承已经生成的片段、保留工具结果、避免重复扣费。过去日志只关心一次调用，现在要记录每个阶段的延迟和事件顺序。过去前端只需要渲染最终文本，现在要处理局部 Markdown、代码块未闭合、表格未完成、引用还没抵达、模型突然切换到工具调用等问题。</p>
+<p>这篇文章只讨论面向用户的流式输出，不讨论底层模型服务如何实现 token streaming。工程团队通常控制的是应用层协议和产品体验，包括如何把模型事件翻译成稳定的业务事件，如何让前端在不完整内容中仍然保持可读，如何定义取消和重试的语义，如何定位“用户说卡住了”背后的真实瓶颈。重点不是“能不能流”，而是“流出来的东西能不能被产品承受”。</p>
+<h2 id="问题背景">问题背景</h2>
+<p>LLM 应用的等待时间天然不稳定。一个看似普通的问题，可能在三秒内完成，也可能因为检索、工具调用、长上下文压缩、模型排队和安全审核拖到几十秒。同步接口在这种场景里会制造大量不确定性：用户不知道系统是否收到请求，不知道正在排队还是正在生成，不知道是否可以关闭页面，也不知道失败后应该重试还是改写问题。很多团队第一次接入流式输出，是为了把首字延迟压下来。首字延迟确实重要，但它只是入口指标，不是产品体验的全部。</p>
+<p>以一个知识库问答产品为例，用户输入“帮我总结上周故障复盘里所有和缓存有关的问题”。后端可能要先做权限过滤，再检索文档，再把文档分块排序，再让模型阅读材料，然后生成答案和引用。用户真正关心的不是每个 token 出现得多快，而是系统是否真的在访问正确范围的资料，是否能解释当前进度，是否在遇到局部失败时给出可执行选择。如果界面只显示一行闪烁的“生成中”，三十秒后吐出半篇答案，用户很难判断答案质量。反过来，如果界面能明确展示“正在检索 18 篇可访问文档”“已选中 5 篇进入回答”“正在生成结论”“引用稍后补齐”，等待就变成了可以理解的流程。</p>
+<p>流式输出还会影响用户的控制感。用户经常在生成过程中发现自己问错了，或者看到模型方向不对，需要立即停止。取消按钮如果只是前端停止渲染，后端仍然继续跑模型和工具，成本会继续消耗，审计记录也会和用户感知不一致。取消按钮如果直接杀掉连接，却没有写入任务状态，用户刷新后可能看到一个仍在运行的任务。重试也一样，如果每次重试都从头开始，用户会怀疑系统不稳定；如果重试复用旧上下文，却没有标记哪些结果来自上一轮，答案就可能混入过期证据。</p>
+<p>流式体验最容易被低估的地方，是它暴露了系统内部的不一致。同步接口可以在服务端把很多毛边收拾干净再返回，流式接口会把中间态直接推到屏幕上。检索为空、工具调用慢、模型输出格式漂移、Markdown 代码块断裂、引用编号变化、敏感词审核延迟，这些原来只是后端日志里的问题，现在会变成用户肉眼可见的体验问题。所以做流式输出不能只接一个 SSE 或 WebSocket，必须先定义哪些中间态可以暴露，哪些中间态需要聚合后暴露，哪些状态必须被隐藏并转化成用户能理解的提示。</p>
+<p>一个成熟的流式产品需要同时服务三类人。第一类是终端用户，他们需要快速获得反馈、随时取消、放心复制和继续追问。第二类是产品和运营，他们需要知道等待时间、取消率、重试率、局部失败率，判断功能是否真的可用。第三类是工程团队，他们需要能从一次会话追踪到具体事件、请求、模型调用和工具调用，定位卡顿、重复、乱序和断线。只照顾第一类人，系统会漂亮但难运维；只照顾第三类人，界面会变成日志控制台。好的流式 UX 是这三类需求的平衡。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>流式输出的核心不是“字符增量”，而是“事件增量”。字符只是事件的一种。一个真实应用至少会出现开始、排队、规划、检索、工具调用、模型增量、引用补齐、告警、取消、完成、失败等事件。前端如果只把所有东西当文本追加，很快会遇到无法恢复的问题。例如模型先输出正文，后端稍后才拿到引用来源，这时引用需要挂到已有段落；工具调用失败后要展示一个可折叠的局部错误，而不是把错误文本混进答案；审核发现某段需要替换，前端要知道替换范围，而不是再追加一个修正声明。</p>
+<p>我通常把流式协议拆成四层概念。第一层是传输层，负责连接、心跳、重连和背压，常见选择是 SSE 或 WebSocket。第二层是任务层，负责一次用户请求的生命周期，包括任务编号、会话编号、幂等键、取消语义和最终状态。第三层是事件层，负责描述系统正在做什么和产出了什么，包括事件类型、序号、阶段、载荷和可见性。第四层是渲染层，负责把事件转换成用户界面，包括文本缓冲、Markdown 增量解析、进度状态、按钮状态和错误提示。</p>
+<p>这四层不能混在一起。很多系统的事故来自把传输连接当成任务本身。浏览器断线不等于任务取消，任务取消也不等于连接断开。用户关闭标签页后，后端可能仍然需要把任务标记为 abandoned，或者继续完成并保存草稿。另一个常见错误是把模型 token 当成业务事件。模型输出的 token 顺序只对模型响应有效，对产品体验不一定有效。应用层需要把模型片段包装成可观测、可恢复、可审计的事件。</p>
+<p>下面这张表是我在工程设计里常用的边界划分：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">层级</th><th scope="col">负责内容</th><th scope="col">不应该负责</th><th scope="col">关键指标</th></tr></thead><tbody><tr><td>传输层</td><td>连接建立、心跳、重连、网络错误</td><td>业务状态判断</td><td>连接成功率、断线率、心跳延迟</td></tr><tr><td>任务层</td><td>任务生命周期、幂等、取消、重试</td><td>文本排版细节</td><td>完成率、取消耗时、重复请求率</td></tr><tr><td>事件层</td><td>事件类型、序号、阶段、载荷</td><td>浏览器组件状态</td><td>乱序率、丢事件率、事件延迟</td></tr><tr><td>渲染层</td><td>增量展示、按钮状态、局部错误</td><td>模型调用策略</td><td>首屏反馈、滚动稳定性、复制成功率</td></tr></tbody></table></div>
+<p>还有一个概念叫“可承诺状态”。不是所有中间状态都适合展示给用户。比如“模型正在思考”是一种模糊状态，展示价值很低，还容易制造误解。更好的状态是“正在检索可访问文档”“正在根据 4 个来源组织答案”“正在调用工单系统查询变更记录”。这些状态有明确含义，即使最后失败，也能让用户理解系统已经走到哪里。可承诺状态应该来自应用确定知道的事实，而不是来自对模型内部行为的想象。</p>
+<p>流式输出也需要处理“内容稳定性”。当模型生成第一个段落时，后面的段落还没出现，标题层级、列表结构和引用位置都可能变化。前端不应该每收到一个字符就完整重排页面，否则滚动会抖动，代码块会闪烁，屏幕阅读器会反复播报。更可靠的做法是把文本分成稳定块和活动块：已经闭合的段落、列表项和代码块可以进入稳定区，当前正在生成的句子留在活动区。活动区可以用较低频率刷新，比如每 40 到 80 毫秒合并一次事件，这样既保留流式感，也不会让浏览器和用户都疲劳。</p>
+<p>最后要特别强调取消和重试。取消不是一个 UI 动作，而是一个分布式状态变更。重试也不是再发一次请求，而是对失败边界和复用边界的重新定义。工程上应该明确：用户点击取消后，前端停止接收，网关关闭上游流，任务服务写入取消原因，模型调用尽量中止，工具调用根据类型决定是否中止或等待补偿，审计日志记录取消者和取消时间。重试时则要明确复用哪些东西：用户原始输入可以复用，权限快照通常需要重新检查，检索结果可以短期复用，模型输出片段一般不直接复用，除非产品明确支持“从中断处继续”。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个可维护的流式架构，需要把模型供应商的原始流和用户看到的事件流隔离开。供应商可能返回 token、tool call delta、usage、finish reason，也可能在异常时直接断开连接。应用层不应该把这些原样透传给浏览器，而应该经过一个事件编排器。编排器负责把内部步骤翻译成稳定的业务事件，并写入事件日志。前端消费的是业务事件，后端排障查看的是同一份事件日志，这样用户反馈和工程定位才会对齐。</p>
+<p>可以把流程想成下面这个图：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户输入
+  |
+  v
+前端创建 request_id 和 idempotency_key
+  |
+  v
+API 网关鉴权、限流、建立流式连接
+  |
+  v
+任务服务写入 stream_run，返回 run_id
+  |
+  v
+事件编排器依次执行：上下文构造 -&gt; 检索 -&gt; 工具调用 -&gt; 模型生成
+  |
+  +--&gt; 事件日志 append(event_seq, event_type, payload)
+  |
+  +--&gt; SSE/WebSocket 推送可见事件
+  |
+  v
+前端事件 reducer 更新界面状态、文本缓冲和按钮状态
+  |
+  v
+完成、失败、取消或断线恢复</code></pre></div>
+<p>这里有几个关键点。第一，<code>request_id</code> 和 <code>run_id</code> 要区分。<code>request_id</code> 表示前端发起的一次请求，<code>run_id</code> 表示后端实际执行的一次生成任务。一次重试可能有新的 <code>request_id</code>，但可以关联到同一个用户意图。第二，事件必须有单调递增的 <code>event_seq</code>，前端用它去重和处理乱序。第三，事件日志要先写后推，或者至少保证推送失败时能补查。否则用户看到过的内容在后端没有记录，后续审计、恢复和客服排障都会断档。</p>
+<p>我建议事件分为五类。<code>lifecycle</code> 描述任务生命周期，比如 created、started、completed、cancelled、failed。<code>progress</code> 描述可承诺状态，比如 retrieving、calling_tool、reranking、generating。<code>content</code> 描述可渲染内容，比如 text_delta、block_done、citation_patch。<code>control</code> 描述客户端或服务端控制，比如 heartbeat、backpressure、resume_hint。<code>diagnostic</code> 描述可隐藏或只在调试模式可见的信息，比如模型名、路由原因、缓存命中和工具耗时。分类的好处是前端可以按产品策略显示，而不是所有事件都必须进入聊天气泡。</p>
+<p>一个事件结构可以设计成这样：</p>
+<div class="code-block"><pre class="line-numbers language-typescript" data-language="TypeScript"><code class="language-typescript">type StreamEvent = {
+  runId: string
+  seq: number
+  category: &quot;lifecycle&quot; | &quot;progress&quot; | &quot;content&quot; | &quot;control&quot; | &quot;diagnostic&quot;
+  type: string
+  visible: boolean
+  ts: string
+  payload: Record&lt;string, unknown&gt;
+}
+
+type TextDeltaPayload = {
+  blockId: string
+  delta: string
+  format: &quot;markdown&quot;
+}</code></pre></div>
+<p>前端不要在收到 <code>text_delta</code> 时直接拼到 DOM 上。更可靠的是先进入 reducer，更新内存中的块状态，再由渲染层按节流频率刷新。块状态可以包含 <code>blockId</code>、<code>rawMarkdown</code>、<code>stableMarkdown</code>、<code>isOpenCodeFence</code>、<code>citations</code>、<code>status</code> 等字段。这样当后端发送 <code>citation_patch</code> 时，前端能精确补到对应块，而不是重新解析整个答案。</p>
+<p>断线恢复也要在流程图里提前设计。SSE 原生有 <code>Last-Event-ID</code>，但很多应用需要自己实现，因为中间代理、鉴权刷新和多标签页都可能影响恢复。恢复流程应该是：前端带上 <code>run_id</code> 和最后收到的 <code>seq</code> 重新连接，服务端先检查用户是否仍有权限读取该任务，再从事件日志回放缺失事件，如果任务仍在运行则继续订阅新事件。如果任务已经结束，则直接回放到最终状态。这个设计能让刷新页面、移动网络切换和浏览器休眠都不再是灾难。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>工程实现可以从最小闭环做起：先把“任务状态”和“事件日志”落地，再接模型流。很多团队反过来做，先把模型 token 推到前端，后来想补取消、恢复、审计时发现没有稳定的任务实体。任务表不一定复杂，但要覆盖生命周期。比如 <code>stream_runs</code> 记录 <code>run_id</code>、<code>conversation_id</code>、<code>user_id</code>、<code>idempotency_key</code>、<code>status</code>、<code>cancel_reason</code>、<code>started_at</code>、<code>finished_at</code>、<code>model_route</code>、<code>usage_estimate</code>。事件表或日志流记录 <code>run_id</code>、<code>seq</code>、<code>type</code>、<code>payload</code>、<code>created_at</code>。如果吞吐量高，可以用 Kafka、Redis Stream 或 append-only 日志；如果早期规模小，PostgreSQL 表加索引也足够。</p>
+<p>服务端生成事件时要坚持一个原则：所有对用户可见的状态都从同一个事件出口发出。不要让检索模块直接推前端、模型模块也直接推前端、工具模块再单独开一个通道。这样前端会收到互相竞争的状态，排查时也不知道哪个模块负责顺序。更好的做法是每个模块向编排器报告内部结果，编排器按任务阶段转换成事件。编排器不需要承载所有业务逻辑，但它要拥有“向用户承诺什么”的决定权。</p>
+<p>下面是一个简化的 Go 结构，展示服务端如何把内部步骤变成流式事件：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type StreamRun struct {
+	RunID          string
+	UserID         string
+	ConversationID string
+	Status         string
+	NextSeq        int64
+	CancelReason   string
+}
+
+type EventSink interface {
+	Append(ctx context.Context, runID string, event StreamEvent) error
+	Publish(ctx context.Context, runID string, event StreamEvent) error
+}
+
+func Emit(ctx context.Context, run *StreamRun, sink EventSink, typ string, payload any) error {
+	run.NextSeq++
+	event := StreamEvent{
+		RunID: run.RunID,
+		Seq:   run.NextSeq,
+		Type:  typ,
+		TS:    time.Now().UTC(),
+		Data:  payload,
+	}
+	if err := sink.Append(ctx, run.RunID, event); err != nil {
+		return err
+	}
+	return sink.Publish(ctx, run.RunID, event)
+}</code></pre></div>
+<p>真实系统里还要处理发布失败。我的建议是以事件日志为事实来源，推送只是通知。如果 <code>Publish</code> 失败但 <code>Append</code> 成功，任务可以继续执行，前端通过恢复机制补事件。如果 <code>Append</code> 失败，则不要继续对外推可见内容，因为后端已经无法证明用户看到了什么。这个选择会让系统在日志存储故障时更保守，但它保护了审计和恢复的一致性。</p>
+<p>前端实现的核心是事件 reducer。它把事件流变成一个可渲染状态，而不是把字符串不断追加到组件。状态可以这样设计：</p>
+<div class="code-block"><pre class="line-numbers language-typescript" data-language="TypeScript"><code class="language-typescript">type StreamViewState = {
+  runId: string
+  status: &quot;connecting&quot; | &quot;running&quot; | &quot;completed&quot; | &quot;failed&quot; | &quot;cancelled&quot;
+  phaseLabel: string
+  blocks: Array&lt;{
+    id: string
+    markdown: string
+    stable: boolean
+    citations: Array&lt;{ id: string; title: string; url: string }&gt;
+  }&gt;
+  lastSeq: number
+  canCancel: boolean
+  canRetry: boolean
+  error?: { code: string; message: string; recoverable: boolean }
+}</code></pre></div>
+<p>这个 reducer 至少要处理四种情况。第一，乱序和重复事件。如果 <code>seq &lt;= lastSeq</code>，通常应该丢弃，除非事件类型是服务端明确允许覆盖的 patch。第二，活动块更新。<code>text_delta</code> 进入当前块，<code>block_done</code> 把块标记为稳定。第三，状态转移。<code>completed</code>、<code>failed</code>、<code>cancelled</code> 是终态，终态后再来的普通内容事件必须忽略并上报。第四，恢复回放。恢复时可能一次收到大量历史事件，渲染层应批量应用，避免逐条动画导致页面闪烁。</p>
+<p>增量 Markdown 是前端最容易踩坑的实现点。模型输出到一半时，代码块可能只有开头没有结尾，表格可能只有表头没有分隔线，链接可能只输出了左括号。直接把不完整 Markdown 交给渲染器，有些库会生成奇怪 DOM，甚至因为频繁重排导致卡顿。可以采取两段式解析：先用轻量扫描器判断当前缓冲的安全边界，把完整段落和闭合代码块提交给正式 Markdown 渲染器，未完成尾巴用纯文本或简化渲染显示。等收到 <code>block_done</code> 或终态时，再做一次完整渲染。</p>
+<p>取消实现要从前端一直传到模型调用。前端点击取消后，立刻把按钮状态变成“正在取消”，但不要马上把任务标记成已取消。它应该调用 <code>POST /stream-runs/{run_id}/cancel</code>，服务端写入取消请求，然后编排器通过 context cancellation、供应商 API abort、工具调用中断或补偿逻辑停止工作。只有服务端发出 <code>cancelled</code> 事件后，前端才进入终态。如果取消超时，前端可以展示“取消请求已提交，任务仍在收尾”，并继续监听终态。这个细节能避免用户以为已经停止，后端却还在执行的错觉。</p>
+<p>重试实现要先定义“重试原因”。网络断线后的重连不是重试，它只是恢复订阅。模型输出失败后的重试是同一个用户意图的新执行。用户修改问题后的再次发送则是新意图。产品上最好把这些动作分开：断线显示“重新连接中”，失败显示“重试生成”，用户编辑显示“基于修改重新提问”。后端也要分开记录，否则指标会混在一起，无法判断到底是网络问题、模型问题还是用户主动探索。</p>
+<p>还有一个容易被忽略的工程细节是滚动策略。聊天产品经常默认自动滚到底，但用户在流式过程中可能向上阅读资料。正确策略是“用户仍在底部附近时自动跟随；用户主动向上滚动后停止跟随；新内容到达时给出轻量提示；用户点击提示再回到底部”。这不是美化，而是避免流式输出抢夺阅读控制权。对于长答案，前端还应该允许用户在生成中复制已稳定的段落，并在复制内容里标记“生成尚未完成”，防止半成品被误当成最终答案。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>流式输出不能只测接口返回 200。它需要端到端评测，因为问题经常发生在事件顺序、浏览器渲染和用户操作交错的地方。基础测试应该覆盖服务端单元测试、协议契约测试、前端 reducer 测试、浏览器交互测试和故障注入测试。每类测试都要围绕真实行为，而不是围绕实现细节。</p>
+<p>下面是一个可执行的测试矩阵：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">场景</th><th scope="col">注入方式</th><th scope="col">期望结果</th><th scope="col">观测指标</th></tr></thead><tbody><tr><td>首字慢</td><td>检索延迟 8 秒</td><td>页面显示明确阶段，不空白等待</td><td>首个可见状态延迟</td></tr><tr><td>事件重复</td><td>回放同一 seq 两次</td><td>前端不重复渲染文本</td><td>重复丢弃计数</td></tr><tr><td>事件乱序</td><td>交换两个 text_delta</td><td>reducer 保持顺序或触发恢复</td><td>乱序告警</td></tr><tr><td>中途取消</td><td>生成 30% 时取消</td><td>任务进入 cancelled，成本停止增长</td><td>取消完成耗时</td></tr><tr><td>连接断开</td><td>浏览器断网后恢复</td><td>缺失事件被补齐，不重复答案</td><td>恢复成功率</td></tr><tr><td>Markdown 未闭合</td><td>输出半个代码块</td><td>页面保持可读，不破坏布局</td><td>渲染错误数</td></tr><tr><td>工具失败</td><td>工具返回 500</td><td>局部错误可见，任务可降级完成</td><td>局部失败率</td></tr></tbody></table></div>
+<p>评测指标要分产品指标和工程指标。产品指标包括首个可见反馈时间、首个正文时间、完整答案时间、取消率、失败后重试率、生成中编辑率、用户中断率、答案复制率。工程指标包括事件写入延迟、推送延迟、断线率、恢复延迟、每任务事件数、模型取消成功率、供应商错误分布、前端渲染帧率和内存增长。不要只看平均值，流式体验对长尾非常敏感。一次 60 秒卡住比十次 2 秒波动更伤用户信任。</p>
+<p>我建议给每次流式任务生成一条 timeline，排障时能看到如下信息：用户提交时间、网关接收时间、鉴权完成时间、检索开始和结束、工具调用开始和结束、模型首 token、每 500 个字符的时间点、取消请求时间、最终状态时间。timeline 不需要对普通用户全部展示，但工程和客服需要能查。用户说“刚才一直转圈”时，客服如果只能看到一个 failed 状态，基本无法判断问题。timeline 能把主观反馈转成工程事实。</p>
+<p>前端还要做视觉回归。流式输出会不断改变 DOM，普通静态截图测不到生成中的状态。应该准备几个固定事件序列，把界面推进到“检索中”“正文生成中”“代码块半开”“引用补齐”“局部失败”“取消收尾”“最终完成”等状态，再截图比对。尤其要检查窄屏、长单词、长代码行、表格溢出、按钮文案变化和输入框禁用状态。很多线上投诉不是模型错，而是移动端流式布局把关键按钮挤出屏幕。</p>
+<p>性能评测也要贴近实际。不要用每秒 5 个事件的理想流测试，而要模拟模型高速输出、工具事件穿插、网络抖动和恢复回放。前端可以对渲染做节流，但不能对状态处理丢事件。服务端可以合并很细的 token 事件，比如每 30 毫秒或每 20 个字符合并一次，但要保留逻辑边界。合并策略的目标是减少无意义刷新，而不是掩盖后端慢。上线前可以用压测任务生成不同长度答案，观察浏览器内存是否随历史会话无限增长，事件表是否需要归档，长连接是否被代理提前关闭。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一个常见失败模式是“假流式”。界面上有打字动画，但后端其实等完整答案返回后再切字符播放。这种做法能骗过演示，骗不过真实用户。它无法降低首个语义反馈时间，也无法在长任务中显示真实进度，更无法提前发现工具失败。假流式适合非常短的固定文案，不适合作为 LLM 应用的主流程。</p>
+<p>第二个失败模式是“取消不彻底”。用户点击取消，前端关闭连接，后端模型仍然继续生成。短期看只是多花钱，长期看会污染会话状态，因为任务可能在后台写入一条用户以为已经取消的答案。解决办法是把取消当成任务状态，而不是连接状态。所有长耗时步骤都要定期检查 cancellation，供应商不支持中断时也要停止继续消费和保存结果，并在成本统计里标记取消后消耗。</p>
+<p>第三个失败模式是“重复片段”。断线重连、浏览器刷新、多标签页同时订阅，都可能让同一批事件被应用两次。如果前端没有按 <code>seq</code> 去重，用户会看到重复段落。更隐蔽的是服务端重试供应商请求后，模型从相同上下文重新输出开头，事件序号是新的，但语义内容重复。这个问题需要在编排器层面处理：模型调用失败后的自动重试要么丢弃旧活动块并发出 replacement 事件，要么明确开始新块，不要把两段输出无缝拼接。</p>
+<p>第四个失败模式是“进度撒谎”。界面显示“马上完成”，实际还要等待工具调用；显示“正在阅读资料”，实际检索已经失败；显示“生成中”，实际在排队。进度文案如果不来自真实阶段，会迅速损害信任。可以少展示阶段，但展示的阶段必须准确。对于无法预测的耗时，不要写百分比。LLM 生成不是文件下载，百分比往往没有真实分母。用阶段和可解释动作比用伪进度条更可靠。</p>
+<p>第五个失败模式是“局部失败升级成全局失败”。例如引用服务超时，但正文已经生成完成。系统如果直接把任务标记 failed，用户会失去可用答案。更合理的方式是定义降级策略：正文生成成功但引用失败，可以完成任务，同时显示“部分引用暂不可用”；某个工具失败但有缓存结果，可以标记来源时间；安全审核失败则必须中止或重写，因为它影响内容合规。不是所有失败都一样，事件协议要能表达局部失败。</p>
+<p>第六个失败模式是“最终状态缺失”。很多流式 bug 表现为界面永远生成中。原因可能是服务端异常退出没有发送 failed，代理断开没有恢复，前端漏处理 finish reason，或者任务已经完成但终态事件丢了。解决办法是任务表必须有最终状态，前端也要有超时探测。长时间没有心跳时，前端不应该直接宣告失败，而应该进入“连接异常，正在恢复”，然后查询任务状态。服务端后台也应扫描运行过久的任务，把无心跳任务标记为 failed 或 abandoned。</p>
+<p>第七个失败模式是“可观测性只在服务端”。用户看到的是浏览器行为，服务端日志只能解释一半。前端需要记录关键体验事件，比如连接建立、首个可见状态、首个正文、用户滚动离开底部、点击取消、恢复连接、渲染错误。日志里不应该记录敏感正文，但可以记录长度、块数量、事件类型和耗时。有了前后端同一 <code>run_id</code>，一次投诉才能从用户点击一路追到模型调用。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<p>上线前我会按下面清单逐项过一遍。清单不是为了追求复杂，而是为了避免把流式输出当成一个 UI 小功能草率上线。</p>
+<ul><li>front matter、路由、图片和文章内容无关，但产品里同样需要元数据完整：每个流式任务必须有 <code>run_id</code>、用户、会话、创建时间、最终状态和模型路由记录。</li><li>传输协议已明确选择 SSE 或 WebSocket，并写清楚心跳间隔、代理超时、最大连接时长、重连策略和鉴权刷新策略。</li><li>所有可见事件都有单调递增序号，前端能够丢弃重复事件，服务端能够按 <code>run_id</code> 和 <code>seq</code> 回放缺失事件。</li><li>事件日志是事实来源，推送失败不会让用户看到后端无法追踪的内容。</li><li>前端 reducer 覆盖 started、progress、text_delta、block_done、citation_patch、failed、cancelled、completed、heartbeat 等事件。</li><li>Markdown 增量渲染有安全边界，代码块、表格、链接和列表未完成时不会破坏页面布局。</li><li>取消按钮调用服务端取消接口，服务端能传播取消信号，最终通过 <code>cancelled</code> 事件确认。</li><li>重试语义区分断线恢复、失败重试和用户改写问题，指标里不要混为一类。</li><li>工具调用和检索阶段有局部失败策略，明确哪些失败可降级，哪些失败必须中止。</li><li>前端滚动策略尊重用户阅读位置，不在用户向上阅读时强制滚到底。</li><li>可观测性覆盖首个可见状态、首个正文、完整耗时、事件延迟、恢复成功率、取消耗时和局部失败率。</li><li>压测覆盖长答案、高频事件、断线恢复、多标签页订阅、移动端弱网和代理超时。</li><li>客服或运维能按 <code>run_id</code> 查看 timeline，判断卡在鉴权、检索、工具、模型、推送还是前端渲染。</li><li>数据保留策略已确定，事件日志保留多久、正文是否脱敏、取消任务是否保存半成品，都有产品和合规共识。</li></ul>
+<p>如果团队还在早期，不必一次实现所有高级能力，但至少要把任务实体、事件序号、取消语义和最终状态做扎实。这四个点一旦缺失，后面补救代价很高。相反，只要这四个点在，界面可以逐步打磨，协议也能平滑扩展。</p>
+<h2 id="总结">总结</h2>
+<p>流式输出的价值不是让文字看起来更快，而是让用户在不确定的生成过程中获得可理解、可控制、可恢复的体验。它把 LLM 应用从“等待一个黑盒结果”推进到“观察一个任务执行”。这件事天然涉及产品和工程的共同设计，不能由前端单独解决，也不能由模型接入层单独解决。</p>
+<p>好的流式 UX 有几个共同特征：状态来自真实阶段，事件协议稳定可回放，前端以 reducer 管理中间态，取消和重试有明确语义，局部失败能被表达，观测数据能还原用户体验。做到这些，用户看到的不只是快，而是系统有条理、有边界、可信任。对于 LLM 应用来说，这种信任比单纯的打字速度更重要。</p>
+<p>我建议团队从一个小而完整的闭环开始：为每次生成建立任务记录，为每个可见变化生成事件，为前端提供可恢复的事件流，为取消和终态建立真实状态。然后再优化首字、动画、引用补齐和多端体验。流式输出一旦成为稳定协议，后续无论接入更长上下文、更复杂工具链，还是支持协作编辑和后台任务，都能在同一条产品语言上继续生长。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent 的上下文预算 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="上下文越长越不等于越可靠，预算管理决定系统可控性。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="Agent 的上下文预算">
+  <meta property="og:description" content="上下文越长越不等于越可靠，预算管理决定系统可控性。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/agent-context-budget.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link active" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>Agent 的上下文预算</span></nav>
+          <div class="note-kicker">NOTES / AGENT / 030</div>
+          <h1>Agent 的上下文预算</h1>
+          <p>上下文越长越不等于越可靠，预算管理决定系统可控性。</p>
+          <div class="note-tag-row"><span>Context</span><span>Agent</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/agent-context-budget.svg" alt="标题图" loading="lazy"><figcaption>Agent 的上下文预算 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>做 Agent 系统时，很多人会把“上下文窗口变大”理解成“系统问题自然减少”。这是一种很容易误导工程设计的错觉。上下文窗口确实给了模型更多材料，但材料越多，冲突、噪声、过期信息和无关细节也会一起进入推理现场。一个没有预算管理的 Agent，像是把所有会议纪要、代码片段、工具返回、用户历史消息、搜索结果和失败日志都塞进同一张桌子，再指望模型每次都能挑出正确证据。短任务里也许还能跑通，进入真实生产后，成本、延迟、正确性和安全性都会一起失控。</p>
+<p>上下文预算不是简单的 token 裁剪，也不是把长文本做摘要。预算管理要回答的是：本轮决策到底需要哪些信息，哪些信息必须原文保留，哪些信息可以摘要，哪些信息只能作为引用，哪些信息要明确排除，哪些信息虽然重要但已经过期。Agent 和普通聊天机器人不同，它会多轮规划、调用工具、修改外部状态，并把工具结果继续带回模型。如果每一次调用都把历史完整堆回去，系统很快会出现几个典型问题：模型引用旧结论，忽略新的工具结果；重复解释已经确认的事项；把失败尝试当成有效方案；被不可信网页或文件内容干扰；在长对话中丢失最初的硬约束。</p>
+<p>我在工程项目里更愿意把上下文看成运行时内存，而不是无限草稿纸。内存有热区、冷区、只读区、临时区和外部存储，Agent 的上下文也应该类似。用户当前目标、系统规则、任务约束、最近工具结果属于热区，需要高优先级保留。项目结构、历史经验、长文档、检索材料属于冷区，需要按需拉取。网页正文、邮件内容、用户上传文件属于不可信数据区，需要隔离。模型自己生成的中间推理和失败尝试属于临时区，很多内容任务结束后只保留摘要。</p>
+<p>上下文预算的难点在于它直接影响模型行为，但很少能用单一指标评估。只压缩 token，可能导致证据缺失；只追求召回，可能导致注意力稀释；只保留最新消息，可能丢掉任务边界；只保留用户原话，可能缺少工具证据。好的预算系统要同时服务四个目标：让模型看见必要事实，让模型少看无关噪声，让系统成本可预测，让错误能够被复盘。换句话说，预算不是省钱的小技巧，而是 Agent 可靠性的基础设施。</p>
+<p>一个常见场景是代码修复 Agent。用户说“修一下这个测试失败”，系统读取报错、搜索代码、打开文件、修改实现、运行测试。这个过程里有很多上下文：用户目标、仓库说明、报错日志、测试文件、被测实现、相关接口、历史补丁、命令输出、失败的中间尝试。如果预算策略粗糙，模型可能在最后提交时仍然被第一次失败日志影响，或者把无关文件片段挤掉了真正的断言。更危险的是，当日志里包含外部输入时，模型还可能把日志文本当成指令。生产 Agent 必须把这些材料分层、标注和裁剪。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>上下文预算可以拆成四个层次：容量预算、注意力预算、风险预算和证据预算。容量预算关心 token 数量，决定能放多少。注意力预算关心信息排序，决定模型先看到什么、哪些内容离任务描述更近。风险预算关心内容可信度，决定哪些数据不能直接参与指令解释。证据预算关心可追溯性，决定回答或行动背后有没有足够依据。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">预算类型</th><th scope="col">主要问题</th><th scope="col">工程手段</th><th scope="col">失控表现</th></tr></thead><tbody><tr><td>容量预算</td><td>本轮最多放多少 token</td><td>分区配额、压缩、截断、分页读取</td><td>成本飙升、延迟变长、超窗失败</td></tr><tr><td>注意力预算</td><td>哪些信息应该更靠近决策</td><td>优先级排序、近因控制、章节化上下文</td><td>模型看见了材料却用错重点</td></tr><tr><td>风险预算</td><td>哪些内容不该被当成指令</td><td>可信等级、数据隔离、引用封装</td><td>间接提示注入、越权行动</td></tr><tr><td>证据预算</td><td>结论是否有可验证来源</td><td>引用片段、工具记录、决策日志</td><td>回答无法解释、复盘困难</td></tr></tbody></table></div>
+<p>容量预算最容易理解，但也最容易被过度简化。很多系统会设置一个固定上限，例如系统提示 2000 token，最近对话 4000 token，检索材料 12000 token。这种静态配额适合起步，不适合复杂任务。因为任务阶段不同，预算结构也不同。刚开始规划时，用户目标和项目约束更重要；定位问题时，日志和相关代码更重要；准备写文件时，目标文件和接口定义更重要；总结时，改动、测试和风险更重要。上下文预算应该随着阶段变化，而不是固定切片。</p>
+<p>注意力预算更隐蔽。模型不只是“有没有看到”，还受到位置、重复、标题、格式和冲突信息影响。把硬约束放在长日志之后，等于降低约束权重；把过期结论重复三次，模型就可能把它当成稳定事实；把原始网页正文和系统规则放在同一语义层，模型就更容易混淆数据与指令。所以预算管理不是只做裁剪，还要做编排。信息应该带着角色进入上下文：这是不可违反的规则，这是当前任务目标，这是工具证据，这是不可信原文，这是旧尝试的摘要。</p>
+<p>风险预算决定 Agent 能不能在开放环境里工作。工具返回、网页内容、仓库文件、工单评论都可能包含“请忽略之前规则”这样的文本。它们对业务可能是数据，对模型却看起来像自然语言指令。系统要把这类内容封装成数据块，明确告诉模型只能把它们当证据，不能当规则。更进一步，敏感字段、密钥、个人信息不应该因为“可能有帮助”就进入模型上下文。风险预算要和权限系统、脱敏策略、工具网关一起设计。</p>
+<p>证据预算则是把 Agent 从“会说”拉回“可交付”。当模型给出结论、决定修改文件或调用写操作工具时，系统应该能回答：它基于哪些文件、哪些工具输出、哪些用户确认做了这个决定。没有证据预算，最终 trace 只剩一堆对话文本，出了问题很难判断是检索漏了、摘要错了、模型误读了，还是工具返回不完整。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个可控的上下文预算系统，可以看成 Agent 运行前的一层“上下文编排器”。它不替代模型推理，而是在每次模型调用前，把候选材料变成有结构、有优先级、有风险标记的输入包。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户目标 / 会话历史 / 项目记忆 / 检索结果 / 工具结果
+        |
+        v
+上下文候选池：按来源保存原文、摘要、时间、作用域、可信等级
+        |
+        v
+任务阶段识别：规划、定位、实现、验证、总结、恢复
+        |
+        v
+预算分配器：容量配额、风险限制、证据要求、保留策略
+        |
+        v
+重排与压缩：硬约束置顶、相关片段聚合、旧信息摘要化
+        |
+        v
+上下文包：system / developer / task / evidence / scratch / citations
+        |
+        v
+模型调用
+        |
+        v
+结果写回：新证据、新摘要、新约束、新风险</code></pre></div>
+<p>这张图里最关键的是“候选池”和“上下文包”分离。候选池可以很大，保存了所有可能有用的信息；上下文包必须很小，只包含本轮决策需要的材料。不要把检索系统直接接到 prompt。检索只是召回候选，预算编排才决定能不能放进去、放多少、放在哪里。很多 Agent 质量问题表面上像模型不稳定，本质上是候选材料没有治理。</p>
+<p>上下文包建议拆成固定槽位。第一槽是系统和安全规则，永远不被业务文本覆盖。第二槽是当前用户目标和硬约束，必须保留原文。第三槽是任务状态，包括已经完成、正在做、待确认事项。第四槽是证据区，放文件片段、工具结果和检索材料。第五槽是工作摘要，放长历史压缩后的状态。第六槽是输出要求，说明本轮应该产出计划、补丁、确认问题还是最终汇报。固定槽位的好处是可测试，可观测，也方便排查“信息为什么没有进入上下文”。</p>
+<p>预算分配不应该只按 token 绝对值，还应该按任务风险调节。只读问答可以给更多外部资料；会修改文件的任务要优先保留目标文件、测试和约束；会调用外发工具的任务要增加确认材料和风险说明；涉及安全、财务、权限的任务要减少自由文本，增加结构化证据。Agent 越接近副作用，越不能依赖模糊记忆。</p>
+<p>一个实际流程例子：用户要求“给这四个 slug 写文章，只改这四个 Markdown 文件”。上下文编排器应该保留用户硬约束、<code>ARTICLE_STYLE.md</code>、<code>js/articles.js</code> 里对应元数据、目标目录状态、校验脚本规则。它不需要保留整个站点所有文章，也不需要把所有构建脚本塞进来。写作过程中，每篇文章的内容草稿不应该挤掉全局硬约束；执行校验后，校验输出应该进入证据区；最终汇报只需要创建文件和校验结果。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>实现上下文预算，第一步是把信息单元结构化。不要让系统内部只有一串拼接后的 prompt 字符串。每个片段都应该有来源、作用域、可信等级、生命周期和成本估计。下面是一个简化的数据结构：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type ContextItem struct {
+    ID          string
+    Source      string // user, system, file, tool, memory, retrieval
+    Role        string // rule, goal, evidence, state, warning, output_contract
+    Text        string
+    Summary     string
+    Scope       string // session, workspace, task, tool_call
+    Trust       string // trusted, verified_data, untrusted_data, model_generated
+    Priority    int
+    TokenCost   int
+    CreatedAt   time.Time
+    ExpiresAt   *time.Time
+    EvidenceRef string
+}</code></pre></div>
+<p>这个结构让预算分配器可以做明确判断。用户本轮硬约束的 <code>Role</code> 是 <code>goal</code> 或 <code>rule</code>，<code>Trust</code> 是 <code>trusted</code>，<code>Priority</code> 很高，通常不能压缩。网页正文的 <code>Role</code> 是 <code>evidence</code>，<code>Trust</code> 是 <code>untrusted_data</code>，可以摘要和引用，但不能进入规则槽。模型上一轮生成的分析属于 <code>model_generated</code>，如果没有工具证据支撑，优先级应该低于实际文件内容。</p>
+<p>第二步是做阶段化预算。可以先用简单状态机，不必一开始就做复杂学习算法：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">plan:
+  rules: 20%
+  goal_and_constraints: 25%
+  memory: 20%
+  evidence: 25%
+  output_contract: 10%
+
+implement:
+  rules: 15%
+  goal_and_constraints: 15%
+  target_files: 40%
+  tests_and_errors: 20%
+  output_contract: 10%
+
+verify:
+  rules: 10%
+  goal_and_constraints: 15%
+  changed_artifacts: 25%
+  command_results: 35%
+  risks: 15%</code></pre></div>
+<p>这些比例不是银弹，但它们能迫使工程团队讨论“这个阶段应该看什么”。如果一个实现阶段的上下文里，历史聊天占了 60%，目标文件只占 10%，后续出错就不是模型偶然，而是预算策略不合理。</p>
+<p>第三步是做冲突处理。上下文里经常存在多个版本的事实：用户先说可以改脚本，后来又说不要改脚本；工具第一次返回测试失败，第二次返回通过；旧记忆说项目用 yarn，新文件显示项目用 pnpm。预算编排器要按来源可信度、时间、作用域和证据强度做裁决，并把裁决结果显式写入上下文。例如：“最新用户指令要求只修改四个 Markdown 文件，该约束覆盖早先一般性编辑习惯”。不要让模型自己在大量冲突文本里猜。</p>
+<p>第四步是做摘要，但摘要要分类型。对话历史适合做任务状态摘要；长文档适合做章节索引和按需摘录；命令输出适合保留错误码、关键栈、失败断言和复现命令；代码文件适合保留相关函数签名和局部实现；用户硬约束原则上保留原文。错误的摘要比没有摘要更危险，因为它会以更高密度传播误解。摘要生成后最好带上原始证据引用，必要时可回源。</p>
+<p>第五步是接入观测。每次模型调用都记录预算报告：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;run_id&quot;: &quot;run_20260423_001&quot;,
+  &quot;stage&quot;: &quot;implement&quot;,
+  &quot;max_tokens&quot;: 24000,
+  &quot;used_tokens&quot;: 21320,
+  &quot;items&quot;: [
+    {&quot;role&quot;: &quot;goal&quot;, &quot;source&quot;: &quot;user&quot;, &quot;tokens&quot;: 520, &quot;kept&quot;: true},
+    {&quot;role&quot;: &quot;target_files&quot;, &quot;source&quot;: &quot;file&quot;, &quot;tokens&quot;: 9800, &quot;kept&quot;: true},
+    {&quot;role&quot;: &quot;memory&quot;, &quot;source&quot;: &quot;workspace&quot;, &quot;tokens&quot;: 1400, &quot;kept&quot;: true},
+    {&quot;role&quot;: &quot;old_dialog&quot;, &quot;source&quot;: &quot;session&quot;, &quot;tokens&quot;: 6800, &quot;kept&quot;: false, &quot;reason&quot;: &quot;low relevance&quot;}
+  ]
+}</code></pre></div>
+<p>有了预算报告，排查问题会清楚很多。模型为什么没遵守某个约束？先看约束是否进入上下文；进入了是否被压缩；压缩是否改变含义；位置是否太靠后；是否被冲突信息覆盖。没有这份报告，大家只能在 prompt 上凭感觉调参。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>上下文预算的评测不能只测最终回答，要测“材料选择是否正确”。我通常把评测拆成五类：硬约束保留率、关键证据召回率、噪声抑制率、冲突裁决正确率和成本稳定性。硬约束保留率看用户明确要求有没有进入每次关键调用。关键证据召回率看目标文件、错误日志、接口定义是否被选中。噪声抑制率看无关历史、重复日志、过期摘要是否被排除。冲突裁决正确率看系统是否选择最新且更可信的事实。成本稳定性看同类任务的 token 使用是否可预测。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">评测项</th><th scope="col">构造方法</th><th scope="col">通过标准</th></tr></thead><tbody><tr><td>硬约束保留</td><td>在长历史中插入“只改指定文件”等约束</td><td>所有写操作前的上下文包都包含原文</td></tr><tr><td>证据召回</td><td>给出失败测试和多个相似文件</td><td>目标测试、被测函数、最新错误进入 evidence</td></tr><tr><td>噪声抑制</td><td>添加大量旧日志和无关文章</td><td>无关材料不挤占目标文件预算</td></tr><tr><td>冲突处理</td><td>同一事实给出旧版本和新版本</td><td>新证据覆盖旧记忆，并有裁决说明</td></tr><tr><td>成本回归</td><td>重放同类任务一百次</td><td>token 波动在可接受范围内</td></tr></tbody></table></div>
+<p>测试要尽量使用可重放任务。比如保存一组真实工单：每个工单包含用户请求、仓库快照、命令输出、候选文件和期望上下文包。然后对预算编排器做单元测试，不一定每次都跑模型。这样可以在修改检索策略、摘要器或优先级规则时快速发现退化。模型端评测再看最终修复成功率、工具调用次数和用户确认次数。</p>
+<p>还需要做长程压力测试。把同一个 Agent 运行三十轮，中间穿插失败命令、用户改口、工具错误、无关搜索结果和大文件读取，观察预算系统能否保持任务边界。很多上下文策略在单轮看起来不错，长程后会把临时猜测写进摘要，或者让旧失败占据太多位置。长程测试的重点不是让模型表现聪明，而是验证状态是否收敛：完成的事情不会反复做，废弃的路线不会反复尝试，最新约束不会被旧摘要覆盖。</p>
+<p>最后要把人工评审纳入评测。上下文包不是给用户看的最终答案，但工程团队应该能打开一份 trace，看懂本轮模型为什么会这么做。如果评审者无法从上下文包中找到任务目标、证据和输出要求，模型再强也只是碰运气。好的预算系统会让失败变得可解释：是预算太小、优先级错、摘要丢证据，还是检索漏掉了关键文件。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一种失败是“上下文越积越厚”。Agent 为了稳妥，把每个工具结果都加入长期摘要，最后摘要本身变成噪声源。表现是模型总在解释历史，行动变慢，而且容易把已经解决的问题拿出来反复处理。解决办法是给状态摘要设置结构和过期规则，只保留当前目标、已完成事项、阻塞点、关键证据和明确决策。</p>
+<p>第二种失败是“硬约束被摘要软化”。用户说“只修改这四个 Markdown 文件”，摘要变成“主要修改文章文件”。这两个句子在工程上完全不同，后者给了系统误改其他文件的空间。硬约束必须原文保留，并标记为不可压缩。凡是涉及权限、文件范围、禁止动作、输出格式、验收命令的指令，都不应该只靠摘要。</p>
+<p>第三种失败是“检索材料污染规则区”。外部文档、网页和用户上传文件被直接拼到 prompt 前部，模型把其中的自然语言当成高优先级指令。解决办法是对不可信内容做引用封装，明确边界，并在工具返回层做净化。预算系统要限制不可信数据的槽位和比例，不能因为相关性高就提高它的指令地位。</p>
+<p>第四种失败是“最近信息压倒真实证据”。模型有近因偏好，最后一次工具输出或最后一段对话容易影响决策。假如最后一次命令失败是因为环境临时问题，而前面已经有更直接的代码证据，模型可能过度关注环境。预算编排器需要按证据类型排序，把权威文件、明确用户指令和最新成功验证放在合适位置。</p>
+<p>第五种失败是“预算策略不可见”。系统出了错，团队只看最终 prompt，却不知道候选池里有哪些材料被丢弃，也不知道丢弃原因。没有可观测性，优化会变成改提示词。每次裁剪、摘要、重排、排除都应该记录原因。尤其是没有放入上下文的关键材料，往往是失败根因。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>明确上下文槽位：系统规则、用户目标、硬约束、任务状态、证据、风险、输出要求分区组织。</li><li>给每个上下文片段记录来源、可信等级、作用域、时间、token 成本和证据引用。</li><li>硬约束、权限边界、文件范围、禁止动作和验收命令必须原文保留。</li><li>对不可信工具结果和外部文本做数据封装，不允许进入规则槽。</li><li>按任务阶段分配预算，规划、实现、验证、总结使用不同配额。</li><li>为摘要建立类型化模板，区分对话摘要、工具摘要、文件摘要和错误摘要。</li><li>处理冲突时显式裁决，使用最新用户指令、权威文件和可验证工具结果覆盖旧记忆。</li><li>记录每次模型调用的预算报告，包括保留、压缩、排除和排除原因。</li><li>建立上下文包回归测试，覆盖长历史、冲突事实、大日志、无关检索和不可信文本。</li><li>为高风险任务降低自由文本比例，提高结构化证据和人工确认材料比例。</li><li>定期检查 token 成本、延迟、成功率、重试次数和用户澄清次数。</li><li>提供回源能力，模型引用摘要时可以追到原始文件、命令输出或用户消息。</li></ul>
+<h2 id="总结">总结</h2>
+<p>Agent 的上下文预算，本质上是在模型调用前做一次工程化的“信息治理”。它不是为了把 prompt 写得更漂亮，而是为了让模型在正确的材料上做判断，在明确的边界里行动，并在失败时留下可复盘证据。上下文窗口变大以后，预算管理反而更重要，因为系统有能力容纳更多噪声，也更容易把旧信息和不可信数据带进关键决策。</p>
+<p>一个实用的起点是：先把上下文从字符串变成结构化片段，再按任务阶段分配槽位和配额，最后记录预算报告。不要一开始追求复杂算法，先保证硬约束不丢、证据可追、风险内容隔离、冲突有裁决。等这些基础稳定后，再优化检索、摘要和重排。长期看，可靠 Agent 拼的不是一次模型调用能塞多少内容，而是每次调用都能拿到恰好足够、足够可信、足够可解释的上下文。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

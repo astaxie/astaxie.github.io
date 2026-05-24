@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>本地 AI 工具栈整理 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="稳定工具栈包含桌面助手、CLI、浏览器自动化和知识库。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="本地 AI 工具栈整理">
+  <meta property="og:description" content="稳定工具栈包含桌面助手、CLI、浏览器自动化和知识库。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/local-tool-stack.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link active" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>本地 AI 工具栈整理</span></nav>
+          <div class="note-kicker">NOTES / WORKFLOW / 098</div>
+          <h1>本地 AI 工具栈整理</h1>
+          <p>稳定工具栈包含桌面助手、CLI、浏览器自动化和知识库。</p>
+          <div class="note-tag-row"><span>Local Tools</span><span>Workflow</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/local-tool-stack.svg" alt="标题图" loading="lazy"><figcaption>本地 AI 工具栈整理 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>过去两年，很多开发者的 AI 工作流从“打开一个聊天网页问问题”，慢慢变成了“让模型进入本地工作现场”。这个变化看起来只是入口不同，实际影响很深。网页聊天适合解释概念、改一段孤立代码、写一封邮件；但真实工程工作总是被放在文件系统、Git 历史、浏览器会话、终端输出、设计稿、数据库快照和个人笔记之间。AI 如果只能站在这些材料外面回答，就会经常说得像那么回事，落地时却缺一块上下文。</p>
+<p>我理解的本地 AI 工具栈，不是把所有东西都换成某个新工具，也不是把模型全搬到笔记本电脑上。它更像一套工作台：有桌面助手负责跨应用沟通，有 CLI 负责靠近代码仓库和命令行，有浏览器自动化负责处理页面状态，有知识库负责沉淀长期上下文，有评测和日志负责判断这套流程是否可靠。工具栈的价值不在数量，而在这些工具之间是否形成稳定边界。每一层都知道自己该做什么，也知道自己不该做什么。</p>
+<p>很多团队在引入 AI 工具时，会直接从“哪个模型更强”开始讨论。这当然重要，但在本地工作流里，模型只是系统的一部分。真正决定效率的是：任务从哪里进入，模型能看到哪些证据，工具可以执行哪些动作，失败时如何回滚，产物如何进入知识库，下一次类似问题能不能复用已有经验。如果这些问题没有设计，工具越多，工作台越乱。最后用户会在五六个窗口之间复制粘贴，把上下文丢给不同 Agent，再手工合并它们的回答。</p>
+<p>本地工具栈还有一个经常被低估的特点：它要服务“半自动”工作，而不是追求全自动。开发者并不一定希望 AI 在没有确认的情况下改完所有文件、提交代码、发布上线。更常见的期待是：AI 能快速阅读仓库，给出可审查的修改计划，生成补丁，跑测试，解释失败原因，整理成笔记，然后把关键决策留在本地知识库里。也就是说，人仍然在控制面，AI 提供执行力和上下文压缩能力。本地栈如果把人从控制面移走，短期看很炫，长期会积累很难排查的信任问题。</p>
+<p>我整理这套工具栈时，优先考虑几个现实约束。第一，工具必须能在普通开发机上运行，不依赖重型平台。第二，关键资料要尽量留在本地，发给远端模型的内容需要经过选择。第三，工作流要能跨项目复用，而不是为每个仓库手工配一套脚本。第四，产物要可追溯，不能只留下一段看似聪明的回答。第五，出错时要能降级到传统工程手段：看日志、跑测试、读 diff、查 Git 历史。</p>
+<p>这篇文章讨论的是一套偏工程实践的本地 AI 工具栈。它不试图列一个“必装软件排行榜”，也不把某个工具包装成银弹。我的目标是讲清楚每一层的职责、接口、数据结构、失败模式和上线检查项。你可以用不同产品替换其中的具体实现，但最好不要省略这些边界。工具可以换，工作流里的约束不能丢。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>本地 AI 工具栈可以拆成五个层次：入口层、上下文层、执行层、记忆层和治理层。入口层解决“从哪里发起任务”，上下文层解决“模型看什么”，执行层解决“谁动手做”，记忆层解决“结果如何沉淀”，治理层解决“如何控制风险”。如果把所有功能都塞进一个聊天窗口，早期很快，后期会很难维护；分层之后，工具之间可以替换，工作流也更容易被团队讨论。</p>
+<p>入口层通常有四种形态：桌面助手、编辑器插件、CLI 和浏览器侧边栏。桌面助手适合跨应用任务，例如整理会议材料、读取截图、分析本地文档；编辑器插件适合代码补全和局部重构；CLI 适合仓库级任务、测试、构建、搜索；浏览器侧边栏适合处理网页状态、后台系统和文档站。入口不是越多越好。入口太多会导致上下文分裂，用户不知道哪一次任务记录在哪里。我的建议是：代码任务默认走 CLI 或编辑器，知识整理默认走桌面助手或本地知识库，网页任务走浏览器自动化，跨入口结果统一写入同一套日志和笔记。</p>
+<p>上下文层的核心概念是证据包。证据包不是“把整个项目扔给模型”，而是把任务相关的文件片段、命令输出、网页文本、历史笔记、系统信息和用户意图整理成一份有来源、有预算、有敏感级别的输入。证据包应该带着元数据：路径、时间、哈希、截断方式、是否包含密钥、是否可发远端。这样做的好处是，回答错误时可以回看模型到底看到了什么，而不是凭感觉猜它是不是漏读了文件。</p>
+<p>执行层要坚持能力注册。文件读取、文件写入、搜索、Git、Shell、浏览器点击、数据库查询、截图识别、OCR、文档转换，都应该是明确的能力，而不是让模型随意拼命令。每个能力至少要声明输入 schema、风险等级、超时、幂等性、是否需要确认、返回值如何裁剪。能力注册听起来像平台工程，实际上在个人工作流里也很有用。你只要把常用命令包成少数几个明确入口，就能减少模型生成危险命令的机会。</p>
+<p>记忆层分短期记忆和长期知识。短期记忆是一个任务 run 内部的上下文，例如刚刚跑过的测试、看过的 diff、用户否定过的方案。长期知识是跨任务复用的内容，例如项目架构说明、常见失败原因、发布 checklist、模型提示词版本、团队约定。两者不能混在一起。短期记忆可以很细、很吵、很接近日志；长期知识必须经过整理，有标题、标签、来源和更新时间。把所有聊天记录都塞进知识库，只会让检索质量下降。</p>
+<p>治理层包括权限、审计、评测和成本控制。本地工具栈虽然运行在自己的机器上，但这不等于安全。一个能读文件、发请求、执行命令的 Agent，如果没有边界，风险比普通脚本更高。治理层应该回答几个问题：哪些目录能读，哪些目录能写，哪些命令需要确认，哪些内容不能出网，任务失败是否自动重试，模型调用花了多少钱，产物是否经过测试。个人用户也需要这些答案，因为本地机器里通常有更多敏感资料。</p>
+<p>下面这张表可以作为选型时的判断框架：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">层次</th><th scope="col">典型工具形态</th><th scope="col">关键职责</th><th scope="col">不应该承担的职责</th><th scope="col">稳定性指标</th></tr></thead><tbody><tr><td>入口层</td><td>桌面助手、CLI、编辑器、浏览器扩展</td><td>接收任务、绑定工作区、展示结果</td><td>长期保存所有上下文</td><td>用户能清楚知道任务发生在哪里</td></tr><tr><td>上下文层</td><td>索引器、检索器、证据包构建器</td><td>选择相关材料、脱敏、压缩</td><td>替模型做最终判断</td><td>引用来源可追溯，敏感内容可标注</td></tr><tr><td>执行层</td><td>工具网关、脚本、MCP 服务</td><td>受控读写、运行命令、打开页面</td><td>绕过确认直接发布</td><td>写操作可审查，可回滚</td></tr><tr><td>记忆层</td><td>Markdown、SQLite、向量库、Git</td><td>沉淀经验、支持复用</td><td>无差别保存噪音</td><td>检索命中能解释来源</td></tr><tr><td>治理层</td><td>策略配置、日志、评测、预算</td><td>控制权限、观测质量、管理成本</td><td>只做形式化记录</td><td>出错时能定位原因</td></tr></tbody></table></div>
+<p>这五层不一定要由五个独立软件实现。一个成熟的 CLI 可能同时承担入口、执行和日志；一个知识库系统可能同时负责记忆和上下文检索。重要的是概念边界要清晰。只要边界清晰，工具换代时不会把整套流程推倒重来。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>我习惯把本地 AI 工具栈画成一条“任务流水线”，而不是一个工具清单：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">User Intent
+  |
+  v
+Entry Router
+  |-- Desktop Assistant
+  |-- CLI / Editor
+  |-- Browser Automation
+  |
+  v
+Workspace Context
+  |-- file index
+  |-- git state
+  |-- browser state
+  |-- notes index
+  |
+  v
+Evidence Pack Builder
+  |-- relevance ranking
+  |-- token budget
+  |-- secret scanning
+  |-- citation map
+  |
+  v
+Model Gateway
+  |-- local model
+  |-- remote model
+  |-- routing policy
+  |
+  v
+Tool Gateway
+  |-- read/search
+  |-- patch/write
+  |-- shell/test
+  |-- browser/action
+  |
+  v
+Artifacts + Memory
+  |-- diff
+  |-- test report
+  |-- decision note
+  |-- checklist update</code></pre></div>
+<p>这条流水线的关键是入口之后必须尽快绑定工作区。用户说“帮我整理这篇文章”时，系统要知道文章文件在哪，关联图片在哪，站点构建命令是什么，风格规范是什么。用户说“帮我排查这个接口变慢”时，系统要知道仓库根目录、服务启动方式、日志路径、最近部署记录和可用测试命令。没有工作区绑定，后面的检索和执行都会变成猜测。</p>
+<p>在实际使用中，我会把任务分成三类流程。</p>
+<p>第一类是只读分析流程。它适合架构理解、代码审查、日志分析、文档问答。入口接到任务后，先读取文件索引和 Git 状态，再构建证据包，模型给出结论和引用。执行层只允许调用只读能力，例如 <code>rg</code>、<code>git show</code>、<code>go test -run</code> 的 dry-run 版本、日志过滤命令。这个流程的风险低，可以减少确认次数，但仍然要记录读取范围。</p>
+<p>第二类是补丁生成流程。它适合修 bug、改文档、加测试。模型先提出修改计划，工具网关生成 diff，用户审查后再写入真实文件。写入后必须跑最小验证命令，并把结果和 diff 一起归档。补丁流程里最忌讳的是模型直接覆盖大文件。可审查的 diff 是本地工作流的信任基础。</p>
+<p>第三类是操作页面流程。它适合后台配置、表单填写、资料采集、网页测试。浏览器自动化必须保存页面 URL、关键 DOM 片段、截图和操作日志。涉及提交、删除、支付、发邮件等动作时，需要人工确认。页面流程很容易因为网络和 UI 变化失败，所以每一步最好都能断点续跑，而不是一次性生成一长串点击动作。</p>
+<p>一个具体例子：我让 AI 帮忙把一组调研笔记整理成站点文章。流程不是“把所有笔记粘贴进模型”。更稳的做法是：</p>
+<ol><li>CLI 绑定当前仓库，读取 <code>content/ARTICLE_STYLE.md</code> 和目标文章元数据。</li><li>上下文层搜索相关笔记，只提取标题、要点和引用来源。</li><li>证据包构建器标记哪些内容来自个人草稿，哪些来自公开资料，哪些不能外发。</li><li>模型生成文章提纲和缺口清单，先不写文件。</li><li>用户确认方向后，模型生成正文补丁。</li><li>工具网关写入 Markdown，运行文章检查脚本。</li><li>结果写入任务日志，并把“本次文章校验命令”沉淀到知识库。</li></ol>
+<p>这个流程比直接让模型写文章慢一点，但长期更可靠。因为每一步都能回答“依据是什么”“改了什么”“怎么验证”“下次怎么复用”。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>落地本地工具栈时，我建议从一个很小的内核开始：工作区配置、能力清单、事件日志、证据包文件。先不要急着做复杂 UI，也不要一上来就做向量库。只要这四件事稳定，后面换模型、接浏览器、接编辑器都比较自然。</p>
+<p>一个工作区配置可以长这样：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">workspace:
+  id: astaxie-github-io
+  root: /Users/asta/coding/09-知识库写作与文档/astaxie.github.io
+  read:
+    - content/**
+    - js/**
+    - scripts/**
+    - package.json
+  write:
+    - content/articles/**
+    - content/notes/**
+  deny:
+    - .env
+    - node_modules/**
+    - .git/**
+  commands:
+    allow:
+      - python3 scripts/check_articles.py
+      - npm run build
+      - rg
+      - git diff
+    confirm:
+      - git commit
+      - git push</code></pre></div>
+<p>这个配置的重点不是格式，而是把读、写、命令风险分开。很多人只配置“允许访问仓库”，这太粗。对 AI 来说，读取 <code>content/articles</code> 和读取 <code>.env</code> 完全不同，写 Markdown 和写构建脚本也完全不同。工作区配置应该成为入口层的第一道关口。</p>
+<p>能力清单可以用结构化数据描述：</p>
+<div class="code-block"><pre class="line-numbers language-typescript" data-language="TypeScript"><code class="language-typescript">type Capability = {
+  name: string
+  description: string
+  inputSchema: unknown
+  risk: &#x27;read&#x27; | &#x27;write&#x27; | &#x27;execute&#x27; | &#x27;external&#x27;
+  timeoutMs: number
+  requiresApproval: boolean
+  redaction: {
+    scanSecrets: boolean
+    maxOutputChars: number
+  }
+}
+
+const runCommand: Capability = {
+  name: &#x27;run_command&#x27;,
+  description: &#x27;Run an allow-listed local command inside a workspace&#x27;,
+  inputSchema: {
+    type: &#x27;object&#x27;,
+    properties: {
+      cwd: { type: &#x27;string&#x27; },
+      argv: { type: &#x27;array&#x27;, items: { type: &#x27;string&#x27; } }
+    },
+    required: [&#x27;cwd&#x27;, &#x27;argv&#x27;]
+  },
+  risk: &#x27;execute&#x27;,
+  timeoutMs: 120000,
+  requiresApproval: false,
+  redaction: { scanSecrets: true, maxOutputChars: 20000 }
+}</code></pre></div>
+<p>我更倾向于把能力做成窄接口，而不是一个万能 Shell。比如“读取文件片段”“搜索文本”“生成补丁”“运行允许列表命令”“打开本地页面”应该是不同能力。窄接口会让模型少做危险猜测，也方便记录审计日志。万能 Shell 看起来灵活，实际会把风险和错误处理都丢给提示词。</p>
+<p>事件日志可以用 SQLite，也可以用 JSONL。个人工具栈用 JSONL 就足够直观：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{&quot;ts&quot;:&quot;2026-02-14T10:00:01+08:00&quot;,&quot;run_id&quot;:&quot;run_001&quot;,&quot;type&quot;:&quot;task.start&quot;,&quot;workspace&quot;:&quot;astaxie-github-io&quot;,&quot;intent&quot;:&quot;create article&quot;}
+{&quot;ts&quot;:&quot;2026-02-14T10:00:06+08:00&quot;,&quot;run_id&quot;:&quot;run_001&quot;,&quot;type&quot;:&quot;tool.read&quot;,&quot;path&quot;:&quot;content/ARTICLE_STYLE.md&quot;,&quot;sha256&quot;:&quot;...&quot;}
+{&quot;ts&quot;:&quot;2026-02-14T10:00:09+08:00&quot;,&quot;run_id&quot;:&quot;run_001&quot;,&quot;type&quot;:&quot;evidence.add&quot;,&quot;source&quot;:&quot;js/articles.js&quot;,&quot;chars&quot;:812,&quot;sensitivity&quot;:&quot;public&quot;}
+{&quot;ts&quot;:&quot;2026-02-14T10:05:30+08:00&quot;,&quot;run_id&quot;:&quot;run_001&quot;,&quot;type&quot;:&quot;artifact.diff&quot;,&quot;files&quot;:[&quot;content/articles/local-tool-stack.md&quot;]}
+{&quot;ts&quot;:&quot;2026-02-14T10:07:12+08:00&quot;,&quot;run_id&quot;:&quot;run_001&quot;,&quot;type&quot;:&quot;check.pass&quot;,&quot;command&quot;:&quot;python3 scripts/check_articles.py --min-han 5000 local-tool-stack&quot;}</code></pre></div>
+<p>日志不是为了“以后可能有用”而写。它要直接服务三个场景：任务中断后恢复、结果出错后复盘、团队协作时解释 AI 做过什么。字段不用多，但必须稳定。至少要有 <code>run_id</code>、时间、工作区、事件类型、输入来源、输出 artifact 和校验结果。</p>
+<p>证据包则可以采用目录结构：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">.ai-runs/run_001/
+  intent.md
+  evidence/
+    article-style.md
+    metadata-local-tool-stack.json
+    related-notes.md
+  prompts/
+    draft-request.md
+  artifacts/
+    local-tool-stack.diff
+    check-output.txt
+  run.jsonl</code></pre></div>
+<p>这样做的好处是，模型上下文不再是一次性消失的请求体，而是本地可回看的材料包。你可以把其中一部分加入 Git，也可以把敏感部分留在本地忽略目录。对于长期维护的知识库和代码库，这种“任务包”比单纯聊天记录更有价值。</p>
+<p>模型路由也要工程化。不是所有任务都需要最强模型。仓库搜索、格式修复、日志分类可以用便宜模型或本地模型；架构推理、复杂重构、跨文件测试失败分析再交给强模型。一个简单的路由规则可以按风险和复杂度判断：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">任务类型</th><th scope="col">默认模型</th><th scope="col">是否允许远端</th><th scope="col">主要证据</th><th scope="col">验证方式</th></tr></thead><tbody><tr><td>代码解释</td><td>中等模型</td><td>允许，需脱敏</td><td>文件片段、符号索引</td><td>引用行号、人工确认</td></tr><tr><td>文档长文</td><td>强模型</td><td>允许，公开材料优先</td><td>风格规范、元数据、提纲</td><td>字数检查、站点预览</td></tr><tr><td>密钥排查</td><td>本地模型或规则</td><td>默认不允许</td><td>文件名、扫描结果摘要</td><td>人工确认</td></tr><tr><td>构建失败</td><td>强模型</td><td>允许，输出裁剪</td><td>日志、依赖版本、diff</td><td>重跑构建</td></tr><tr><td>网页表单</td><td>中等模型加浏览器工具</td><td>视页面数据决定</td><td>DOM、截图、表单 schema</td><td>截图和提交前确认</td></tr></tbody></table></div>
+<p>一个容易被忽略的实现点是剪贴板。很多本地 AI 工具都靠用户复制粘贴来传上下文，但剪贴板没有来源、没有权限、没有版本。更好的方式是入口层提供“附加当前文件”“附加选中网页”“附加命令输出”的明确动作，每个动作都会生成证据条目。复制粘贴仍然可以保留，但不应该成为主要上下文通道。</p>
+<p>另一个实现点是本地知识库的格式。Markdown 仍然是很好的默认选择，因为它能被 Git 管理、能被静态站发布、能被搜索工具读取、能被模型直接消费。对个人知识库来说，不要过早把所有内容塞进专有数据库。数据库可以保存索引和事件，长期文本最好保持文件化。文件化带来的可迁移性，是本地工具栈最重要的抗风险能力之一。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>本地工具栈的评测不能只看“模型回答是否聪明”。更应该测试整个流程能不能稳定完成任务。我的评测会分四层：能力测试、流程测试、质量测试和回归测试。</p>
+<p>能力测试关注单个工具是否可靠。搜索能不能正确处理中文路径，文件读取遇到大文件是否截断，Shell 超时是否生效，浏览器截图是否保存，密钥扫描是否能识别常见格式。这些测试不需要模型参与，应该像普通工程测试一样自动化。只要能力层不稳，模型再强也会被错误输出带偏。</p>
+<p>流程测试关注一类任务能不能闭环。例如“根据元数据创建文章”“修复一个单元测试失败”“整理一个网页为笔记”“生成一次发布说明”。每个流程都应该有输入样例、允许的工具、期望 artifact 和校验命令。流程测试可以让模型参与，但要把随机性降到可观察范围内：记录模型版本、提示词版本、证据包哈希和输出差异。</p>
+<p>质量测试关注结果是否达到人的要求。比如文档文章要检查汉字数、front matter、图片引用、标题层级、重复段落；代码修改要检查测试覆盖、diff 范围、错误处理；网页操作要检查最终页面状态。质量测试往往需要规则和人工结合。规则负责底线，人工负责判断是否真正有用。</p>
+<p>回归测试关注工具栈升级后有没有退化。换模型、换 CLI 版本、调整提示词、增加新能力，都可能改变行为。每次升级至少应该跑一组固定任务，比较通过率、耗时、成本、人工干预次数和失败类型。对个人用户来说，做一个很小的评测集就够了。比如保留十个自己经常做的任务：写文章、查代码、改测试、总结会议、整理链接。只要这些任务能稳定通过，工具栈就有基本可信度。</p>
+<p>可以用下面的评测表记录结果：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">用例</th><th scope="col">输入规模</th><th scope="col">允许工具</th><th scope="col">期望产物</th><th scope="col">自动校验</th><th scope="col">人工评分</th></tr></thead><tbody><tr><td>创建知识库文章</td><td>2 个 slug、1 个风格文件</td><td>读文件、写 Markdown、运行检查</td><td>两篇长文</td><td>front matter、汉字数、图片引用</td><td>深度、可读性、无重复</td></tr><tr><td>修复 Go 测试</td><td>1 个失败日志、相关包</td><td>搜索、读文件、写补丁、跑测试</td><td>最小修复 diff</td><td><code>go test ./...</code></td><td>是否引入额外复杂度</td></tr><tr><td>整理网页笔记</td><td>3 个网页、1 个本地模板</td><td>浏览器读取、写 Markdown</td><td>一篇笔记</td><td>链接、标题、摘要字段</td><td>是否保留关键判断</td></tr><tr><td>分析构建失败</td><td>1 份 CI 日志、当前 diff</td><td>读日志、搜索、运行命令</td><td>根因说明和补丁</td><td>构建重跑</td><td>结论是否可复现</td></tr></tbody></table></div>
+<p>还有一个非常实用的指标：人工接管点。每次任务中用户在哪些地方不得不停下来纠正 AI，应该被记录。接管点比“总体满意度”更具体。比如用户接管是因为模型读错需求、证据不足、命令失败、输出格式不合规、还是风险确认太频繁。把接管点分类后，工具栈优化会更有方向。</p>
+<p>成本评测也不只是钱。要同时看时间成本、注意力成本和上下文成本。一个工具如果每次都要用户手工整理大段材料，即使模型调用便宜，整体也不便宜。一个浏览器自动化如果经常卡在登录态或弹窗上，即使最终能完成，注意力成本也很高。本地工具栈的目标应该是降低端到端成本，而不是单次 API 成本。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是上下文过宽。模型拿到太多文件后，容易抓住表面相关但实际无关的片段。表现是回答很长，引用很多，却没有命中真正约束。解决办法不是盲目扩大上下文窗口，而是改进证据包构建：先列任务假设，再按假设取证；每个证据条目必须有来源和作用；超出预算的材料要形成摘要，而不是硬塞。</p>
+<p>第二类失败是上下文过窄。模型只看到用户选中的一小段代码，没有看到调用方、测试、配置和历史决策，于是生成局部正确、整体错误的补丁。这个问题常出现在编辑器插件里。解决办法是给入口层增加“相关上下文自动扩展”，例如根据符号查引用、根据测试失败查被测函数、根据 Markdown front matter 查元数据来源。</p>
+<p>第三类失败是工具权限太粗。允许一个通用命令执行能力后，模型可能为了达成目标运行不必要的危险命令。即使没有恶意，也可能因为路径理解错误改错目录。解决办法是按能力拆分和命令允许列表控制，写操作默认生成 diff，涉及删除、提交、发布、外部发送时强制确认。</p>
+<p>第四类失败是长期记忆污染。用户把聊天记录、草稿、错误结论都写进知识库，后续检索又把这些内容当成依据。时间一长，模型会复读旧错误。解决办法是给长期知识设状态：草稿、已验证、已废弃、需要复审。检索时优先使用已验证内容，废弃内容只能作为历史参考，不能作为当前事实。</p>
+<p>第五类失败是本地环境漂移。CLI 版本、依赖版本、浏览器状态、环境变量、系统权限都可能变化。昨天能跑的流程，今天可能因为 Node 版本不同失败。解决办法是记录环境摘要，并在任务日志里保存关键版本。对重要项目，可以把常用命令封装进仓库脚本，减少对用户全局环境的依赖。</p>
+<p>第六类失败是自动化过度。工具栈为了追求顺滑，把确认步骤全部省掉，结果用户失去掌控感。AI 修改了文件、跑了命令、甚至提交了变更，但用户不知道它为什么这么做。解决办法是区分低风险自动化和高风险确认。只读搜索、格式检查可以自动；跨文件大改、外部提交、删除数据必须展示计划和 diff。</p>
+<p>第七类失败是评测缺席。很多人凭几次成功体验就把工具接入日常工作，等到任务复杂后才发现输出不稳定。解决办法是保留一组固定样例，任何模型、提示词、工具版本升级后都跑一遍。评测集不需要大，但必须覆盖真实工作流。工具栈是工程系统，不是只靠感觉调参的玩具。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<p>在把本地 AI 工具栈变成日常默认流程前，我会检查下面这些项目：</p>
+<ul><li>工作区边界：每个常用项目都有明确根目录、可读范围、可写范围和忽略规则。</li><li>能力清单：文件、搜索、Shell、Git、浏览器、知识库写入都通过明确能力调用，不依赖模型自由发挥。</li><li>命令策略：常用检查命令在允许列表，高风险命令需要确认，超时和输出截断已配置。</li><li>证据包：模型输入能回看，来源、时间、敏感级别和裁剪方式能解释。</li><li>写入路径：所有文件修改都以 diff 或补丁形式呈现，用户能审查后再落盘。</li><li>日志记录：任务开始、证据读取、模型调用、工具执行、产物、校验结果都有事件记录。</li><li>知识沉淀：长期笔记有状态、标签、来源和更新时间，不把临时聊天直接当事实。</li><li>验证命令：每类任务都有最小校验命令，例如文章检查、测试、构建、链接检查。</li><li>失败恢复：中断后能根据 run id 找回证据、产物和下一步，不需要从头解释背景。</li><li>成本预算：知道强模型用在什么任务上，普通任务可以降级到便宜模型或本地模型。</li><li>隐私策略：密钥、客户数据、私有日志、个人资料默认不进入远端模型，例外需要确认。</li><li>团队约定：多人使用时，提示词、工具版本、文章风格、发布流程有共享说明。</li></ul>
+<p>如果只能先做三件事，我会选工作区边界、事件日志和验证命令。它们不显眼，但能显著降低出错成本。工具栈早期最怕的是“看起来能做很多事，但出了问题不知道怎么查”。把这三件事做好，后面逐步增加模型路由、浏览器自动化和知识库检索都会更稳。</p>
+<h2 id="总结">总结</h2>
+<p>本地 AI 工具栈的核心，不是把电脑塞满 AI 应用，而是把入口、上下文、执行、记忆和治理组织成一条可复盘的工程流水线。桌面助手、CLI、浏览器自动化和知识库各有价值，但它们必须围绕工作区、证据包、能力清单和事件日志协作。否则工具越多，用户越需要手工搬运上下文，AI 反而变成新的负担。</p>
+<p>我更愿意把本地工具栈看成“开发者工作台”的升级。它让模型靠近文件、命令、网页和笔记，但不放弃人的控制面；它允许自动化处理低风险重复工作，但要求高风险动作有 diff、有确认、有校验；它把一次次任务的经验沉淀为可搜索的知识，而不是散落在聊天窗口里。这样的工具栈不会一夜之间替代工程师，却能持续减少上下文切换、重复排查和低价值整理。</p>
+<p>真正稳定的 AI 工作流，往往不是最炫的那个，而是失败时最容易解释、最容易回滚、最容易改进的那个。本地工具栈如果能做到这一点，就已经从玩具走向了生产力基础设施。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

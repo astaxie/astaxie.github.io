@@ -1,170 +1,83 @@
-<!DOCTYPE HTML>
-<html>
+<!doctype html>
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  
-  <title>Archives | Geek Programer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>技术探索 | Asta 的 AI 小站</title>
   <meta name="author" content="Asta Xie">
-  
-  <meta name="description" content="beego Go golang php architect">
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-
-  
-  <meta property="og:site_name" content="Geek Programer"/>
-
-  
-    <meta property="og:image" content="undefined"/>
-  
-
+  <meta name="description" content="astaxie 的技术探索记录：AI Agent、MCP、Go、API-first 和工程实践。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="技术探索 | astaxie">
+  <meta property="og:description" content="把平常的技术实验、设计判断和复盘沉淀为可查阅的知识库。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/css/img/avatar-astaxie.jpg">
   <link href="/favicon.ico" rel="icon">
-  <link rel="alternate" href="/atom.xml" title="Geek Programer" type="application/atom+xml">
-  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
-  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
-  
+  <link rel="stylesheet" href="/css/style.css">
 </head>
+<body class="docs-home no-right-rail">
 
-<body>
-  <header id="header" class='normal_mode'>
-    <div class='profile'>
-  <h1><a href="/"><img class="logo" src="/css/img/logo.png"/></a></h1>
-  <h2>
-  	<a href="/">
-  	Geek Programer
-  	Successful habits are more important than success
-  	</a>
-  </h2>
-</div>
-<nav id="main-nav">
-  <ul class='inner'>
-    
-      <li><a href="/">Home</a></li>
-    
-      <li><a href="/archives">Archives</a></li>
-    
-      <li><a href="/projects">Projects</a></li>
-    
-      <li><a href="/about">About Me</a></li>
-    
-  </ul>
-  <div class="clearfix"></div>
-</nav>
-<div class="clearfix"></div>
-  </header>
-  <div id="content" class="inner">
-    <div id="main-col"><div id="wrapper">
-<h2 class="archive-title">Archives</h2>
+  <div class="docs-layout">
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats"><span><b>Go</b> GopherChina / beego / Go Web</span><span><b>Book</b> 《Go Web 编程》</span><span><b>AI</b> ThinkInAI / 星科实验室</span></div>
+      </section>
+      <section class="rail-card rail-nav-card">
+        <nav class="rail-menu" aria-label="页面导航">
+          <a class="rail-link rail-primary-link" href="/about/">关于我</a>
+          <a class="rail-link rail-primary-link" href="/projects/">开源项目</a>
+          <details class="rail-menu-group" open>
+            <summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary>
+            <div class="article-menu rail-submenu" aria-label="文章分类">
+              <a class="rail-link rail-sub-link active" href="/#article-browser">全部文章</a>
+              <a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+              <a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+              <a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+              <a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+              <a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+              <a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a>
+            </div>
+          </details>
+        </nav>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
 
+    <main class="docs-main">
+      <section class="content-module article-browser">
+        <div class="module-header"><h2>技术探索</h2><div class="module-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div></div>
+        <div class="internal-module-body compact-copy">
+          <div class="note-kicker">EXPLORATIONS / ARCHIVE</div>
+          <h1 class="internal-title">把技术实验、设计判断和复盘沉淀成知识库。</h1>
+          <p>这里会记录平常遇到的问题、做过的实验、项目里的设计判断，以及一些值得反复回看的工程笔记。</p>
+        </div>
+        <div class="article-table active">
+          <div class="article-table-head"><span>ARTICLE</span><span>SUMMARY</span><span>CATEGORY</span><span>SOURCE</span></div>
+          <a class="article-row" href="/notes/agent-tool-boundaries/"><span>Agent 工具调用从 demo 到生产要补哪些边界？</span><span>从权限、上下文、回放和人工确认四个边界看 Agent 工具调用。</span><span>AI Agent</span><span>NOTES/AGENT</span></a>
+          <a class="article-row" href="/notes/go-mcp-server-testing/"><span>Go 里实现 MCP Server 的接口设计和测试策略</span><span>梳理 MCP Server 的资源、工具、错误语义和契约测试。</span><span>MCP</span><span>NOTES/MCP</span></a>
+          <a class="article-row" href="/notes/rag-personal-knowledge-workflow/"><span>个人知识库里的 RAG 工作流</span><span>从文档切分、索引、引用和更新机制看 RAG 的日常使用。</span><span>RAG</span><span>NOTES/RAG</span></a>
+          <a class="article-row" href="/2014/02/28/creating-an-api-centric-web-application-use-beego/"><span>Creating an API-Centric Web Application using beego</span><span>旧站保留下来的 API-first Web 应用和 beego 技术文章。</span><span>beego</span><span>2014/02</span></a>
+        </div>
+      </section>
 
-    <div class="archive">
-	<article class="post"
-		<header>
-		  <time datetime="2014-02-28T15:09:52.000Z"><a href="/2014/02/28/creating-an-api-centric-web-application-use-beego/">Feb 28 2014</a></time>
-		  <h1 class="title"><a href="/2014/02/28/creating-an-api-centric-web-application-use-beego/">Creating an API-Centric Web Application use beego</a></h1>
-		</header>
-	</article>
-    </div>
-
-<nav id="pagination">
-  
-  
-  <div class="clearfix"></div>
-</nav>
-</div></div>
-    <!--
-    <aside id="sidebar" class="alignright" style="display:none">
-  <div class="search">
-  <form action="//google.com/search" method="get" accept-charset="utf-8">
-    <input type="search" name="q" results="0" placeholder="Search">
-    <input type="hidden" name="q" value="site:astaxie.me">
-  </form>
-</div>
-</aside>
-    
-    -->
-    <div class="clearfix"></div>
+      <section class="content-module">
+        <div class="module-header"><h2>准备补上的笔记</h2><div class="module-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div></div>
+        <div class="internal-module-body">
+          <div class="internal-grid">
+            <div class="internal-card"><h3>DeepChat 的本地知识设计</h3><p>如何在桌面 AI 应用里处理本地文件、会话上下文和多模型调用之间的关系。</p></div>
+            <div class="internal-card"><h3>MCP Server 的测试策略</h3><p>协议实现如何做集成测试、契约测试和错误回放，避免工具调用成为黑盒。</p></div>
+            <div class="internal-card"><h3>从 beego 回看 Go Web</h3><p>经过多年生态演进后，再看框架、约定、代码生成和工程化工具的取舍。</p></div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
-  <footer id="footer" class="inner"><div class="alignleft">
-  
-  &copy; 2014 Asta Xie
-  
-  
-    <a class="icon github" href="https://github.com/astaxie">github</a>
-    <a href="http://weibo.com/kaibao001">weibo</a>
-    <a href="http://plus.google.com/111292884696033638814">google+</a>
-  
-</div>
-
-<div class="clearfix"></div></footer>
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-<script src="/js/jquery.imagesloaded.min.js"></script>
-<script src="/js/gallery.js"></script>
-
-
-<script type="text/javascript">
-var disqus_shortname = 'astaxie';
-
-(function(){
-  var dsq = document.createElement('script');
-  dsq.type = 'text/javascript';
-  dsq.async = true;
-  dsq.src = '//' + disqus_shortname + '.disqus.com/count.js';
-  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-}());
-</script>
-
-
-
-    <script type="text/javascript">
-        (function(){
-
-            $(window).scroll(function(){
-
-                var scrollTop = $(window).scrollTop();
-                if ( scrollTop >200 ){
-                    $("#main-nav").removeClass('normal_mode').addClass('top_mode');
-                } else{
-                    $("#main-nav").removeClass('top_mode').addClass('normal_mode');
-                }
-
-            });
-
-        })();
-    </script>
-
-
-
-  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
-  <script src="/fancybox/jquery.fancybox.pack.js"></script>
-  <script type="text/javascript">
-  (function($){
-    $('.fancybox').fancybox();
-  })(jQuery);
-  </script>
-
-
-
-
-<script type="text/javascript">
-  
-  $(function(){
-
-    $('.title').hover(
-      function() {      
-        $(this).stop().animate(
-          {'marginLeft': '10px'}, 200
-        );   
-      }, 
-      function() {       
-        $(this).stop().animate({'marginLeft': '0px'}, 200);      
-      
-    });   
-
-  });
-
-</script>
-
-
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
 </body>
 </html>

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAG 评测矩阵 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="RAG 评测要同时看召回、引用、答案和用户任务完成度。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="RAG 评测矩阵">
+  <meta property="og:description" content="RAG 评测要同时看召回、引用、答案和用户任务完成度。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/rag-eval-matrix.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link active" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>RAG 评测矩阵</span></nav>
+          <div class="note-kicker">NOTES / EVAL / 079</div>
+          <h1>RAG 评测矩阵</h1>
+          <p>RAG 评测要同时看召回、引用、答案和用户任务完成度。</p>
+          <div class="note-tag-row"><span>RAG</span><span>Evals</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/rag-eval-matrix.svg" alt="标题图" loading="lazy"><figcaption>RAG 评测矩阵 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>RAG 系统上线后最容易陷入一种错觉：只要用户觉得答案还行，就认为检索和生成都还行。等真正出现问题时，团队才发现“答案不好”这个描述太粗。可能是 query 改写把意图改歪了，可能是召回没有拿到关键文档，可能是 rerank 把正确片段排到后面，可能是上下文组装时丢了限制条件，也可能是模型拿到了证据却没有按证据回答。每一层都能让最终答案变差，但修复动作完全不同。</p>
+<p>很多团队的第一版 RAG 评测只看两个指标：答案相似度和人工满意度。它们有价值，但不足以指导工程。答案相似度依赖标准答案，而真实业务问题经常有多个合理表达；人工满意度能反映用户体验，但主观、昂贵、滞后。更麻烦的是，最终答案分数高不代表 RAG 链路健康。模型可能凭通用知识答对，检索却没有命中内部文档；也可能答案正确但引用错了，用户点开链接后发现证据不支持结论。</p>
+<p>RAG 的质量应该被看成一个矩阵，而不是一个总分。矩阵的一边是链路阶段：查询理解、召回、重排、上下文组装、生成、引用、任务完成、成本延迟。另一边是样本类型：事实查找、流程解释、对比决策、故障排查、多文档综合、权限边界、证据不足、版本冲突。只有把二者交叉起来看，才能知道系统在哪些场景、哪一层薄弱。</p>
+<p>举个例子，用户问“新计费策略下企业版超额调用怎么处理”。如果答案错了，至少有五种可能。第一，系统把“企业版”改写成“专业版”，查询理解失败。第二，向量召回只找到旧计费文档，召回失败。第三，正确文档召回了但被 rerank 排到第八名，没有进入上下文。第四，上下文里同时有旧策略和新策略，模型没有处理版本冲突。第五，模型回答了处理流程，但引用的是价格页而不是政策原文。一个答案分数无法区分这些问题，评测矩阵可以。</p>
+<p>RAG 评测还要承认业务目标。内部知识助手、客服机器人、研发文档搜索、合规问答和个人知识库的指标权重不同。客服场景里错答赔付政策很严重；研发场景里漏掉限制条件会导致错误实现；个人知识库里引用完整性可能比语气更重要。评测矩阵不是固定模板，而是一套把质量拆开讨论的方法。团队要根据业务风险给不同单元格配置权重。</p>
+<p>另一个常见问题是只评离线样本，不看线上任务。离线样本能保护关键路径，但真实用户会带着上下文、错别字、简称、权限差异和临时目标来问。RAG 的最终目标不是让答案像标准答案，而是帮助用户完成任务。用户是否点击引用、是否继续追问、是否转人工、是否采纳建议、是否在工具里完成下一步，都是任务完成信号。它们不能替代离线评测，但能补上离线评测看不到的体验维度。</p>
+<p>所以，RAG 评测矩阵的目标是让质量讨论从“好不好”变成“哪一类问题、哪一层链路、哪一个版本、哪一种风险正在变化”。有了这个结构，模型升级、embedding 切换、chunk 策略调整、文档更新、reranker 改造都可以被同一套指标观察，而不是每次靠人工感受重新判断。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>RAG 评测矩阵至少包含四组指标：检索指标、证据指标、答案指标、任务指标。检索指标看系统有没有找到正确材料；证据指标看材料是否进入上下文并被正确引用；答案指标看最终输出是否忠实、完整、可用；任务指标看用户是否解决了问题。成本、延迟和稳定性贯穿所有指标，不应该放到最后才看。</p>
+<p>检索指标的核心不是 top-k 命中率，而是“关键证据是否在可用位置”。很多系统会报告 recall@20，但模型上下文只放 top 5。正确片段出现在第 17 位，对最终回答没有帮助。更实际的指标是 evidence_recall@context，也就是黄金证据是否进入最终上下文；另一个是 first_relevant_rank，它能反映 rerank 是否把正确材料提前。对于多文档问题，还要看 evidence_coverage，不是命中一篇就算通过。</p>
+<p>证据指标关注引用和上下文质量。一个好的 RAG 答案不只是“参考了文档”，而是每个关键结论都能回跳到正确片段。引用完整性看答案中的关键声明是否有引用；引用精确度看引用片段是否支持对应声明；上下文污染率看进入上下文的无关或过期材料比例；冲突暴露率看系统是否把版本冲突、政策冲突或权限冲突显式处理。</p>
+<p>答案指标关注最终文本。它包括 factuality、completeness、instruction following、format validity、abstention behavior。这里要特别强调拒答行为。证据不足时硬答，是 RAG 的典型失败；证据充足时过度拒答，也会伤害用户。评测矩阵需要同时看 answerability 和 abstention，不能只奖励“看起来谨慎”。</p>
+<p>任务指标更贴近产品。用户问一个接口限制，不一定只是要知道一句话，可能是要继续写代码；用户问一条故障原因，可能是要决定是否回滚。任务完成可以通过人工标注、会话后反馈、点击行为、后续问题数量、工单转人工率、引用打开率和业务系统操作来估计。它比答案指标更慢、更噪，但能防止团队把评测优化成漂亮文本。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">维度</th><th scope="col">关键问题</th><th scope="col">示例指标</th><th scope="col">常见误区</th></tr></thead><tbody><tr><td>查询理解</td><td>系统是否保留用户意图和约束</td><td>intent accuracy、rewrite drift</td><td>改写后更像搜索词但丢了条件</td></tr><tr><td>召回</td><td>正确材料是否被找到</td><td>recall@k、gold chunk hit</td><td>只看 top20，不看上下文可见性</td></tr><tr><td>重排</td><td>正确材料是否排在可用位置</td><td>MRR、first relevant rank</td><td>rerank 追求相关性，忽略版本</td></tr><tr><td>上下文</td><td>进入模型的材料是否干净</td><td>context coverage、pollution rate</td><td>把相邻主题塞满上下文</td></tr><tr><td>引用</td><td>结论是否能回跳证据</td><td>citation precision、claim coverage</td><td>有链接就算有依据</td></tr><tr><td>答案</td><td>输出是否正确完整</td><td>groundedness、completeness</td><td>只按标准答案相似度打分</td></tr><tr><td>任务</td><td>用户是否解决问题</td><td>task success、handoff rate</td><td>用点赞代替所有质量判断</td></tr><tr><td>运行</td><td>是否可接受</td><td>latency、cost、stability</td><td>质量提升但成本不可上线</td></tr></tbody></table></div>
+<p>样本类型也要分层。事实查找样本测试基础召回；多文档综合样本测试证据覆盖；版本冲突样本测试时间和状态；权限边界样本测试安全；证据不足样本测试拒答；流程执行样本测试答案能否转成行动。不同样本类型的通过标准不同，不应该混在一个平均分里。</p>
+<p>我建议每条样本都显式声明 answerability：answerable、partially_answerable、unanswerable。answerable 表示证据足够，系统应给出明确答案；partially_answerable 表示只能回答一部分，系统要说明缺口；unanswerable 表示当前证据不足或用户无权限，系统应拒答或引导补充。这个字段能把 RAG 从“永远尽量回答”拉回到证据驱动。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>RAG 评测矩阵需要贯穿从样本到报告的完整链路。评测 Runner 不能只调用应用接口拿答案，还要保存中间 trace，并把 trace 拆成矩阵单元。推荐流程如下：</p>
+<figure class="mermaid-block" data-mermaid-block><template data-mermaid-source>flowchart TD
+  A[评测样本集] --&gt; B[固定配置运行]
+  B --&gt; C[Query Rewrite Trace]
+  B --&gt; D[Retrieval Trace]
+  B --&gt; E[Rerank Trace]
+  B --&gt; F[Context Assembly Trace]
+  B --&gt; G[Answer and Citations]
+  C --&gt; H[查询理解评估]
+  D --&gt; I[召回评估]
+  E --&gt; J[重排评估]
+  F --&gt; K[上下文评估]
+  G --&gt; L[答案和引用评估]
+  H --&gt; M[矩阵报告]
+  I --&gt; M
+  J --&gt; M
+  K --&gt; M
+  L --&gt; M
+  M --&gt; N[发布门禁和修复队列]</template><div class="mermaid-render" role="img" aria-label="Mermaid 图表" aria-busy="true">图表加载中...</div></figure>
+<p>固定配置运行很重要。一次评测必须记录模型、embedding、索引版本、chunk 策略、reranker、prompt、知识库快照和权限身份。否则两个版本的分数不能比较。RAG 系统的输入不是只有用户问题，还包括知识库状态和运行配置。没有这些元数据，评测报告只能说明“这一次看起来如何”，不能说明变化来自哪里。</p>
+<p>矩阵报告应该能从两个方向阅读。按链路看，可以发现系统性问题：比如所有样本的 first_relevant_rank 变差，说明 reranker 或索引出问题；引用精确度下降，说明答案生成或引用绑定有问题。按样本类型看，可以发现场景问题：比如事实查找稳定，但版本冲突样本失败，说明文档版本和时间过滤需要治理。</p>
+<figure class="mermaid-block" data-mermaid-block><template data-mermaid-source>flowchart LR
+  Q[问题: 企业版超额调用怎么处理] --&gt; R1[查询理解: 企业版+超额调用+新计费策略]
+  R1 --&gt; R2[召回: 计费政策/价格页/旧公告]
+  R2 --&gt; R3[重排: 新政策排第1, 旧公告排第4]
+  R3 --&gt; R4[上下文: 保留新政策, 标注旧公告过期]
+  R4 --&gt; R5[生成: 给出处理流程和限制]
+  R5 --&gt; R6[引用: 每个关键步骤回跳政策段落]</template><div class="mermaid-render" role="img" aria-label="Mermaid 图表" aria-busy="true">图表加载中...</div></figure>
+<p>这条图不是为了展示理想状态，而是为了定义每一层的评测点。查询理解层检查“企业版”“超额调用”“新计费策略”是否都保留；召回层检查新政策是否命中；重排层检查新政策是否进入上下文预算；上下文层检查旧公告是否被过滤或标注过期；生成层检查是否回答流程、条件和例外；引用层检查引用是否指向政策原文。</p>
+<p>评测矩阵还应该输出失败阶段。一个样本最终失败时，不要只标 answer_wrong，而要尽量标到最早失败阶段。最早失败阶段能帮助分工：query_rewrite_failure 给应用链路，retrieval_miss 给索引和 embedding，rerank_drop 给重排，context_loss 给上下文组装，generation_error 给提示词和模型，citation_error 给引用绑定，policy_error 给拒答和权限。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>工程实现从样本结构开始。样本不要只写 question 和 answer，至少要包含意图、权限、黄金证据、期望答案要点、拒答规则和矩阵权重。下面是一个可以落地的 JSONL 样本例子：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;id&quot;: &quot;rag_billing_enterprise_overage_001&quot;,
+  &quot;type&quot;: &quot;version_conflict&quot;,
+  &quot;risk_level&quot;: &quot;high&quot;,
+  &quot;query&quot;: &quot;新计费策略下企业版超额调用怎么处理？&quot;,
+  &quot;user_scope&quot;: [&quot;customer-success&quot;, &quot;billing-docs&quot;],
+  &quot;answerability&quot;: &quot;answerable&quot;,
+  &quot;expected_intent&quot;: {
+    &quot;topic&quot;: &quot;billing_overage&quot;,
+    &quot;product_tier&quot;: &quot;enterprise&quot;,
+    &quot;policy_version&quot;: &quot;2026-03&quot;
+  },
+  &quot;gold_evidence&quot;: [
+    {
+      &quot;doc_id&quot;: &quot;billing-policy-2026-03&quot;,
+      &quot;chunk_id&quot;: &quot;enterprise-overage&quot;,
+      &quot;must_be_in_context&quot;: true
+    }
+  ],
+  &quot;forbidden_evidence&quot;: [
+    {
+      &quot;doc_id&quot;: &quot;billing-policy-2025-11&quot;,
+      &quot;reason&quot;: &quot;old policy&quot;
+    }
+  ],
+  &quot;expected_points&quot;: [
+    &quot;企业版超额调用先进入宽限额度&quot;,
+    &quot;超过宽限额度后需要客户成功经理确认扩容或限流&quot;,
+    &quot;答案需要说明旧政策不再适用&quot;
+  ],
+  &quot;weights&quot;: {
+    &quot;retrieval&quot;: 0.25,
+    &quot;context&quot;: 0.2,
+    &quot;citation&quot;: 0.2,
+    &quot;answer&quot;: 0.25,
+    &quot;task&quot;: 0.1
+  }
+}</code></pre></div>
+<p>这个样本把“正确答案”拆成证据和要点。gold_evidence 用于检索和上下文评估，forbidden_evidence 用于检查旧材料污染，expected_points 用于答案评估，weights 用于聚合。answerability 明确系统应该回答，不应该因为存在旧政策就拒答；如果样本是 unanswerable，expected_points 应该变成拒答理由和下一步引导。</p>
+<p>Trace 数据结构也要服务矩阵。只保存最终 prompt 不够，因为 prompt 已经丢失了很多中间排序信息。可以用下面的结构：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type RAGTrace struct {
+    SampleID        string
+    Config          RAGConfig
+    QueryRewrite    QueryRewriteTrace
+    Retrieval       []RetrievedChunk
+    Reranked        []RankedChunk
+    ContextChunks   []ContextChunk
+    Answer          string
+    Citations       []Citation
+    LatencyMS       int
+    CostUSD         float64
+}
+
+type RetrievedChunk struct {
+    DocID     string
+    ChunkID   string
+    Rank      int
+    Score     float64
+    Retriever string
+}
+
+type ContextChunk struct {
+    DocID        string
+    ChunkID      string
+    TokenCount   int
+    Version      string
+    VisibleToUser bool
+}</code></pre></div>
+<p>Config 要包含所有会影响结果的版本。Embedding 模型变了、chunk 大小变了、过滤器变了，都会影响召回。评测报告如果不记录这些配置，后续无法解释波动。ContextChunk 里保留 VisibleToUser，是为了检查权限过滤是否在最终上下文仍然成立。很多泄漏不是召回阶段发生的，而是在缓存、摘要或拼接阶段绕过了过滤。</p>
+<p>指标计算可以按层写成独立 evaluator。查询理解 evaluator 检查改写后的 query 是否保留 expected_intent。召回 evaluator 检查 gold_evidence 是否出现在 Retrieval。重排 evaluator 检查黄金片段的 rank 是否进入上下文预算。上下文 evaluator 检查 gold_evidence 是否在 ContextChunks，forbidden_evidence 是否缺席。引用 evaluator 检查 Citation 是否指向支持声明的 chunk。答案 evaluator 用规则和 judge 混合检查 expected_points。</p>
+<p>一个矩阵结果可以这样保存：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;sample_id&quot;: &quot;rag_billing_enterprise_overage_001&quot;,
+  &quot;passed&quot;: false,
+  &quot;stage&quot;: {
+    &quot;query&quot;: {&quot;score&quot;: 1.0, &quot;passed&quot;: true},
+    &quot;retrieval&quot;: {&quot;score&quot;: 1.0, &quot;passed&quot;: true},
+    &quot;rerank&quot;: {&quot;score&quot;: 0.8, &quot;passed&quot;: true},
+    &quot;context&quot;: {&quot;score&quot;: 0.4, &quot;passed&quot;: false, &quot;reason&quot;: &quot;old policy entered context&quot;},
+    &quot;citation&quot;: {&quot;score&quot;: 0.5, &quot;passed&quot;: false, &quot;reason&quot;: &quot;answer cites price page for overage rule&quot;},
+    &quot;answer&quot;: {&quot;score&quot;: 0.7, &quot;passed&quot;: false, &quot;missing&quot;: [&quot;说明旧政策不再适用&quot;]},
+    &quot;task&quot;: {&quot;score&quot;: 0.6, &quot;passed&quot;: false}
+  },
+  &quot;first_failure_stage&quot;: &quot;context&quot;,
+  &quot;blocking&quot;: true
+}</code></pre></div>
+<p>first_failure_stage 很关键。上面这个例子里，答案确实缺了一个要点，引用也不精确，但最早的问题是上下文污染：旧政策进入了上下文且没有被标注过期。如果只改 prompt，让模型“注意版本”，可能短期通过，长期仍会被旧材料干扰。矩阵报告把修复焦点放回上下文过滤。</p>
+<p>聚合时不要直接把所有 stage 分数加权平均后得一个总分。总分可以给管理看，但工程看板应该显示热力图。行是样本类型，列是链路阶段，格子里是通过率、回归数、严重失败数和趋势。比如：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">样本类型</th><th scope="col">查询</th><th scope="col">召回</th><th scope="col">重排</th><th scope="col">上下文</th><th scope="col">引用</th><th scope="col">答案</th><th scope="col">任务</th></tr></thead><tbody><tr><td>事实查找</td><td>99%</td><td>96%</td><td>94%</td><td>93%</td><td>91%</td><td>90%</td><td>88%</td></tr><tr><td>多文档综合</td><td>95%</td><td>88%</td><td>82%</td><td>78%</td><td>74%</td><td>70%</td><td>66%</td></tr><tr><td>版本冲突</td><td>93%</td><td>84%</td><td>79%</td><td>61%</td><td>58%</td><td>55%</td><td>50%</td></tr><tr><td>权限边界</td><td>98%</td><td>92%</td><td>90%</td><td>86%</td><td>82%</td><td>80%</td><td>76%</td></tr><tr><td>证据不足</td><td>97%</td><td>89%</td><td>87%</td><td>85%</td><td>83%</td><td>72%</td><td>69%</td></tr></tbody></table></div>
+<p>这张表比一个 82 分更有用。它告诉我们版本冲突的上下文和引用是当前短板，多文档综合也有明显衰减。团队可以据此决定先做文档版本过滤、冲突提示和引用绑定，而不是盲目换模型。</p>
+<p>权重设计也要工程化，不要在会议上凭感觉拍一个数字。我的做法是先列出业务风险，再把风险映射到矩阵单元。比如客服赔付政策里，答案错误和引用错误都很重，因为用户会据此行动；研发文档助手里，召回和上下文覆盖更重，因为工程师通常会继续读引用；合规问答里，权限和拒答比流畅度重要。权重不是为了算出漂亮总分，而是为了让发布门禁符合真实风险。</p>
+<p>一个具体流程是：先让产品、工程和运营各自给样本类型打 risk_level；再由工程 owner 给每个失败阶段估计修复成本；最后把风险和成本合在一起决定阻断策略。高风险低修复成本的单元格应该优先做严格门禁，例如错误引用、旧版本污染、权限泄漏。高风险高修复成本的单元格可以先做告警和人工复核，但必须设定下降预算，不能长期挂在看板上。低风险单元格更多看趋势，不要因为一个边缘样本让发布流程停摆。</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">matrix_policy:
+  version_conflict:
+    context:
+      gate: blocking
+      reason: &quot;旧政策进入上下文会直接导致错误承诺&quot;
+    citation:
+      gate: blocking
+      reason: &quot;用户需要点击原文确认政策&quot;
+  factual_lookup:
+    answer:
+      gate: warning
+      max_regression: 0.03
+  permission_boundary:
+    context:
+      gate: blocking
+      reason: &quot;不可见材料不得进入模型上下文&quot;</code></pre></div>
+<p>任务指标的实现也要避免太粗。不要把“点赞”当成唯一真值，因为很多用户不点赞也完成了任务，很多用户点赞只是觉得语气友好。更稳定的做法是为每类任务定义可观察的后续行为：文档问答看引用打开和停留，故障排查看是否进入 runbook 或创建排障记录，客服问答看是否减少转人工和重复追问，研发助手看用户是否复制代码片段后继续查看相关 API。线上行为不是黄金答案，但它能告诉你离线矩阵是否漏了真实问题。</p>
+<p>评测报告应该把这些行为信号和离线阶段并排展示。比如某次改动让 citation precision 提高，但引用打开率下降，说明引用可能更精确却不够有用；某次改动让 answer score 提高，但重复追问增加，说明答案看起来完整却没有解决用户任务。矩阵的价值就在这里：它不会把离线指标和线上体验混成一个不可解释的分数，而是保留足够多的维度，让团队看到质量变化的方向。</p>
+<p>在 CI 中，矩阵可以分三档运行。第一档是 smoke set，几十条高风险样本，每次提交跑，要求快且稳定。第二档是 regression set，几百条关键路径样本，合并前或每日跑。第三档是 full set，包含线上采样和长尾问题，夜间跑。不要把全量评测塞进每个 PR，否则团队会因为慢而关闭它。</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">eval_suites:
+  smoke:
+    max_cases: 50
+    timeout_minutes: 10
+    blocking: true
+  regression:
+    max_cases: 500
+    timeout_minutes: 60
+    blocking: true
+  full:
+    max_cases: 5000
+    timeout_minutes: 360
+    blocking: false</code></pre></div>
+<p>发布门禁也要矩阵化。高风险样本的检索、上下文、引用和答案失败可以直接阻断；低风险样本允许小幅波动，但不能出现新的权限泄漏和事实冲突。成本和延迟不能只做观察指标。一个 RAG 改动如果让多文档综合质量提高 2%，但 p95 延迟从 3 秒变 12 秒，客服场景可能无法接受。矩阵里必须有运行维度。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>测试 RAG 矩阵时，先测试样本质量。每条样本的 gold_evidence 必须真实存在，chunk_id 必须能在当前索引快照找到，forbidden_evidence 必须有明确原因。expected_points 不能写成完整作文，而要写成可检查要点。样本如果依赖某个时间点，必须记录 as_of。样本如果涉及权限，必须提供至少一个可回答身份和一个不可回答身份。</p>
+<p>然后测试每个 evaluator。召回 evaluator 要能识别 doc_id 和 chunk_id 的精确命中，也要处理文档重切分后的映射。重排 evaluator 要测试黄金片段在不同 rank 下的得分。上下文 evaluator 要测试 token 截断、重复 chunk、过期版本、权限不可见材料。引用 evaluator 要测试引用缺失、引用错段、引用相关但不支持结论。答案 evaluator 要测试同义表达、要点遗漏、错误范围和错误拒答。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">Evaluator</th><th scope="col">最小正例</th><th scope="col">最小反例</th><th scope="col">边界例</th></tr></thead><tbody><tr><td>Query</td><td>改写保留产品、版本、动作</td><td>改写丢掉企业版</td><td>同义词替换但约束保留</td></tr><tr><td>Retrieval</td><td>gold chunk 在 top-k</td><td>只命中同主题旧文档</td><td>命中文档标题但未命中关键段</td></tr><tr><td>Rerank</td><td>gold chunk 进入上下文预算</td><td>gold chunk 被排到预算外</td><td>多个 gold chunk 只进入一半</td></tr><tr><td>Context</td><td>新政策进入，旧政策缺席</td><td>旧政策和新政策混放</td><td>旧政策进入但被明确标注过期</td></tr><tr><td>Citation</td><td>引用支持关键声明</td><td>引用价格页支持不了规则</td><td>引用上级段落但包含足够证据</td></tr><tr><td>Answer</td><td>覆盖要点且不扩张</td><td>漏掉限制条件</td><td>表达不同但事实等价</td></tr></tbody></table></div>
+<p>评测本身还要做稳定性测试。同一套样本、同一套配置，重复跑三次，关键指标不应该大幅波动。如果波动明显，要检查是否有非确定性排序、索引更新、工具实时返回、模型温度、缓存穿透。RAG 评测如果不稳定，就不能作为发布门禁。对生成部分可以允许轻微表达差异，但检索和上下文指标应该基本确定。</p>
+<p>线上评测要和离线矩阵对齐。线上不能要求每个问题都有黄金证据，但可以用弱标签和行为信号。比如用户点击第一个引用并停留较久，可能说明引用有用；用户连续追问“依据是什么”“你确定吗”，可能说明答案不够可信；转人工率升高可能说明任务失败。把这些信号按样本类型回流，可以发现离线集缺少的场景。</p>
+<p>A/B 测试也要看矩阵，而不是只看总体满意度。一个新 reranker 可能让热门问题满意度提高，但让长尾多文档问题召回下降。总体满意度可能仍然上涨，因为热门问题占比大；但对高价值客户的复杂问题，系统变差了。矩阵能把 A/B 结果拆到场景和阶段，避免平均数掩盖风险。</p>
+<p>最后要做人工复核。自动指标适合规模化，但 RAG 质量里有很多业务语义。每周抽取失败样本、边界通过样本和高风险线上样本，让业务 owner 和工程 owner 一起复核。复核结论不是写在会议纪要里，而是更新样本、标签、权重或 evaluator。评测矩阵只有持续吸收真实反馈，才不会变成陈旧仪表盘。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一种失败模式是把检索评测做成搜索引擎评测。RAG 不是只要 top-k 相关，而是要把可支持答案的证据放进模型可见上下文。只看 recall@20，会让团队忽略上下文预算、重排和组装。</p>
+<p>第二种失败模式是样本只有标准答案，没有黄金证据。这样只能评最终文本，无法判断检索链路。RAG 样本必须标注 gold_evidence，否则矩阵少了一半。</p>
+<p>第三种失败模式是忽略版本和时间。知识库里经常同时存在草案、旧政策、新政策、迁移说明和事故复盘。系统如果没有 as_of、valid_from、valid_to 和版本过滤，答案会在旧材料和新材料之间摇摆。</p>
+<p>第四种失败模式是引用和声明没有绑定。答案末尾列出三个参考链接，不等于每个关键结论都有证据。引用评测要做到 claim 级，否则错引用会大量漏掉。</p>
+<p>第五种失败模式是把拒答当失败。证据不足或用户无权限时，正确行为就是拒答或要求补充信息。矩阵需要 answerability 字段，才能判断拒答是谨慎还是无能。</p>
+<p>第六种失败模式是忽略权限。离线评测常用管理员视角跑，结果上线后普通用户看到的证据完全不同。每个涉及敏感材料的样本都应该至少跑两个身份，检查可见证据和答案是否匹配。</p>
+<p>第七种失败模式是过度追求自动 judge。LLM judge 能评答案覆盖和忠实度，但不应该替代检索、重排、权限和版本检查。能从 trace 算出来的指标，优先用确定性算法。</p>
+<p>第八种失败模式是没有把评测连接到修复流程。报告显示版本冲突样本通过率 55%，但没有 owner、没有失败阶段、没有样本链接、没有 trace，工程上仍然不会动。矩阵输出必须能生成修复队列。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>[ ] 每条评测样本包含 query、type、risk_level、answerability、gold_evidence、expected_points。</li><li>[ ] 评测运行记录模型、embedding、索引、chunk、reranker、prompt、知识库快照和权限身份。</li><li>[ ] Trace 中保留 query rewrite、retrieval、rerank、context、answer、citation、latency、cost。</li><li>[ ] 检索指标区分召回候选和最终上下文，不用 recall@20 代替可见证据命中。</li><li>[ ] 引用评测检查关键声明到具体 chunk 的支持关系，不只检查链接存在。</li><li>[ ] 版本冲突样本包含 forbidden_evidence 或 valid_time，旧材料污染会被捕获。</li><li>[ ] 权限边界样本用不同 user_scope 运行，确认不可见材料不会进入上下文或引用。</li><li>[ ] 发布门禁按风险和阶段配置，严重引用错误、权限泄漏和高风险答案错误直接阻断。</li><li>[ ] 看板使用样本类型乘链路阶段的热力图，同时展示成本、延迟和稳定性。</li><li>[ ] 线上反馈、人工复核和事故复盘会回流到样本集和 evaluator。</li></ul>
+<h2 id="总结">总结</h2>
+<p>RAG 评测不能只问答案像不像标准答案。一个生产 RAG 系统的质量来自查询理解、召回、重排、上下文、引用、生成和任务完成的组合。评测矩阵把这些组合拆开，让团队能看到具体薄弱点，而不是围绕一个总分争论。</p>
+<p>好的矩阵有三个特点。第一，它有结构化样本，记录黄金证据、拒答规则、权限和版本。第二，它有完整 trace，能把失败定位到最早阶段。第三，它有分层门禁，高风险问题严格阻断，低风险问题看趋势和回归。这样做会比简单打分麻烦，但它能换来真正可修的质量反馈。</p>
+<p>RAG 的工程本质是证据管理。评测矩阵也是证据管理：证明系统找到了正确材料，证明材料进入了上下文，证明答案按材料生成，证明用户最终能完成任务。只要这条链路清楚，模型、索引和知识库怎么演进，都能有一套稳定的方法判断是否真的变好。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM 应用工程循环 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="把 prompt、结构化输出、工具调用和评测放进同一个迭代闭环。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="LLM 应用工程循环">
+  <meta property="og:description" content="把 prompt、结构化输出、工具调用和评测放进同一个迭代闭环。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/llm-application-engineering-loop.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link active" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>LLM 应用工程循环</span></nav>
+          <div class="note-kicker">NOTES / LLM / 055</div>
+          <h1>LLM 应用工程循环</h1>
+          <p>把 prompt、结构化输出、工具调用和评测放进同一个迭代闭环。</p>
+          <div class="note-tag-row"><span>LLM Apps</span><span>Engineering</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/llm-application-engineering-loop.svg" alt="标题图" loading="lazy"><figcaption>LLM 应用工程循环 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多 LLM 应用的第一个版本都很顺。写一段 prompt，接一个模型，给几条样例，页面上出现了看起来很聪明的回答。团队很快会把它接到知识库、客服、代码仓库、工单系统或者内部运营流程里，然后问题开始暴露：同一类输入今天能过，明天变差；用户换一种说法就走错分支；结构化输出偶尔多一个字段；工具调用成功但业务状态不对；上线前评测通过，上线后真实流量里出现完全没见过的长尾。最后大家把精力花在反复改 prompt 上，却没有一套可以解释、可以回归、可以推进的工程循环。</p>
+<p>LLM 应用和传统 Web 应用最大的差别，不是“模型会生成自然语言”，而是系统中间多了一段概率性的决策层。这个决策层会读取上下文，解释用户意图，选择输出格式，决定是否调用工具，还会把外部数据重新组织成下一步输入。它不像普通函数那样只由代码路径决定行为，也不像简单机器学习模型那样只有输入特征和预测值。LLM 应用的行为来自多个可变部件：prompt、上下文装配、模型版本、结构化输出 schema、工具描述、工具结果、检索材料、采样参数、业务兜底逻辑、用户最新指令。任何一个部件变化，都可能改变系统行为。</p>
+<p>如果没有工程循环，团队会陷入几种常见状态。第一种是“感觉驱动”，某个坏例子出现后马上改 prompt，然后另一个场景又坏掉。第二种是“样例漂移”，评测集只收录最近失败的例子，老问题被修坏也没人发现。第三种是“接口模糊”，模型输出既要给人读，又要给程序消费，字段含义靠自然语言猜。第四种是“工具失控”，模型能调用越来越多工具，但没有统一的权限、幂等、确认和回滚机制。第五种是“观测断层”，线上只有最终回答和用户反馈，看不到模型当时读了什么、为什么选这个工具、schema 校验失败了几次、成本和延迟花在哪里。</p>
+<p>我更愿意把 LLM 应用看成一个持续运行的工程系统，而不是一段高级 prompt。它需要像后端服务一样有接口契约、测试样本、版本记录、灰度策略、运行日志和事故复盘；也需要承认模型行为不可能被完全静态证明，所以必须用评测和观测形成闭环。这个闭环的目标不是让模型“永远正确”，而是让每一次错误都能进入可操作的改进路径：是输入归一化缺失，还是上下文少了证据；是 schema 太宽，还是工具边界太粗；是 prompt 目标冲突，还是评测样本没有覆盖；是模型能力不足，还是业务规则没有结构化。</p>
+<p>一个典型例子是企业内部的工单分流助手。用户提交一句话：“线上支付偶尔失败，麻烦看一下，影响华东几个客户。”初版系统可能直接让模型输出分类、优先级和处理建议。看起来很简单，但生产里会遇到更多细节：用户可能贴日志、贴截图、夹杂英文错误码；同一个问题可能属于支付、网络、风控、客服多个团队；“偶尔失败”可能是 P2，也可能因为大客户影响变成 P0；模型建议通知某个团队之前，需要确认团队是否值班；如果要创建事故工单，还要避免重复创建。这个应用不是一问一答，而是一条业务流程。它要把 prompt、schema、工具和评测放在同一个循环里管理。</p>
+<p>LLM 应用工程循环解决的是“如何稳定地变好”。稳定并不意味着每个组件永远不变，恰恰相反，prompt 会改，schema 会升级，工具会增加，模型会换，样本会扩充。真正重要的是每次变化都能被隔离、比较、回滚和解释。没有循环，改动只是补丁；有了循环，改动才是工程资产。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>LLM 应用工程循环可以拆成八个核心概念：行为契约、样本池、上下文装配、模型调用、结构化输出、工具执行、评测体系和生产观测。它们不是线性的一次性步骤，而是互相反馈的环。行为契约定义应用应该完成什么任务、不能做什么、输出给谁消费。样本池保存真实场景和边界场景。上下文装配决定模型在本轮决策里看到什么。模型调用负责生成候选决策。结构化输出把模型决策变成程序可验证的对象。工具执行把决策映射到外部系统。评测体系在离线环境里发现回归。生产观测把真实流量里的失败再带回样本池。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">概念</th><th scope="col">主要产物</th><th scope="col">关键问题</th><th scope="col">常见误区</th></tr></thead><tbody><tr><td>行为契约</td><td>任务说明、禁止事项、成功标准</td><td>应用到底替用户完成哪一步</td><td>把目标写成泛泛的“回答准确”</td></tr><tr><td>样本池</td><td>输入、期望输出、证据、标签</td><td>哪些场景必须稳定通过</td><td>只保留最近失败样本</td></tr><tr><td>上下文装配</td><td>检索策略、裁剪策略、引用结构</td><td>模型需要哪些事实才能决策</td><td>把所有材料塞进 prompt</td></tr><tr><td>模型调用</td><td>prompt 版本、参数、模型版本</td><td>如何生成可比较的输出</td><td>改 prompt 不记录版本</td></tr><tr><td>结构化输出</td><td>JSON Schema、业务校验、错误处理</td><td>下游如何安全消费结果</td><td>只要求“请输出 JSON”</td></tr><tr><td>工具执行</td><td>工具目录、权限、幂等、确认</td><td>哪些动作可以自动完成</td><td>把后端接口原样暴露给模型</td></tr><tr><td>评测体系</td><td>golden cases、对抗样本、指标</td><td>改动是否真的更好</td><td>只看人工挑选的成功例子</td></tr><tr><td>生产观测</td><td>trace、成本、延迟、失败分类</td><td>线上行为如何回流改进</td><td>只记录最终文本回答</td></tr></tbody></table></div>
+<p>行为契约是循环的起点。很多团队从 prompt 开始写，这是很自然的 demo 路径，但不是稳定的工程路径。先写 prompt 容易把业务目标、模型人格、输出格式、边界规则、工具使用条件混在一起。更好的做法是先写行为契约：输入来自哪里，输出给谁，哪些字段必须稳定，哪些情况要拒绝，哪些情况要向用户追问，哪些动作必须拿确认，哪些证据必须引用。行为契约不一定很长，但要能被测试。</p>
+<p>样本池是循环的燃料。样本不只是“用户问法和标准答案”，还应该包含输入上下文、业务状态、期望结构、允许的多种结果、失败标签和人工解释。对于 LLM 应用，很多场景没有唯一文本答案，但有可判断的行为边界。例如工单分流里，模型可以用不同措辞解释原因，但 <code>team</code> 不能错，<code>severity</code> 不能随便升级，<code>need_human_confirm</code> 不能在高风险动作里漏掉。样本池要服务行为评测，而不是服务漂亮回答。</p>
+<p>上下文装配是 LLM 应用里的“数据访问层”。检索到材料不等于应该全部放进模型；历史对话存在不等于都相关；工具返回长文本不等于可信。上下文装配要决定来源、优先级、截断、摘要、引用和可信等级。工程上要把上下文装配从 prompt 字符串里抽出来，让它成为可测试的模块。否则每次模型输出变差，团队很难判断是 prompt 问题、检索问题，还是上下文里出现了冲突证据。</p>
+<p>结构化输出是模型和程序之间的接口。没有结构化输出，LLM 应用只能靠字符串解析和人类阅读，后续工具调用、审计、回放、统计都很脆弱。结构化输出也不能只停留在 JSON 格式，它应该有 schema、字段语义、枚举约束、业务校验和版本兼容。模型输出可以不完美，但系统必须知道它在哪里不完美，并能选择修复、重试、降级或交给人。</p>
+<p>工具执行把 LLM 应用从“建议系统”变成“行动系统”。一旦模型能写文件、创建工单、发消息、查数据库，工程循环就必须纳入权限、幂等、确认、超时、重试和回滚。工具调用不是模型的一段附属能力，而是业务流程的一步。每个工具都应该有清楚的输入契约、输出契约和副作用等级。否则评测通过的自然语言回答，可能在线上变成错误的外部操作。</p>
+<p>评测和观测是闭环的两端。评测负责在上线前问：“这次改动有没有修复目标问题，有没有破坏旧能力，有没有带来新的成本和延迟。”观测负责上线后问：“真实流量里哪些场景失败了，失败发生在哪个环节，是否需要进入样本池。”没有评测，改动不可回归；没有观测，评测会越来越脱离真实世界。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一套可持续演进的 LLM 应用，通常可以画成下面这条闭环链路：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">业务目标
+  |
+  v
+行为契约：任务边界、输出要求、风险规则、成功标准
+  |
+  v
+样本池：真实样本、边界样本、对抗样本、线上失败样本
+  |
+  v
+应用实现：输入归一化 -&gt; 上下文装配 -&gt; 模型调用 -&gt; 结构化输出校验
+  |
+  v
+执行层：工具选择、权限检查、幂等控制、结果包装
+  |
+  v
+离线评测：正确性、稳定性、成本、延迟、回归
+  |
+  v
+灰度上线：影子运行、小流量、人工审核、自动降级
+  |
+  v
+生产观测：trace、错误标签、用户反馈、业务指标
+  |
+  v
+失败入库：归因、最小复现、样本补充、下一轮改动</code></pre></div>
+<p>这张图里最关键的是“失败入库”。很多团队做了评测，也做了日志，但失败没有进入下一轮开发资产。客服反馈说“这个分类错了”，工程师临时改一句 prompt，问题看似解决，却没有把原始输入、当时上下文、模型输出、schema 校验结果、工具调用记录、人工正确答案存成一个可回放样本。下一次换模型或改检索策略时，同样问题可能再次出现。工程循环要求每个重要失败都能变成一个最小复现单元。</p>
+<p>可以把系统分成控制面和数据面。控制面管理契约、版本、样本、评测和发布策略；数据面处理真实请求、调用模型、执行工具和记录 trace。控制面决定“这套行为能不能发布”，数据面决定“这次请求怎么执行”。不要把两者混在同一个 prompt 文件里。prompt 是数据面的一部分，评测样本、schema 版本、发布规则和观测指标也同样重要。</p>
+<p>在一次真实请求里，流程可以更细：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户输入
+  -&gt; normalize(input)
+  -&gt; load_contract(app_version)
+  -&gt; build_context(input, policy, retrieval, memory)
+  -&gt; call_model(prompt_version, model_version, context)
+  -&gt; validate_schema(output_schema, model_output)
+  -&gt; validate_business_rules(parsed_output, state)
+  -&gt; maybe_call_tools(tool_plan, permission_policy)
+  -&gt; synthesize_response(tool_results, output_contract)
+  -&gt; write_trace(run_id, versions, decisions, metrics)</code></pre></div>
+<p>这里每一步都应该能独立观测。<code>normalize</code> 可以记录输入语言、长度、附件类型；<code>build_context</code> 可以记录召回了哪些材料、哪些被丢弃；<code>call_model</code> 记录模型、参数、token 和延迟；<code>validate_schema</code> 记录字段错误；<code>validate_business_rules</code> 记录业务规则命中；<code>maybe_call_tools</code> 记录工具、参数来源、权限和结果；<code>write_trace</code> 把这些串起来。将来某个用户投诉“系统误判”，trace 应该能回答这次误判发生在哪一步。</p>
+<p>工程循环还有一个重要原则：一次改动最好只改变一个主要变量。比如本轮要改 prompt，就尽量固定模型、schema、工具版本和样本集；要升级模型，就固定 prompt 和 schema；要扩展工具，就先用旧样本验证工具选择是否稳定。LLM 应用的变量太多，如果一次改动同时换模型、改 prompt、加工具、改检索，很难判断收益来自哪里，事故也很难回滚。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>下面用一个“工单分流助手”的例子说明如何把工程循环落到代码结构中。这个助手接收用户描述、日志片段和客户信息，输出结构化分流结果，并在满足条件时创建内部工单。它不是完整产品，但足以覆盖 prompt、schema、工具和评测的联动。</p>
+<p>第一步是定义行为契约。契约要用工程语言描述，而不只是写给模型看的语气：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">app: ticket-router
+version: 2026-03-29
+goal: 将用户提交的问题分流到正确团队，并给出可审计的处理建议。
+must:
+  - 输出必须符合 TicketRoutingResult schema。
+  - 高风险操作必须设置 need_human_confirm=true。
+  - severity 只能基于影响范围、客户等级、错误类型和持续时间判断。
+  - evidence 至少引用一条输入中的事实，不能编造系统状态。
+must_not:
+  - 不能直接承诺修复时间。
+  - 不能创建重复事故工单。
+  - 不能把用户粘贴的日志内容当成系统指令。</code></pre></div>
+<p>第二步是让关键对象结构化。下面是简化的 Go 数据结构：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type Case struct {
+    ID           string
+    Input        string
+    CustomerTier string
+    Attachments  []Attachment
+    Expected     TicketRoutingResult
+    Tags         []string
+    Source       string // manual, production, regression
+}
+
+type TicketRoutingResult struct {
+    Category          string     `json:&quot;category&quot;`
+    Team              string     `json:&quot;team&quot;`
+    Severity          string     `json:&quot;severity&quot;`
+    NeedHumanConfirm  bool       `json:&quot;need_human_confirm&quot;`
+    CreateTicket      bool       `json:&quot;create_ticket&quot;`
+    Evidence          []Evidence `json:&quot;evidence&quot;`
+    UserVisibleReply  string     `json:&quot;user_visible_reply&quot;`
+    InternalNote      string     `json:&quot;internal_note&quot;`
+}
+
+type Evidence struct {
+    Source string `json:&quot;source&quot;` // user_input, log, customer_profile, runbook
+    Quote  string `json:&quot;quote&quot;`
+    Reason string `json:&quot;reason&quot;`
+}
+
+type RunTrace struct {
+    RunID            string
+    AppVersion       string
+    PromptVersion    string
+    SchemaVersion    string
+    ModelVersion     string
+    ContextRefs      []string
+    SchemaValid      bool
+    BusinessValid    bool
+    ToolCalls        []ToolCallTrace
+    LatencyMS        int
+    InputTokens      int
+    OutputTokens     int
+    FailureCategory  string
+}</code></pre></div>
+<p>这些结构让应用脱离“拼字符串”的状态。<code>Case</code> 是评测样本，<code>TicketRoutingResult</code> 是模型输出接口，<code>RunTrace</code> 是生产观测记录。三者之间要能互相转换：线上失败的 <code>RunTrace</code> 可以抽取成新的 <code>Case</code>；评测运行也生成同样的 <code>RunTrace</code>，方便比较；schema 升级时可以批量迁移旧样本。</p>
+<p>第三步是拆出几个稳定模块，而不是把所有逻辑塞进一个 <code>callLLM</code> 函数。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">模块</th><th scope="col">输入</th><th scope="col">输出</th><th scope="col">主要测试</th></tr></thead><tbody><tr><td><code>InputNormalizer</code></td><td>用户文本、附件、租户状态</td><td>归一化请求</td><td>语言、长度、附件缺失、敏感信息</td></tr><tr><td><code>ContextBuilder</code></td><td>请求、契约、检索策略</td><td>上下文包</td><td>证据召回、噪声抑制、提示注入隔离</td></tr><tr><td><code>ModelRunner</code></td><td>prompt、上下文、schema</td><td>原始模型输出</td><td>超时、重试、参数版本</td></tr><tr><td><code>OutputValidator</code></td><td>原始输出、JSON Schema</td><td>解析结果或错误</td><td>字段缺失、枚举错误、类型错误</td></tr><tr><td><code>BusinessGuard</code></td><td>解析结果、业务状态</td><td>可执行计划</td><td>权限、重复工单、确认策略</td></tr><tr><td><code>ToolBroker</code></td><td>可执行计划</td><td>工具结果</td><td>幂等、失败重试、审计</td></tr><tr><td><code>Evaluator</code></td><td>样本、运行结果</td><td>指标和失败列表</td><td>回归、成本、稳定性</td></tr></tbody></table></div>
+<p><code>ContextBuilder</code> 是很容易被低估的模块。它应该把上下文分成清楚的块：用户原始输入、归一化摘要、客户资料、相关 runbook、历史相似工单、工具可用性、输出要求。外部文本要标记为“数据”，不能让模型把日志里的自然语言当成新指令。对于工单分流，最关键的证据通常不是长篇 runbook，而是错误码、影响范围、客户等级、持续时间和已有事故状态。上下文装配应该优先保留这些事实。</p>
+<p>第四步是建立版本关系。一次应用运行至少要记录 <code>app_version</code>、<code>prompt_version</code>、<code>schema_version</code>、<code>model_version</code>、<code>toolset_version</code> 和 <code>evalset_version</code>。这些版本不一定都对应独立仓库文件，但必须能在 trace 里查到。否则线上问题只会留下“某天模型答错了”的描述，无法重放。</p>
+<p>一个实际的迭代流程可以这样走：</p>
+<ol><li>新增或修改行为契约，明确要修的失败类型。</li><li>从线上 trace 或人工构造中补充样本，并标注期望结构。</li><li>固定当前模型、schema、工具版本，运行基线评测。</li><li>只改一个主要变量，例如 prompt 或上下文策略。</li><li>运行全量回归，比较目标样本、旧样本、成本、延迟和 schema 通过率。</li><li>如果通过，进入影子运行，让新版本处理真实流量但不影响业务动作。</li><li>观察差异，抽样人工审核，再做小流量灰度。</li><li>上线后把失败 trace 打标签并回流样本池。</li></ol>
+<p>工程上还要给失败分类预留字段。不要只记录 <code>failed=true</code>。至少应该区分：输入无法理解、检索缺证据、上下文冲突、schema 无效、业务规则失败、工具失败、人工判错、用户反馈差、成本超限、延迟超限。失败分类越清楚，下一轮改动越具体。比如 schema 无效应该优先修输出契约和解析器；工具失败要看权限和重试；人工判错要看样本和推理规则；用户反馈差可能是口吻或期望管理问题。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>LLM 应用的测试不能只问“模型回答对不对”。它要覆盖输入、上下文、输出、工具和业务结果。传统单元测试依然有用，但它只覆盖确定性代码；LLM 相关部分需要离线评测、回归样本、人工裁判和线上观测共同工作。</p>
+<p>最基础的是 schema 通过率。模型输出必须能被解析，并且字段满足类型、枚举、必填和长度约束。如果 schema 通过率不稳定，后面的语义评测都没有意义。第二层是业务规则通过率，例如高风险工单是否要求人工确认，低置信度是否追问，重复事故是否阻止创建。第三层是语义正确率，例如团队分流、严重级别、证据引用是否符合人工标注。第四层是操作安全性，例如工具是否只在允许条件下调用，参数是否来自可信来源，幂等键是否存在。第五层是运行指标，包括延迟、成本、重试次数、上下文大小和降级率。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">指标</th><th scope="col">说明</th><th scope="col">适合的自动化方式</th><th scope="col">需要人工吗</th></tr></thead><tbody><tr><td>Schema Valid Rate</td><td>输出能否按 schema 解析</td><td>JSON Schema 校验</td><td>通常不需要</td></tr><tr><td>Business Guard Pass</td><td>是否满足业务规则</td><td>规则引擎或断言</td><td>少量抽查</td></tr><tr><td>Routing Accuracy</td><td>分类、团队、优先级是否正确</td><td>golden case 对比</td><td>需要标注</td></tr><tr><td>Evidence Support</td><td>结论是否有输入证据支撑</td><td>引用检查加人工审阅</td><td>需要</td></tr><tr><td>Tool Safety</td><td>工具调用是否合规</td><td>参数来源和权限断言</td><td>高风险需审核</td></tr><tr><td>Cost Latency</td><td>成本和延迟是否可接受</td><td>指标统计</td><td>不需要</td></tr><tr><td>Regression Delta</td><td>新旧版本差异</td><td>A/B 离线重放</td><td>对差异样本审核</td></tr></tbody></table></div>
+<p>评测样本要分层管理。核心回归集放最关键的业务场景，数量不一定大，但每个版本必须通过。扩展集覆盖更多真实样本，用来观察趋势。对抗集专门放边界输入，例如提示注入、日志里包含伪指令、缺少关键信息、多个团队都可能相关、用户要求绕过流程。线上抽样集来自真实流量，用来防止评测集自嗨。每个失败样本进入样本池时，都应该带上失败原因和期望改动，不然样本会变成混乱的历史堆积。</p>
+<p>还要评测“变化是否值得”。LLM 应用很容易出现某个指标上涨、另一个指标下降。比如新 prompt 让分流准确率提高两个点，但 schema 无效率从百分之一升到百分之五，或者平均延迟增加一倍。上线决策不能只看单一准确率。对于有工具副作用的系统，安全性指标和业务保护规则应该优先于自然语言流畅度。对客服类系统，用户可见回复的口吻重要，但不能牺牲证据和权限。</p>
+<p>一个实用的评测报告应该包含以下内容：本次改动说明、版本矩阵、样本集规模、总体指标、按标签拆分指标、失败样本列表、成本延迟变化、人工审核结论和上线建议。报告不需要很花哨，但要能让工程师、产品和业务方看到同一个事实。特别是失败样本列表，要保留输入、旧输出、新输出、期望输出和差异解释。没有差异解释，评测报告只是一张分数表。</p>
+<p>线上观测要和离线评测使用同一套失败分类。比如离线评测里有 <code>context_missing_evidence</code>，线上 trace 里也要能标这个标签。这样一来，当线上某类失败上升，团队可以直接回到样本池补充对应案例，而不是重新发明一个问题分类。长期看，失败分类本身会成为团队对 LLM 应用的共同语言。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一种失败模式是只改 prompt，不改契约。团队发现模型答错，就在 prompt 里加一句“请务必注意某某情况”。短期可能有效，但 prompt 很快变成长长的禁令列表，彼此冲突，难以测试。更好的做法是把稳定规则沉到 schema、业务校验、上下文策略或工具权限里。prompt 应该表达任务和推理方式，不应该承担所有工程约束。</p>
+<p>第二种失败模式是评测集污染。每次失败都直接把“模型应该输出这句话”加入样本，最终评测集变成对某个 prompt 的背诵题。模型换一种合理表达会被判错，真正危险的行为却没有被覆盖。评测样本应该标注结构化期望和判断依据，而不是只存一段标准文本。对于允许多答案的场景，要用规则、字段和人工裁判组合评估。</p>
+<p>第三种失败模式是 schema 太宽。字段都是字符串，数组没有上限，可选字段没有语义，枚举允许 <code>other</code> 但没有说明何时使用。这样的 schema 看似灵活，实际把复杂度推给下游。模型会把解释、证据、动作混在一个字段里，解析器只能被迫猜。schema 要把业务决策拆成稳定字段，并让不确定性显式出现，例如 <code>need_more_info</code>、<code>missing_fields</code>、<code>confidence_reason</code>。</p>
+<p>第四种失败模式是工具边界过粗。一个 <code>execute</code> 工具可以执行任意命令，一个 <code>update_ticket</code> 工具可以改所有字段，一个 <code>send_message</code> 工具可以给任何人发任何内容。模型在 demo 里用得很好，不代表生产里安全。工具应该按用户可理解的动作拆分，并在 Host 层做权限和确认。越有副作用的工具，越需要窄接口、幂等键、预览和审计。</p>
+<p>第五种失败模式是上下文无限扩张。为了让模型“知道更多”，系统把完整历史、检索结果、工具输出、用户资料都塞进去。结果成本上涨，延迟变长，模型反而被噪声影响。上下文装配要有预算和优先级，尤其要隔离不可信外部文本。模型看到的信息越多，不代表决策越可靠；它看到的正确信息越集中，系统才越稳。</p>
+<p>第六种失败模式是线上观测太浅。只记录最终回答，无法知道模型是否漏看证据、schema 是否重试、工具是否失败后降级。出了问题只能猜。生产 LLM 应用必须记录结构化 trace，至少包含版本、输入摘要、上下文引用、输出校验、工具调用、错误分类、成本和延迟。涉及隐私的数据可以脱敏或只存引用，但不能完全没有链路信息。</p>
+<p>第七种失败模式是降级策略掩盖问题。模型输出错了，系统自动重试；重试还错，就用兜底文案；用户没有投诉，指标看起来还行。但真实业务可能已经积累了大量人工处理负担。降级是必要的，但降级也要被计数、告警和抽样分析。否则系统表面稳定，内部质量在慢慢下降。</p>
+<p>第八种失败模式是团队没有变更纪律。产品改了业务规则，算法换了模型，工程加了工具，运营改了知识库，但没有统一版本和发布记录。LLM 应用的行为由这些东西共同决定，缺少变更纪律就无法复盘。至少要做到：每次发布记录版本矩阵，每次评测保留报告，每次线上事故能找到对应代码、prompt、schema、工具和样本状态。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<p>上线前我会按下面的清单检查，尤其是带工具副作用的应用：</p>
+<ul><li>行为契约已经写清楚任务边界、成功标准、禁止事项和人工确认条件。</li><li>front door 输入已经归一化，长文本、附件、空输入、异常编码和敏感信息有处理策略。</li><li>上下文装配有明确预算，外部文本被标记为数据，关键证据有引用。</li><li>Prompt、schema、模型、工具、样本集都有版本，并写入每次 trace。</li><li>结构化输出有 JSON Schema 或等价校验，字段语义清楚，枚举和可选字段有边界。</li><li>业务规则在模型之外有二次校验，高风险动作不能只靠模型自觉。</li><li>工具有权限检查、参数来源检查、超时、重试、幂等和错误归一化。</li><li>有核心回归集、扩展样本集、对抗样本集和线上抽样审核流程。</li><li>评测报告包含正确性、schema 通过率、业务规则、工具安全、成本和延迟。</li><li>灰度策略明确：影子运行、小流量、人工审核、自动回滚和降级条件。</li><li>生产 trace 覆盖输入摘要、上下文引用、模型版本、输出校验、工具调用和失败分类。</li><li>用户反馈能关联到 run_id，重要失败能进入样本池并形成最小复现。</li><li>隐私和合规策略明确，日志脱敏、数据保留期限和访问权限已经配置。</li><li>运维看板能看到成本、延迟、错误率、重试率、降级率和人工接管率。</li><li>回滚方案不只回滚代码，也能回滚 prompt、schema、模型路由和工具开关。</li></ul>
+<p>这个 checklist 的价值不在于让流程显得完整，而在于提前暴露责任边界。LLM 应用上线失败，经常不是某个模型回答错一句话，而是多个边界同时模糊：谁能改 prompt、谁能扩 schema、谁能放工具、谁确认高风险动作、谁把失败样本补进去。清单把这些问题摆到上线前解决。</p>
+<h2 id="总结">总结</h2>
+<p>LLM 应用工程循环的核心，是把不可完全预测的模型行为放进可持续改进的工程系统里。Prompt 很重要，但它只是循环中的一个部件；结构化输出、上下文装配、工具边界、评测样本和生产观测同样决定最终质量。一个应用能不能长期可靠，不取决于第一版回答有多惊艳，而取决于每次失败能否被复现、归因、修复和回归。</p>
+<p>做这类系统时，不要急着把所有能力都交给模型。先定义行为契约，再建立样本池；先让输出可验证，再接入有副作用的工具；先做离线评测，再做灰度；先记录 trace，再谈自动优化。工程循环跑起来后，团队会从“调 prompt”转向“管理行为”。这是 LLM 应用从 demo 走向生产的关键一步。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

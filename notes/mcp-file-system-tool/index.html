@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文件系统 MCP 工具 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="文件工具要控制根目录、读写范围和敏感路径。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="文件系统 MCP 工具">
+  <meta property="og:description" content="文件工具要控制根目录、读写范围和敏感路径。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/mcp-file-system-tool.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link active" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>文件系统 MCP 工具</span></nav>
+          <div class="note-kicker">NOTES / MCP / 050</div>
+          <h1>文件系统 MCP 工具</h1>
+          <p>文件工具要控制根目录、读写范围和敏感路径。</p>
+          <div class="note-tag-row"><span>Filesystem</span><span>MCP</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/mcp-file-system-tool.svg" alt="标题图" loading="lazy"><figcaption>文件系统 MCP 工具 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>文件系统 MCP 工具看起来很基础：读文件、列目录、写文件、搜索文本、打补丁。可是一旦把它交给模型使用，它就从“方便的本地 API”变成了高风险执行面。模型可能读到密钥、覆盖用户改动、把临时文件写进仓库、跟随符号链接越过根目录，或者在大仓库里做一次不受控搜索把机器拖慢。文件工具的难点不是会不会调用 <code>os.ReadFile</code>，而是如何把文件访问限制在明确的工作区、如何表达读写意图、如何保护用户未提交的修改、如何在失败时给模型足够信息继续修正。</p>
+<p>在传统软件里，文件系统通常由人类开发者直接操作。开发者知道当前目录、知道哪些文件不能碰、知道 <code>.env</code> 里可能有秘密。模型没有这些常识，或者说它的常识不能作为安全边界。它会根据任务上下文推断路径，但推断可能错；它会尝试修复问题，但修复可能扩大影响面；它会觉得“写一个配置文件”很自然，但那个文件可能是生产凭据。因此，文件系统 MCP 工具必须先定义边界，再谈能力。</p>
+<p>边界包含四层。第一是根目录边界：工具只能访问允许的 workspace root，不能通过 <code>../</code>、绝对路径、符号链接、挂载点绕出去。第二是操作边界：读、写、删除、执行脚本、改变权限应该是不同能力，不应混成一个万能工具。第三是内容边界：密钥、证书、浏览器 cookie、SSH 私钥、云凭据和用户隐私文件需要特殊处理，不能因为路径在根目录里就默认可读。第四是协作边界：仓库里可能已经有用户修改，工具不能随意覆盖；写操作要能展示 diff、检测冲突、保留审计记录。</p>
+<p>很多事故来自“过于信任路径字符串”。例如用户让模型修改项目里的 <code>config.yaml</code>，模型传入 <code>../../.ssh/config</code>，如果工具只是简单拼接路径并读取，就会越权。再如根目录下有一个符号链接 <code>secrets -&gt; /Users/alice/.aws</code>，工具如果只检查字符串前缀，就会以为 <code>workspace/secrets/credentials</code> 在允许范围内。还有大小写不敏感文件系统、Unicode 归一化、硬链接、路径中隐藏控制字符等问题。文件工具要以操作系统真实解析结果为准，而不是以输入字符串看起来像什么为准。</p>
+<p>文件系统工具还承载一个很特别的工程责任：它经常是模型实现代码修改的主要手段。读文件影响上下文质量，搜索影响定位速度，写文件影响用户信任。一个好的文件工具应该让模型能高效完成任务，同时把破坏面限制得很小。它不应该每次读文件都返回几十万行，也不应该允许模型用一次写入替换整个仓库。读要支持范围，搜索要支持过滤，写要支持补丁，删除要默认禁止或要求确认。工具接口越贴近“工程协作”的真实工作流，模型越不容易做出粗糙操作。</p>
+<p>因此，生产级文件系统 MCP 工具的目标不是最大权限，而是最小充分能力。它应当能回答：当前允许访问哪些根目录；每个根目录有哪些读写策略；路径如何规范化；敏感文件如何识别；大文件如何截断；写入如何避免覆盖；搜索如何限流；错误如何分类；日志如何审计。只要这些问题没有回答清楚，文件工具就只能用于受控 demo，不适合进入长期使用的开发环境。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>第一个概念是 <code>WorkspaceRoot</code>。它不是一个普通字符串，而是一个经过解析、规范化、授权的目录对象。工具启动时应明确拿到允许根目录列表，每个根目录带有权限策略。例如某个根目录只读，某个根目录允许写 <code>content/articles</code>，某个根目录允许搜索但不允许读取二进制文件。不要让模型在调用时临时指定任意根目录；根目录应该来自宿主应用、用户选择或受信配置。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type WorkspaceRoot struct {
+    ID          string
+    DisplayName string
+    RealPath    string
+    ReadOnly    bool
+    WriteRules  []PathRule
+    DenyRules   []PathRule
+    MaxFileBytes int64
+}
+
+type PathRule struct {
+    Pattern string
+    Kind    RuleKind
+    Reason  string
+}</code></pre></div>
+<p>第二个概念是路径解析。输入路径必须先按根目录解释，再转换为绝对路径，清理 <code>.</code> 和 <code>..</code>，解析符号链接，最后确认真实路径仍在根目录内。这个过程不能只靠 <code>strings.HasPrefix</code>。正确做法是使用 <code>filepath.Abs</code>、<code>filepath.Clean</code>、<code>filepath.EvalSymlinks</code>，并用 <code>filepath.Rel</code> 判断是否逃逸。还要注意目标文件不存在时，<code>EvalSymlinks</code> 不能直接解析完整路径，此时应解析已存在的父目录，再检查即将创建的文件名是否安全。</p>
+<p>第三个概念是操作分级。文件工具至少应拆成这些能力：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">能力</th><th scope="col">典型接口</th><th scope="col">风险</th><th scope="col">默认策略</th></tr></thead><tbody><tr><td>列目录</td><td><code>list_directory</code></td><td>暴露文件名和结构</td><td>允许，但限制深度和条数</td></tr><tr><td>读文件</td><td><code>read_file</code></td><td>泄露敏感内容或读超大文件</td><td>限制大小、范围和敏感路径</td></tr><tr><td>搜索</td><td><code>search_files</code></td><td>大量扫描、泄露片段</td><td>限制 glob、目录、结果数和超时</td></tr><tr><td>写文件</td><td><code>write_file</code></td><td>覆盖用户修改</td><td>优先补丁，要求基线校验</td></tr><tr><td>创建目录</td><td><code>create_directory</code></td><td>污染仓库结构</td><td>仅允许写规则覆盖范围</td></tr><tr><td>删除</td><td><code>delete_path</code></td><td>数据丢失</td><td>默认禁用或强确认</td></tr><tr><td>改权限</td><td><code>chmod</code></td><td>提升执行风险</td><td>通常不提供</td></tr></tbody></table></div>
+<p>第四个概念是内容策略。路径规则只能挡住一部分风险。很多秘密文件的名字并不固定，内容里可能出现 token、私钥、连接串。读工具可以在返回前做轻量扫描：如果检测到私钥头、云访问密钥、长随机 token、数据库 URL，就返回红acted 版本或拒绝读取。写工具也应该防止模型把明文密钥写进仓库，至少对常见模式给出警告。这里不能追求百分百识别，但可以把最常见事故挡在工具层。</p>
+<p>第五个概念是补丁优先。对代码仓库而言，整文件写入风险很高。模型读到旧版本文件，用户同时改了几行，模型再整文件写回，就会覆盖用户改动。更好的接口是 <code>apply_patch</code> 或 <code>replace_range</code>：要求模型说明基线片段，工具在写入前检查当前文件是否仍匹配。匹配失败就返回冲突，让模型重新读取。这样文件工具从“盲写”变成“带并发控制的协作编辑”。</p>
+<p>第六个概念是可观测性。文件工具的调用日志不能只写“read ok”。它要记录 root、相对路径、操作类型、结果大小、耗时、是否命中敏感规则、是否写入、写入 diff 摘要、调用主体和会话 ID。敏感内容本身不应进入日志，但路径和策略结果必须可审计。出了问题以后，你需要知道模型到底读过哪些文件、为什么允许写入、写入前基线是什么。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>文件系统 MCP 工具可以按“请求解析、策略判断、执行、结果整形、审计”五段设计。每段都应该有明确输入输出，避免把安全逻辑散在各个 handler 里。</p>
+<figure class="mermaid-block" data-mermaid-block><template data-mermaid-source>flowchart TD
+    A[模型发起文件工具调用] --&gt; B[参数 schema 校验]
+    B --&gt; C[选择 WorkspaceRoot]
+    C --&gt; D[路径规范化与符号链接解析]
+    D --&gt; E[根目录逃逸检查]
+    E --&gt; F[路径 deny/allow 策略]
+    F --&gt; G[内容敏感规则和大小限制]
+    G --&gt; H[执行读/列/搜/补丁]
+    H --&gt; I[结果截断与结构化返回]
+    I --&gt; J[审计日志和指标]</template><div class="mermaid-render" role="img" aria-label="Mermaid 图表" aria-busy="true">图表加载中...</div></figure>
+<p>这条链路里的关键是顺序。必须先做 schema 校验，避免奇怪参数进入路径解析。必须先解析真实路径，再判断是否在根目录内，避免符号链接逃逸。必须在执行前做策略判断，不能等读完敏感文件再决定不返回。写操作还要在执行前读取当前文件状态，计算基线校验；执行后再生成 diff 摘要和审计事件。</p>
+<p>读文件流程可以更细：</p>
+<ol><li>校验 <code>root_id</code>、<code>path</code>、<code>offset</code>、<code>limit</code> 等参数。</li><li>将相对路径解析到 root 下的真实路径。</li><li>判断真实路径是否仍在 root 内，并检查 deny 规则。</li><li>读取文件元数据，拒绝目录、设备文件、过大文件和不支持的二进制类型。</li><li>对内容做范围读取，必要时按行边界截断。</li><li>扫描敏感内容，命中时拒绝或脱敏。</li><li>返回内容、截断标记、文件大小、修改时间和编码信息。</li></ol>
+<p>写文件流程更严格：</p>
+<ol><li>校验写权限和路径规则。</li><li>禁止写入敏感路径、生成文件目录、依赖缓存和版本控制内部目录。</li><li>如果文件已存在，要求请求携带 <code>expected_hash</code> 或基线片段。</li><li>计算当前文件 hash，发现不一致则返回冲突。</li><li>应用补丁到临时文件，做格式和大小检查。</li><li>原子替换目标文件，保留必要的备份或依赖版本控制恢复。</li><li>返回 diff 摘要、变更行数、最终 hash 和审计 ID。</li></ol>
+<p>搜索工具也需要单独限制。不要让模型默认从根目录递归扫所有文件。搜索请求应包含目录、glob、排除规则、最大结果数和超时。工具内部应默认排除 <code>.git</code>、<code>node_modules</code>、<code>vendor</code>、<code>dist</code>、<code>build</code>、大二进制目录和隐藏敏感目录。搜索结果返回文件路径、行号和小片段，不要直接返回整文件。模型需要更多上下文时再调用读文件。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>下面是一个路径解析函数的核心形态。重点不是代码多复杂，而是每一步都在处理真实风险。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">func ResolvePath(root WorkspaceRoot, userPath string, mustExist bool) (string, error) {
+    if filepath.IsAbs(userPath) {
+        return &quot;&quot;, ErrAbsolutePathNotAllowed
+    }
+    cleaned := filepath.Clean(userPath)
+    if cleaned == &quot;.&quot; || strings.HasPrefix(cleaned, &quot;..&quot;+string(os.PathSeparator)) || cleaned == &quot;..&quot; {
+        return &quot;&quot;, ErrPathEscapesRoot
+    }
+    joined := filepath.Join(root.RealPath, cleaned)
+
+    var real string
+    if mustExist {
+        p, err := filepath.EvalSymlinks(joined)
+        if err != nil {
+            return &quot;&quot;, err
+        }
+        real = p
+    } else {
+        parent := filepath.Dir(joined)
+        realParent, err := filepath.EvalSymlinks(parent)
+        if err != nil {
+            return &quot;&quot;, err
+        }
+        real = filepath.Join(realParent, filepath.Base(joined))
+    }
+
+    rel, err := filepath.Rel(root.RealPath, real)
+    if err != nil {
+        return &quot;&quot;, err
+    }
+    if rel == &quot;..&quot; || strings.HasPrefix(rel, &quot;..&quot;+string(os.PathSeparator)) {
+        return &quot;&quot;, ErrPathEscapesRoot
+    }
+    return real, nil
+}</code></pre></div>
+<p>真实系统还要补上大小写归一化和平台差异。在 macOS 上，默认文件系统可能大小写不敏感；在 Linux 容器里通常大小写敏感。跨平台工具不要假设路径比较一定简单。最稳妥的方式是尽量使用 <code>filepath.Rel</code> 基于真实路径判断，并在根目录初始化时保存解析后的真实路径。对 Unicode 文件名，如果系统和语言运行时存在不同归一化形式，日志和策略匹配要避免出现同一个文件多种表示。</p>
+<p>参数 schema 也要收紧。一个读文件工具的输入可以这样定义：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;required&quot;: [&quot;root_id&quot;, &quot;path&quot;],
+  &quot;properties&quot;: {
+    &quot;root_id&quot;: {&quot;type&quot;: &quot;string&quot;},
+    &quot;path&quot;: {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;minLength&quot;: 1,
+      &quot;maxLength&quot;: 500,
+      &quot;pattern&quot;: &quot;^[^\\u0000]+$&quot;
+    },
+    &quot;offset&quot;: {&quot;type&quot;: &quot;integer&quot;, &quot;minimum&quot;: 0},
+    &quot;limit&quot;: {&quot;type&quot;: &quot;integer&quot;, &quot;minimum&quot;: 1, &quot;maximum&quot;: 20000}
+  },
+  &quot;additionalProperties&quot;: false
+}</code></pre></div>
+<p><code>additionalProperties: false</code> 很重要，它能阻止模型塞进无意义参数。<code>limit</code> 不应无限大，读取长文件应该用分段。<code>path</code> 禁止空字节，避免底层系统或库出现截断歧义。schema 不是唯一防线，但它可以把很多错误挡在入口。</p>
+<p>写操作建议使用补丁数据结构，而不是简单的 <code>{path, content}</code>。例如：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;root_id&quot;: &quot;repo&quot;,
+  &quot;path&quot;: &quot;internal/config/config.go&quot;,
+  &quot;expected_hash&quot;: &quot;sha256:9a0c...&quot;,
+  &quot;edits&quot;: [
+    {
+      &quot;old&quot;: &quot;Timeout: 5 * time.Second,&quot;,
+      &quot;new&quot;: &quot;Timeout: 3 * time.Second,&quot;
+    }
+  ]
+}</code></pre></div>
+<p>工具执行时先读取当前文件，校验 hash。如果 hash 不匹配，但 <code>old</code> 片段仍唯一存在，可以根据策略允许继续；如果 <code>old</code> 不存在或出现多次，就返回冲突。返回冲突不是失败，而是协作信号：模型应该重新读取文件，理解用户或其他进程的最新修改，再生成更精确补丁。</p>
+<p>敏感路径规则应同时支持固定目录和模式匹配。默认 deny 清单可以包括：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">规则</th><th scope="col">原因</th><th scope="col">处理</th></tr></thead><tbody><tr><td><code>.git/**</code></td><td>版本控制内部结构，误写会破坏仓库</td><td>禁止写，读取受限</td></tr><tr><td><code>**/.env*</code></td><td>常见密钥配置</td><td>默认拒绝读取内容</td></tr><tr><td><code>**/*id_rsa*</code></td><td>SSH 私钥</td><td>拒绝读取和写入</td></tr><tr><td><code>**/*.pem</code></td><td>证书或私钥</td><td>读取需显式授权</td></tr><tr><td><code>node_modules/**</code></td><td>依赖缓存，体量大</td><td>默认不搜索不写</td></tr><tr><td><code>dist/<strong></code>, <code>build/</strong></code></td><td>构建产物</td><td>默认不写，搜索排除</td></tr></tbody></table></div>
+<p>这些规则不能写死到每个 handler。应当由策略引擎统一判断，handler 只接收已经授权的真实路径。策略引擎可以返回 <code>allow</code>、<code>deny</code>、<code>redact</code>、<code>confirm</code> 四种结果。只读工具遇到 <code>redact</code> 可以返回脱敏内容；写工具遇到 <code>confirm</code> 可以要求用户确认；高风险路径直接 <code>deny</code>。这样工具行为稳定，审计也清楚。</p>
+<p>文件读取的返回格式也值得设计。直接返回纯文本虽然简单，但缺少上下文。更好的结构是：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;path&quot;: &quot;cmd/server/main.go&quot;,
+  &quot;language&quot;: &quot;go&quot;,
+  &quot;size_bytes&quot;: 18420,
+  &quot;mtime&quot;: &quot;2026-04-03T10:12:00Z&quot;,
+  &quot;offset&quot;: 0,
+  &quot;truncated&quot;: true,
+  &quot;content&quot;: &quot;package main\n...&quot;,
+  &quot;next_offset&quot;: 12000
+}</code></pre></div>
+<p>模型看到 <code>truncated</code> 和 <code>next_offset</code> 后，可以决定是否继续读取。对代码文件，工具可以补充语言类型；对二进制文件，工具应返回元数据而不是内容。对超大日志文件，可以提供尾部读取或按关键字定位，而不是把整份日志塞进上下文。</p>
+<p>搜索实现上，优先复用成熟工具或库，例如 ripgrep 的行为模型，而不是自己递归读取所有文件。若在服务内实现，也要使用可取消 context、最大文件数、最大字节数、最大结果数和超时。搜索结果应稳定排序，通常按路径和行号，或者按匹配质量加路径排序。非稳定排序会让模型在多轮对话里难以复现判断。</p>
+<p>写入时要考虑原子性。对单文件修改，可以写到同目录临时文件，<code>fsync</code> 后 rename。这样即使进程中断，也不容易留下半个文件。对跨文件修改，文件系统本身没有天然事务，工具应该返回每个文件的结果，并在高层要求分步提交。不要承诺“多文件原子修改”，除非你真的实现了事务或有版本控制回滚。</p>
+<p>还有一个容易被忽视的实现细节是“预览模式”。写工具可以支持 <code>dry_run</code>，在不落盘的情况下返回将要修改的 diff、命中的策略、预计变更文件数和风险标签。模型在复杂任务里先调用预览，再把摘要展示给用户或继续细化补丁，可以明显降低误写概率。预览结果不能代替最终校验，因为预览之后文件还可能变化；真正写入时仍然要重新计算 hash、重新检查 deny 规则、重新生成审计事件。它的价值在于把高风险写入拆成可检查的中间状态，让模型和用户都有机会在破坏发生前停下来。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>文件系统工具必须有攻击性测试。普通单元测试只验证“能读到文件”，远远不够。测试要覆盖路径逃逸、符号链接、敏感文件、并发写入、大文件、二进制、权限不足和平台差异。每个曾经出过事故的路径样式都应该进入回归测试。</p>
+<p>路径测试可以构造临时目录：根目录下放普通文件、子目录、指向根外的符号链接、指向根内的符号链接、名字包含空格和 Unicode 的文件。然后分别请求 <code>../outside</code>、<code>sub/../../outside</code>、<code>link_to_outside/secret</code>、绝对路径、空路径、超长路径。期望结果不是“操作系统报错就行”，而是工具返回明确错误分类，例如 <code>path_escapes_root</code> 或 <code>path_denied</code>。</p>
+<p>写入测试要模拟用户并发修改。流程是：读取文件 hash；测试代码在工具写入前改动文件；工具尝试按旧 hash 写入；断言返回冲突且文件内容没有被覆盖。再测试基线片段重复出现的情况，工具应该拒绝模糊替换。最后测试正常补丁，断言只改目标片段，换行风格保持合理，最终 hash 返回正确。</p>
+<p>敏感内容测试要避免真的放入真实密钥，可以使用假私钥头和测试 token。目标是确认工具识别模式、脱敏结果和审计字段，而不是确认某个正则万能。对 <code>.env</code> 这类路径命中，默认应拒绝读取；对普通文件里出现疑似 token，可以返回带遮罩的片段，并提醒需要显式授权才能查看完整内容。这个策略会偶尔误报，但比默认泄露好。</p>
+<p>性能评测也很现实。大仓库里搜索一次可能触达几十万个文件。需要准备包含依赖目录和构建产物的测试样本，确认默认排除规则生效。指标包括搜索耗时、扫描文件数、返回结果数、取消是否及时、内存峰值。工具应该能在 context 取消后快速停止，而不是继续后台扫描。</p>
+<p>模型层评测关注工具接口是否引导正确行为。准备一组任务：读取指定文件片段、查找函数定义、修改配置值、创建新文档、避免读取 <code>.env</code>、遇到冲突后重新读取。观察模型是否倾向于整文件写入、是否会请求过大范围、是否能理解冲突错误。文件工具的返回消息要为模型下一步提供清楚路径，而不是只说“失败”。</p>
+<p>下面是我会放进 CI 或定期评测的样例矩阵：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">场景</th><th scope="col">输入</th><th scope="col">期望结果</th><th scope="col">关注点</th></tr></thead><tbody><tr><td>路径逃逸</td><td><code>../../etc/passwd</code></td><td>拒绝</td><td>不能依赖字符串前缀</td></tr><tr><td>符号链接逃逸</td><td><code>secrets/aws</code></td><td>拒绝</td><td>真实路径检查</td></tr><tr><td>大文件读取</td><td><code>logs/big.log</code> limit 20000</td><td>截断返回</td><td>上下文控制</td></tr><tr><td>敏感路径</td><td><code>.env</code></td><td>拒绝或脱敏</td><td>密钥保护</td></tr><tr><td>并发写入</td><td>旧 hash 写文件</td><td>冲突</td><td>不覆盖用户修改</td></tr><tr><td>搜索依赖目录</td><td><code>node_modules</code> 命中很多</td><td>默认排除</td><td>性能和噪声</td></tr><tr><td>二进制文件</td><td><code>image.png</code></td><td>返回元数据</td><td>不污染上下文</td></tr></tbody></table></div>
+<p>上线后还要看真实指标。读文件失败率过高，可能是模型路径推断差或工具错误过于模糊；写入冲突率过高，可能是任务过程中用户频繁修改，也可能是模型读写间隔太长；搜索超时率高，说明默认范围太宽；敏感拒绝频繁，说明工具候选集或任务提示需要更清楚地告诉模型不要碰这些路径。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是根目录逃逸。常见原因包括 <code>../</code>、绝对路径、符号链接、大小写差异、挂载点和不存在文件的父目录解析不完整。修复思路是建立统一路径解析函数，所有操作必须经过它；根目录初始化时保存真实路径；目标不存在时解析父目录；最终用相对路径判断是否逃逸。不要让各个工具自己拼路径。</p>
+<p>第二类失败是敏感内容泄露。路径规则不全、内容扫描缺失、日志记录过细都会导致泄露。尤其是审计日志，如果把完整文件内容或参数原文写进去，工具即使拒绝返回给模型，也可能在日志系统里留下秘密。解决方法是日志只记录摘要，敏感命中时记录规则 ID 和脱敏样本，不记录原文。</p>
+<p>第三类失败是覆盖用户修改。模型最容易在长任务中读取旧文件，然后用旧上下文写回。整文件写入尤其危险。解决方法是默认使用补丁，要求 hash 或基线片段，写入前检查当前状态。工具返回冲突时，要把冲突解释得足够清楚，让模型知道应该重新读取，而不是反复提交同一个补丁。</p>
+<p>第四类失败是上下文污染。工具把大文件、压缩后的 minified 文件、依赖目录结果或二进制乱码返回给模型，导致模型上下文被无用内容占满。解决方法是限制读取大小、识别二进制、默认排除生成目录、搜索只返回片段。文件工具要帮助模型聚焦，而不是把文件系统原样倒进对话。</p>
+<p>第五类失败是删除和权限修改过度开放。删除文件、递归删除目录、修改可执行权限都可能造成不可恢复影响。很多任务其实不需要这些能力。默认不要提供删除工具；确实需要时，也应该要求明确路径、展示影响范围、禁止匹配宽泛 glob，并要求用户确认。权限修改通常可以通过补丁或构建脚本解决，不应成为模型随手调用的工具。</p>
+<p>第六类失败是错误信息对模型不可用。比如路径不存在时只返回 <code>ENOENT</code>，模型可能不知道当前 root 是什么，也不知道该先列目录。更好的错误包含错误种类、相对路径、是否可重试、建议下一步。例如 <code>path_not_found</code> 可以提示“先调用 list_directory 查看父目录”；<code>write_conflict</code> 可以提示“重新读取目标文件后再生成补丁”；<code>sensitive_path_denied</code> 则不应建议绕过。</p>
+<p>第七类失败是工具和版本控制关系不清。文件工具本身不是 Git，但它运行在仓库里时必须尊重工作树状态。写前可以检查目标文件是否有未提交修改，至少把这个状态返回给模型或审计日志。对用户未提交的文件，工具更应该依赖 hash 冲突检测。不要自动 <code>git checkout</code> 或清理工作树，除非用户明确要求。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>所有文件操作都必须经过统一路径解析函数，禁止 handler 自己拼接和检查路径。</li><li>工具启动时只接受受信来源提供的 <code>WorkspaceRoot</code>，不允许模型临时指定任意根目录。</li><li>根目录真实路径已解析，符号链接逃逸、<code>../</code>、绝对路径、空字节和超长路径都有测试。</li><li>读、写、列目录、搜索、删除被拆成不同工具或不同权限，删除和改权限默认不开放。</li><li>默认 deny 清单覆盖 <code>.git</code>、<code>.env*</code>、私钥、证书、依赖缓存、构建产物和其他项目敏感目录。</li><li>读取有大小限制、范围参数、二进制检测、截断标记和敏感内容脱敏策略。</li><li>搜索有 glob 限制、默认排除目录、最大结果数、最大扫描量、超时和 context 取消。</li><li>写入默认使用补丁或范围替换，要求 <code>expected_hash</code> 或唯一基线片段，冲突时不覆盖。</li><li>写操作生成 diff 摘要、最终 hash 和审计 ID；日志不记录完整敏感内容。</li><li>错误模型区分路径不存在、越权、敏感拒绝、参数错误、冲突、超时和系统错误。</li><li>单元测试覆盖路径逃逸、符号链接、敏感路径、大文件、二进制、并发写入和策略匹配。</li><li>模型评测覆盖读取、搜索、补丁、冲突恢复和敏感路径拒绝，确认返回消息能引导正确下一步。</li><li>生产指标包含读写次数、拒绝次数、冲突率、搜索耗时、截断率、敏感命中率和写入失败率。</li></ul>
+<h2 id="总结">总结</h2>
+<p>文件系统 MCP 工具是模型进入工程世界的一扇门。门开得太小，模型只能做玩具任务；门开得太大，用户的代码、秘密和工作成果都会暴露在不可控风险里。好的设计不是简单地允许或禁止，而是把文件系统能力拆成清晰的、可审计的、带边界的操作：根目录受控，路径真实解析，读写分级，敏感内容保护，补丁优先，冲突可恢复，日志不泄密。</p>
+<p>实现文件工具时，最值得坚持的是几个朴素原则。路径检查必须基于真实路径，不能基于字符串感觉；写入必须尊重当前文件状态，不能覆盖用户修改；搜索和读取必须控制规模，不能污染上下文；敏感内容必须默认保护，不能指望模型自觉避开；错误必须可解释，不能只把系统错误抛给模型。做到这些以后，文件系统 MCP 工具就不只是“能读写文件”的接口，而是一个能和模型安全协作的工程边界。它让模型有能力处理真实仓库，也让用户仍然掌握最终控制权。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

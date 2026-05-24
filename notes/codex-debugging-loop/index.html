@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex 调试循环 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="复现、缩小、假设、打点、修复和回归是稳定调试路径。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="Codex 调试循环">
+  <meta property="og:description" content="复现、缩小、假设、打点、修复和回归是稳定调试路径。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/codex-debugging-loop.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link active" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>Codex 调试循环</span></nav>
+          <div class="note-kicker">NOTES / WORKFLOW / 089</div>
+          <h1>Codex 调试循环</h1>
+          <p>复现、缩小、假设、打点、修复和回归是稳定调试路径。</p>
+          <div class="note-tag-row"><span>Codex</span><span>Debugging</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/codex-debugging-loop.svg" alt="标题图" loading="lazy"><figcaption>Codex 调试循环 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>调试是最容易被 AI 做坏的工程任务之一。因为调试看起来像问答：这里报错了，为什么？模型很容易马上给出一个听起来合理的解释，然后顺手改几行代码。问题是，真实 bug 很少因为解释漂亮就消失。没有复现、没有缩小范围、没有验证假设、没有回归测试的修复，只是在代码库里增加新的不确定性。</p>
+<p>我见过很多失败的 AI 调试流程都有同一个特征：跳步。用户贴一段错误日志，Codex 直接猜依赖版本；测试偶发失败，Codex 直接加 sleep；接口超时，Codex 直接扩大 timeout；空指针出现，Codex 直接加 nil 判断。这些修改有时能让当前错误不再出现，但系统行为是否正确、根因是否解决、其他路径是否被破坏，都没有答案。</p>
+<p>调试真正需要的是循环，而不是灵感。先复现，确认问题存在；再缩小，把庞大的系统压成最小可观察场景；接着提出假设，说明为什么这个现象会发生；然后打点或检查证据；证据支持后做最小修复；最后用回归测试锁住问题。这个循环听起来朴素，但越是复杂系统，越依赖这种纪律。</p>
+<p>Codex 在调试里很有用，因为它能快速阅读代码、整理日志、比较分支、生成最小测试、运行命令、解释失败输出。它不怕重复跑测试，也能记住刚才验证过哪些假设。但它也有危险：容易被第一个合理解释吸引，容易把多个改动混在一起，容易为了让测试通过而改测试，容易忽略偶发性和环境差异。因此我们要给它一个明确的调试协议。</p>
+<p>本文讨论的 Codex 调试循环，面向日常工程里的几类问题：单元测试失败、集成测试不稳定、线上日志异常、性能回退、本地构建失败、依赖升级后的行为变化。它不追求一次性神断案，而是把每一步都变成可记录、可验证、可回滚的动作。对于一个 AI 编程助手来说，这比“聪明”更重要。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>第一个概念是 <code>repro</code>，复现。不能复现的问题也能调，但不能假装已经理解。复现可以是一个失败测试、一条命令、一组请求、一段日志加上时间窗口，或者一个最小输入文件。复现的目的不是证明用户说得对，而是建立一个共同事实：在某个明确环境下，执行某个动作，会得到某个错误结果。</p>
+<p>第二个概念是 <code>scope reduction</code>，缩小范围。复杂系统的问题往往横跨前端、后端、缓存、队列、数据库和外部服务。Codex 不应该一开始就全仓库搜索然后到处改，而要逐步缩小：是新代码还是旧代码？是所有输入还是特定输入？是确定失败还是偶发失败？是逻辑错误、环境错误、时序错误还是数据错误？范围越小，修复越接近根因。</p>
+<p>第三个概念是 <code>hypothesis ledger</code>，假设账本。调试过程中会出现多个解释：可能是配置没加载，可能是时间格式错了，可能是并发写覆盖，可能是测试隔离不干净。Codex 要把假设写下来，并记录验证结果。这样不会反复检查同一件事，也不会在证据不足时突然换方向。</p>
+<p>第四个概念是 <code>instrumentation before mutation</code>。在没有足够证据时，先观察再修改。观察可以是日志、断点、临时断言、指标、trace、数据库查询、测试里的中间状态输出。AI 很容易直接改代码，纪律要求它先说明要观察什么，以及观察结果如何支持或否定假设。</p>
+<p>第五个概念是 <code>minimal fix</code>。修复要尽量小，最好只改变导致 bug 的那条路径。调试时顺手重构最危险，因为你会失去因果关系：测试变绿到底是根因修了，还是无意中绕过了断言？如果确实需要重构，也应该先用测试暴露问题，再小步修复，最后单独整理。</p>
+<p>第六个概念是 <code>regression lock</code>。bug 修掉以后，要有一个失败后变绿的测试或检查。没有回归锁，问题就可能在下次重构时回来。对于线上问题，回归锁不一定总是单元测试，也可以是合成监控、日志断言、迁移校验或 canary 指标，但必须能持续运行。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">阶段</th><th scope="col">目标</th><th scope="col">Codex 的动作</th><th scope="col">禁忌</th></tr></thead><tbody><tr><td>复现</td><td>建立共同事实</td><td>运行命令、记录错误、固定环境</td><td>没运行就直接修</td></tr><tr><td>缩小</td><td>减少搜索空间</td><td>二分输入、比较版本、隔离依赖</td><td>全仓库乱改</td></tr><tr><td>假设</td><td>给出现象解释</td><td>写假设和预期证据</td><td>用“可能”代替验证</td></tr><tr><td>打点</td><td>收集证据</td><td>加临时日志、断言、查询状态</td><td>长期留下噪声</td></tr><tr><td>修复</td><td>改最小原因</td><td>小补丁、保持契约</td><td>顺手重构</td></tr><tr><td>回归</td><td>防止复发</td><td>增加测试、监控或校验</td><td>只看当前命令变绿</td></tr></tbody></table></div>
+<p>这几个概念能把 Codex 从“猜答案”拉回工程过程。尤其是假设账本非常重要。它让调试变成一组可审计的判断，而不是一串聊天记录。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>Codex 调试循环可以画成下面的状态机：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">Bug Report / Failing Command
+  v
+Reproduce
+  |-- success --&gt; Capture Evidence
+  |-- failed  --&gt; Clarify Environment / Build Synthetic Repro
+  v
+Reduce Scope
+  |-- input dimension
+  |-- code path dimension
+  |-- data/state dimension
+  |-- time/concurrency dimension
+  v
+Hypothesize
+  v
+Instrument / Inspect
+  |-- evidence supports --&gt; Patch
+  |-- evidence rejects  --&gt; Update Hypothesis
+  |-- evidence unclear  --&gt; Reduce Further
+  v
+Regression Test
+  |-- red before fix
+  |-- green after fix
+  v
+Clean Up + Explain</code></pre></div>
+<p>状态机里有两个出口需要特别注意。第一，如果无法复现，不代表可以停止，也不代表可以乱改。Codex 应该转向环境澄清或构造合成复现。例如线上日志显示某个租户失败，但本地测试不失败，那就要确认数据形态、配置、时区、并发量和版本差异。第二，如果证据不清楚，不应该硬修，而要继续缩小或打点。</p>
+<p>一次标准会话可以这样执行：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">1. 读取用户给出的错误、命令、日志、期望行为。
+2. 在本地运行最接近的复现命令，保存完整输出。
+3. 如果失败可复现，读取相关代码和测试；如果不可复现，记录环境差异。
+4. 把问题分解成输入、状态、时间和代码路径四个维度。
+5. 提出 2 到 4 个假设，每个假设都写出可验证信号。
+6. 选择成本最低、区分度最高的验证动作。
+7. 根据证据更新假设账本。
+8. 写一个会失败的回归测试或最小检查。
+9. 做最小修复。
+10. 运行目标测试和必要的邻近测试。
+11. 移除临时打点，保留有价值的永久观测。
+12. 总结根因、修复和残余风险。</code></pre></div>
+<p>这个流程看起来比“直接修”慢，但在复杂问题上反而更快。因为每一步都减少不确定性，不会在错误方向上堆补丁。对于 Codex 来说，流程还有一个额外好处：它能防止上下文漂移。模型在长会话里容易忘记最初错误是什么，假设账本和复现命令能把它拉回来。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>可以为 Codex 准备一个轻量的调试记录结构。它不一定要落数据库，哪怕写在任务摘要里也有用。核心是让每个动作都有输入、输出和结论。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type DebugSession struct {
+    ID          string
+    Problem     ProblemStatement
+    Environment EnvironmentSnapshot
+    Repros      []ReproAttempt
+    Hypotheses  []Hypothesis
+    Evidence    []EvidenceItem
+    Patches     []PatchAttempt
+    Regression  RegressionLock
+}
+
+type ReproAttempt struct {
+    Command      string
+    WorkingDir   string
+    Result       string // reproduced, not_reproduced, blocked
+    OutputDigest string
+    Notes        string
+}
+
+type Hypothesis struct {
+    ID             string
+    Claim          string
+    ExpectedSignal string
+    Status         string // open, supported, rejected
+    EvidenceIDs    []string
+}
+
+type EvidenceItem struct {
+    ID       string
+    Source   string // test_output, log, code_read, metric, database, trace
+    Summary  string
+    Supports []string
+    Rejects  []string
+}</code></pre></div>
+<p>这样的数据结构能约束 Codex 的行为。它每做一步，都要问：这一步验证了哪个假设？结果是什么？如果没有验证任何假设，只是“顺便看看”，那就要警惕是否在发散。</p>
+<p>举一个具体例子。一个 Go 项目的测试偶发失败：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">--- FAIL: TestTokenRefresh (0.03s)
+    auth_test.go:87: expected refreshed token to expire after 3600s, got -1s</code></pre></div>
+<p>糟糕的修法是把断言改宽，或者在测试里加 <code>time.Sleep(time.Second)</code>。更好的 Codex 调试循环如下。</p>
+<p>先复现：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">go test ./internal/auth -run TestTokenRefresh -count=100</code></pre></div>
+<p>如果 100 次里失败 3 次，说明是偶发问题。接着缩小范围：失败值是 <code>-1s</code>，看起来像过期时间在当前时间之前，可能是共享 clock、全局 token cache、并发测试污染，或者测试把秒级时间和纳秒级时间混用。</p>
+<p>建立假设账本：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">hypotheses:
+  - id: H1
+    claim: &quot;TokenRefresh 使用真实 time.Now，测试里的 fixedNow 只控制创建时间，刷新时读到真实时间&quot;
+    expectedSignal: &quot;Refresh 函数内部直接调用 time.Now&quot;
+    status: open
+  - id: H2
+    claim: &quot;并行测试共享 token cache，其他测试把同一个 userID 的 token 标记为过期&quot;
+    expectedSignal: &quot;测试使用相同 userID，cache 是包级变量&quot;
+    status: open
+  - id: H3
+    claim: &quot;过期时间计算发生整数截断，边界时间下变成负值&quot;
+    expectedSignal: &quot;Duration.Seconds 转 int 后参与比较&quot;
+    status: open</code></pre></div>
+<p>然后读代码找证据。假设发现实现是这样：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">func (m *Manager) Refresh(ctx context.Context, token string) (*Token, error) {
+    old, err := m.store.Find(ctx, token)
+    if err != nil {
+        return nil, err
+    }
+    expiresAt := time.Now().Add(m.ttl)
+    return m.store.Save(ctx, old.UserID, expiresAt)
+}</code></pre></div>
+<p>测试里却是这样：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">func TestTokenRefresh(t *testing.T) {
+    fixed := time.Date(2026, 2, 23, 10, 0, 0, 0, time.UTC)
+    manager := NewManager(store, time.Hour)
+    token := seedExpiredToken(store, fixed.Add(-time.Minute))
+
+    refreshed, err := manager.Refresh(context.Background(), token.Value)
+    require.NoError(t, err)
+    require.Equal(t, time.Hour, refreshed.ExpiresAt.Sub(fixed))
+}</code></pre></div>
+<p>这里 H1 得到支持：测试用 fixed time 建数据，却没有把 clock 注入 Manager。修复不是 sleep，也不是放宽断言，而是把时间源变成依赖：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type Clock interface {
+    Now() time.Time
+}
+
+type Manager struct {
+    store Store
+    ttl   time.Duration
+    clock Clock
+}
+
+func (m *Manager) Refresh(ctx context.Context, token string) (*Token, error) {
+    old, err := m.store.Find(ctx, token)
+    if err != nil {
+        return nil, err
+    }
+    expiresAt := m.clock.Now().Add(m.ttl)
+    return m.store.Save(ctx, old.UserID, expiresAt)
+}</code></pre></div>
+<p>回归测试要先能稳定失败，再因修复变绿。可以加一个 fake clock：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type fakeClock struct {
+    now time.Time
+}
+
+func (c fakeClock) Now() time.Time {
+    return c.now
+}</code></pre></div>
+<p>这样测试不再依赖真实时间，也不需要等待。Codex 在总结里应该写清楚：根因是生产代码直接读取真实时间，测试使用固定时间做期望，两者时间源不一致导致偶发负 duration；修复是注入 clock；回归锁是 <code>TestTokenRefreshUsesInjectedClock</code>。</p>
+<p>性能问题也可以用同一套循环。比如接口 P95 从 120ms 涨到 900ms。Codex 不应该先改 SQL，而是先复现基准、确认数据量、比较慢查询日志、看 explain、定位是 N+1 查询还是索引失效。假设可能是“新增过滤条件没有索引”“循环里逐条查用户”“缓存 key 加入高基数字段导致命中率下降”。每个假设都要有指标或查询计划验证。性能调试里最忌讳靠直觉优化，因为看似更快的改动可能只在小数据集上有效。</p>
+<p>对于线上问题，Codex 不能随意改生产，但可以整理诊断计划。比如：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">观测目标：确认 500 错误是否集中在 invoice export。
+需要数据：过去 30 分钟按 route、tenant、error_code 聚合的错误数。
+假设 H1：新发布的 CSV 字段包含未转义换行，导致导出失败。
+验证信号：错误日志包含 csv: wrong field count，且只出现在带备注字段的租户。
+安全动作：先查询日志和只读指标，不执行写操作。</code></pre></div>
+<p>这类计划让人类值班同学可以快速执行，也能让 Codex 在有工具权限时安全地调用只读接口。</p>
+<p>在更大的代码库里，还需要为不同问题类型准备不同的默认路径。构建失败优先看工具链、锁文件、生成文件和平台差异；接口行为错误优先看路由、参数解析、权限中间件和服务层契约；数据问题优先看迁移、默认值、读写路径和历史数据形态；并发问题优先看共享状态、锁粒度、重试、幂等键和测试隔离；性能问题优先看基准、profile、慢查询和缓存命中率。Codex 不需要一开始就懂全部领域，但它要会根据问题类型选择第一批证据。</p>
+<p>假设选择也有工程技巧。好的下一步验证动作，应该同时满足三个条件：成本低、区分度高、风险小。比如怀疑时区问题时，打印解析前后的时间戳比重写时间模块更合适；怀疑缓存污染时，用不同 key 跑同一个测试比直接清空所有缓存更有信息量；怀疑数据库索引时，看查询计划比先加索引更安全。Codex 可以把候选动作列出来，再选择最能排除多个假设的一步。这样调试会更像搜索算法，而不是情绪化试错。</p>
+<p>还有一种常见场景是“用户只给症状，没有命令”。比如“最近导出偶尔失败”“页面有时打不开”“CI 不稳定”。这时 Codex 应该先把症状改写成可检查的问题定义：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">现象：导出任务偶发失败。
+期望：同一租户同一时间范围内导出应生成 CSV 并返回下载地址。
+已知：失败集中在大客户，日志里有 context deadline exceeded。
+未知：数据量、查询耗时、是否有重试、失败是否与发布时间相关。
+第一步：查询最近失败任务的 tenant、row_count、duration、error_code 分布。</code></pre></div>
+<p>这个改写动作很重要。很多调试失败不是因为技术难，而是问题定义太模糊。Codex 如果能先把模糊症状变成结构化诊断对象，后续工具调用就不会乱。</p>
+<p>我也会要求 Codex 在修复前做一次“契约确认”。它要回答：这个 bug 涉及的外部契约是什么？修复会不会改变调用者看到的返回值、错误码、时序、数据格式或副作用？例如修一个导出超时问题，如果把同步接口改成异步任务，性能可能好了，但 API 契约已经变了，不能当作普通 bugfix 直接合并。又比如修一个空指针，如果直接在异常分支返回空结果，调用者可能把系统错误误认为“没有数据”。调试不是让错误消失，而是恢复正确契约。</p>
+<p>在工具层面，可以给 Codex 准备一组安全的诊断命令模板。Go 项目常用的是定向测试、竞态检测、基准测试和覆盖率：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">go test ./internal/auth -run TestTokenRefresh -count=100
+go test ./internal/worker -run TestQueue -race -count=20
+go test ./internal/search -bench BenchmarkQuery -benchmem
+go test ./internal/billing -coverprofile=/tmp/billing.out</code></pre></div>
+<p>这些命令不应该机械全跑，而要和假设绑定。怀疑数据竞争才跑 <code>-race</code>，怀疑性能回退才跑 bench，怀疑覆盖缺口才看 cover。Codex 每次运行命令都要说明目的，否则长任务里会积累很多无关输出，最后没人知道哪条证据支持了修复。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>要评测 Codex 调试能力，不能只看最后代码是否通过测试。很多糟糕修复也能让当前测试通过。评测要覆盖过程质量：是否复现、是否提出可验证假设、是否避免无证据修改、是否写了回归锁、是否保持最小改动。</p>
+<p>可以设计四类样本。</p>
+<p>第一类是确定性单元测试失败。给出一个失败测试和代码，期望 Codex 运行测试、定位函数、写最小修复。评分重点是能否找到根因，而不是大面积重写。</p>
+<p>第二类是偶发测试失败。评测它是否会用 <code>-count</code>、随机种子、并发参数、时间控制等办法提高复现概率，是否会识别共享状态和真实时间。不能接受直接加 sleep 或扩大断言范围。</p>
+<p>第三类是线上日志诊断。只给日志、指标摘要和代码片段，不给可写权限。评测它是否能提出只读验证计划，是否避免危险操作，是否能把未知写清楚。</p>
+<p>第四类是性能回退。给出基准数据、查询计划或 profiling 片段，评测它是否先确认瓶颈，再改动热点路径。不能接受没有测量的“优化”。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">评测维度</th><th scope="col">满分表现</th><th scope="col">扣分表现</th></tr></thead><tbody><tr><td>复现纪律</td><td>记录命令、环境、失败输出</td><td>没复现直接修改</td></tr><tr><td>假设质量</td><td>每个假设都有预期证据</td><td>罗列泛泛原因</td></tr><tr><td>证据使用</td><td>根据日志、测试、代码更新判断</td><td>证据反驳后仍坚持原猜测</td></tr><tr><td>修复范围</td><td>最小改动，保持契约</td><td>顺手重构多个模块</td></tr><tr><td>回归锁</td><td>增加失败后变绿的测试或检查</td><td>只让当前命令通过</td></tr><tr><td>说明质量</td><td>清楚讲根因、验证和风险</td><td>只说“已修复”</td></tr></tbody></table></div>
+<p>在自动化评测里，可以记录 Codex 的命令序列和文件 diff。一个健康的调试轨迹通常会先运行失败命令，再读取相关文件，再添加或修改测试，最后修改实现。危险轨迹则是先改实现，再跑测试，测试失败后继续大范围修改。轨迹不一定决定对错，但能暴露习惯。</p>
+<p>还可以评测“中途发现假设错误”时的表现。优秀调试不是从一开始就猜中根因，而是在证据改变时及时转向。样本可以故意设置一个很诱人的错误线索，例如日志里出现 Redis timeout，但真正根因是调用方没有设置 deadline，导致连接池耗尽后所有请求都表现成缓存超时。Codex 如果只盯着 Redis 配置调参，就会失败；如果它能继续追调用链、查看连接池指标、确认 deadline 传播，就能找到根因。这个评测能区分会解释错误的人和会调试系统的人。</p>
+<p>对于偶发问题，评测还应该看统计意识。一次通过不能证明问题消失，一次失败也不一定说明修复无效。Codex 应该根据问题概率选择重复次数，并在总结里写清楚置信度。例如旧实现 <code>-count=200</code> 失败 17 次，新实现 <code>-count=500</code> 失败 0 次，这比“我跑了一次通过”有说服力。若时间有限，也要说明样本不足，不能夸大结论。很多线上故障的难点就在概率和分布，AI 调试不能把它简化成单次命令结果。</p>
+<p>还要加入反作弊规则：不能删除测试，不能把断言改成无意义，不能用过大的 timeout 掩盖死锁，不能吞掉错误只为了通过，不能把 panic recover 后忽略。AI 调试最容易为了绿色结果牺牲系统语义，评测必须惩罚这种行为。</p>
+<p>对于真实项目，可以在每次调试结束后做一个轻量复盘。记录 bug 类型、复现成本、根因位置、修复文件、测试文件、是否首次修复成功、是否引入新失败。几个月后，这些数据会告诉团队：Codex 擅长哪些问题，不擅长哪些问题，哪些模块需要更好的测试和可观测性。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是无复现修复。Codex 根据错误文本直接改代码，当前错误可能消失，但根因未必解决。尤其是空指针、超时、并发失败和外部服务错误，都需要明确触发条件。没有复现时可以做防御性修复，但必须标注“不确定根因”，并补充后续观测。</p>
+<p>第二类失败是扩大容忍度。比如把超时从 1 秒改成 30 秒，把重试从 3 次改成 10 次，把断言从相等改成小于某个很大范围。这类修复常常掩盖问题，还会增加资源消耗。只有在证据表明阈值本来就不合理时，才应该改阈值，并同时解释容量和用户体验影响。</p>
+<p>第三类失败是修改测试来迎合实现。测试失败时，Codex 有时会把预期值改成当前输出。除非需求或契约确认变了，否则这是危险信号。正确做法是先判断测试表达的契约是否仍然有效；如果有效，改实现；如果无效，更新测试并说明契约变化。</p>
+<p>第四类失败是混合多个补丁。一次调试里同时改时间源、缓存、错误处理和日志，最后测试变绿，但不知道哪个改动有效。这样会让 review 变难，也可能引入新 bug。要保持小步提交，每个补丁对应一个假设。</p>
+<p>第五类失败是忽略环境。CI 失败而本地成功，可能是系统版本、CPU 架构、时区、文件系统大小写、并发度、网络隔离、随机种子不同。Codex 如果只在本地复现不了就宣布问题不存在，会误导团队。它应该列出环境差异，并尝试模拟关键差异。</p>
+<p>第六类失败是临时打点残留。调试时加的日志、打印和宽松错误处理，如果不清理，会污染输出或泄露信息。Codex 在结束前要检查 diff，移除临时噪声，只保留对长期运维有价值的结构化日志和指标。</p>
+<p>第七类失败是没有回归锁。修复后只跑了一次命令，没有新增测试或监控。这样的 bug 很容易回来。即使短期无法写测试，也要说明原因，并给出替代检查，比如发布后观察某个错误码是否归零。</p>
+<p>第八类失败是把可观测性当成事后装饰。很多问题之所以难调，是因为代码在关键边界没有留下稳定信号：请求没有 trace id，后台任务没有 job id，错误日志没有租户和输入规模，指标没有区分失败阶段。Codex 修 bug 时如果发现证据长期不足，可以建议补结构化观测，但要控制范围。比如在导出任务里增加 <code>export_stage</code>、<code>tenant_id_hash</code>、<code>row_count_bucket</code> 和 <code>duration_ms</code>，比随手打印整段请求体更安全、更可运营。好的观测会降低下一次调试成本，坏的观测会制造噪声和隐私风险。</p>
+<p>第九类失败是忘记回滚路径。调试线上回归时，最快的安全动作有时不是继续写补丁，而是先撤回发布、关闭开关或恢复配置。Codex 应该把“继续修”和“先回滚”同时纳入判断：影响面大、数据风险高、根因未明时，优先止血；影响面小、复现清晰、补丁可验证时，再继续前进，并记录决策依据和责任边界。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>明确调试协议：复现、缩小、假设、打点、修复、回归，不能跳过关键阶段。</li><li>要求 Codex 在首次修改前记录至少一个复现尝试，或说明为什么无法复现。</li><li>为调试会话维护假设账本，记录每个假设的验证信号和状态。</li><li>优先选择只读观察动作，证据不足时不要直接改实现。</li><li>对偶发问题使用重复运行、固定随机种子、控制时间源和隔离共享状态。</li><li>对性能问题先建立基准或 profiling 证据，再修改热点路径。</li><li>对线上问题区分只读诊断和写操作，写操作必须走人工确认。</li><li>要求修复保持最小范围，避免调试过程中顺手重构。</li><li>新增或更新回归测试，确保它能在旧实现失败、新实现通过。</li><li>运行目标测试和邻近测试，记录命令和结果。</li><li>检查 diff，移除临时日志、打印、调试开关和无关格式化。</li><li>不允许删除测试、放宽关键断言或吞掉错误来换取绿色结果。</li><li>总结根因、证据、修复、测试和残余风险，方便 reviewer 快速判断。</li><li>把漏掉的问题沉淀成新的调试评测样本。</li><li>对高频问题补充可观测性，让下一次复现成本更低。</li></ul>
+<h2 id="总结">总结</h2>
+<p>Codex 调试最重要的能力不是猜得快，而是按纪律减少不确定性。复现让问题变成事实，缩小让搜索空间变小，假设让行动有方向，打点让判断有证据，最小修复保持因果关系，回归测试防止问题回来。这个循环足够朴素，也足够强。</p>
+<p>把 Codex 放进调试流程时，要特别防止它跳步。不要让它在没有复现时直接修改，不要让它用宽松断言掩盖错误，不要让它一次改太多文件。相反，要让它记录命令、证据和假设，像一个耐心的工程师一样把问题拆开。</p>
+<p>当这种循环成为团队习惯后，AI 调试会变得可靠很多。Codex 可以承担大量重复检查和证据整理，人类则聚焦在根因判断、风险取舍和上线决策上。调试不会因此变成自动魔法，但会从混乱的猜测变成可复盘的工程过程。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

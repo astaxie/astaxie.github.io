@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>团队知识库 RAG | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="团队知识库的关键不是导入更多文档，而是让决策、代码和复盘连起来。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="团队知识库 RAG">
+  <meta property="og:description" content="团队知识库的关键不是导入更多文档，而是让决策、代码和复盘连起来。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/team-knowledge-rag.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link active" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>团队知识库 RAG</span></nav>
+          <div class="note-kicker">NOTES / RAG / 018</div>
+          <h1>团队知识库 RAG</h1>
+          <p>团队知识库的关键不是导入更多文档，而是让决策、代码和复盘连起来。</p>
+          <div class="note-tag-row"><span>Team Knowledge</span><span>RAG</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/team-knowledge-rag.svg" alt="标题图" loading="lazy"><figcaption>团队知识库 RAG 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>很多团队第一次做知识库 RAG，会把目标描述成“把所有文档喂给模型”。这个说法听起来直接，落到工程里却很容易失真。团队知识不是一个静态文件夹，它同时存在于设计文档、代码提交、故障复盘、会议纪要、客服工单、发布说明和个人脑子里。单纯导入更多文档，只会让检索系统变得更吵：同一个接口有三版设计稿，同一个故障有事故群聊天、复盘文档和临时修复提交，同一个业务词在销售、产品、研发那里含义不完全一样。模型回答时如果只抓到局部片段，就会把一个阶段性的讨论当成当前事实。</p>
+<p>我更愿意把团队知识库看成一套“决策可追溯系统”。它要回答的不是“有没有某段文字”，而是“某个结论为什么成立、影响了哪些代码、后来有没有被修正”。一个新同学加入项目时，真正需要的不是全部资料，而是当前架构边界、历史决策、常见坑、待废弃方案和负责人。如果 RAG 只能返回三段相似文本，它在团队协作里只能算增强搜索；如果它能把需求、决策、实现、验证和复盘连成链路，它才开始接近知识系统。</p>
+<p>团队场景还有几个个人知识库没有那么强的问题。第一是权限，财务、客户合同、绩效材料、内部安全事件不能因为语义相似就被放进任意人的上下文。第二是时效，过期设计文档在向量空间里依然很像正确答案，甚至因为写得详细而更容易被召回。第三是责任，AI 生成的回答如果影响线上操作，团队需要知道引用来自哪里、谁批准过、哪次发布验证过。第四是语言混杂，代码里是英文符号，文档里是中文解释，会议里是口语简称，检索链路必须能处理这种跨表达的知识。</p>
+<p>因此团队知识库 RAG 的核心不是“存多少”，而是“如何把知识放到正确的生命周期里”。草稿可以参与探索，但不能作为生产结论；设计评审通过后可以进入主索引；上线后需要绑定版本和监控结果；复盘后要把原先的错误假设标记出来。这样做的成本比导入文件高，但收益也更稳定，因为系统不再把所有文本当成平权事实。</p>
+<p>一个实际例子：某团队要问“订单取消后库存为什么有时不释放”。普通向量检索可能返回库存服务设计、订单状态机、去年一次故障复盘和一段客服 FAQ。真正有用的回答应该先区分“业务允许不释放”和“系统异常未释放”，然后指出当前代码在取消事件消费失败时依赖补偿任务，补偿任务在某个版本之后改成按商户分片，相关故障发生在迁移窗口，最后引用对应的 ADR、PR 和复盘。这个答案不是从一篇文档里来的，而是从团队知识链路里拼出来的。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>团队知识库 RAG 可以拆成四类对象：事实、决策、证据和状态。事实是可被引用的描述，例如接口字段、配置含义、表结构、故障时间线。决策是团队选择某个方案的理由，例如为什么不用消息回查、为什么某个服务不直接访问库存表。证据是事实和决策的来源，例如文档段落、代码行、提交、会议结论、监控截图。状态是这条知识当前能不能用，例如草稿、已评审、已上线、已废弃、存在争议。</p>
+<p>如果只存文本块，系统很难表达这些差异。一个“已废弃”的方案和一个“当前方案”可能语义非常接近，甚至前者更详细。工程上需要在索引层加入结构化元数据，让检索先知道该找哪类知识，再决定如何排序。元数据不是点缀，它是团队 RAG 的边界控制器。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">概念</th><th scope="col">工程含义</th><th scope="col">常见字段</th><th scope="col">典型用途</th></tr></thead><tbody><tr><td>文档单元</td><td>可被切分、索引和引用的最小来源</td><td><code>doc_id</code>、<code>path</code>、<code>owner</code>、<code>version</code></td><td>回到原文、权限过滤</td></tr><tr><td>知识片段</td><td>面向检索的内容块</td><td><code>chunk_id</code>、<code>section</code>、<code>token_count</code></td><td>向量召回、关键词召回</td></tr><tr><td>决策记录</td><td>被团队认可的选择和理由</td><td><code>adr_id</code>、<code>decision_status</code>、<code>reviewers</code></td><td>架构问答、方案解释</td></tr><tr><td>代码证据</td><td>与知识相关的实现位置</td><td><code>repo</code>、<code>symbol</code>、<code>commit</code>、<code>line_range</code></td><td>验证文档是否落地</td></tr><tr><td>事件记录</td><td>发布、事故、迁移等时间点</td><td><code>event_type</code>、<code>started_at</code>、<code>ended_at</code></td><td>解释变化、处理冲突</td></tr><tr><td>权限标签</td><td>控制可见范围</td><td><code>tenant</code>、<code>team</code>、<code>confidentiality</code></td><td>上下文裁剪、安全审计</td></tr></tbody></table></div>
+<p>在实现里，我会把“团队知识”分成三层。第一层是原始材料层，尽量保留原文和来源，不急着清洗成漂亮结论。第二层是可检索层，把文档切片、抽取实体、建立时间和所有者等字段。第三层是知识产品层，也就是面向使用者的问答、摘要、入职路径、变更影响分析。很多失败来自把三层混在一起：为了问答方便改写原文，为了展示漂亮把引用链丢掉，为了节省存储把历史版本覆盖掉。</p>
+<p>另一个关键概念是“团队词汇表”。每个团队都有简称，例如“灰度单”“影子写”“大促锁单”“三方履约”。如果词汇表不进入检索系统，模型会把它们当普通词处理，召回很依赖运气。词汇表不需要一开始很复杂，可以从文档标题、代码符号、服务名、频道名和高频缩写里自动候选，再由项目维护者确认。确认后的词条不仅用于查询改写，也用于实体抽取和结果解释。</p>
+<p>还有一个容易被忽略的概念是“知识冷却时间”。不是所有刚写完的内容都应该马上进入主索引。会议纪要里的方案可能当天就被否掉，事故处置群里的判断可能十分钟后被推翻。我的经验是给不同来源设置不同冷却策略：代码提交和合并后的 ADR 可以快速进入；会议纪要进入低置信索引；故障时间线在复盘完成前只作为事件材料，不作为最终结论。这样做会让系统少一点“实时万能”的感觉，但团队更容易信任它。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>可以把团队知识库 RAG 想象成一条从材料到回答的流水线，中间有多次过滤和归因，而不是一个“文档进、答案出”的黑盒。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">原始来源
+  |-- Docs / Wiki / ADR
+  |-- Git commits / PR / code symbols
+  |-- Incidents / tickets / release notes
+  |-- Meeting notes / chat exports
+        |
+        v
+采集与规范化 -&gt; 权限标注 -&gt; 生命周期标注 -&gt; 切分与实体抽取
+        |                                      |
+        |                                      v
+        |                              向量索引 + 关键词索引 + 关系索引
+        |                                      |
+        v                                      v
+来源仓库 &lt;----------------------------- 检索编排器
+                                               |
+                      查询理解 -&gt; 权限过滤 -&gt; 混合召回 -&gt; 重排 -&gt; 上下文组装
+                                               |
+                                               v
+                                      带引用的回答 / 影响分析 / 入职路径
+                                               |
+                                               v
+                                      反馈、评测、知识修订任务</code></pre></div>
+<p>这张图里最重要的节点不是模型，而是权限标注、生命周期标注和上下文组装。权限标注决定“能不能看”，生命周期标注决定“该不该信”，上下文组装决定“模型看见的是一堆碎片还是一条推理路径”。如果这三处做得粗糙，换更大的模型也只是把错误说得更流畅。</p>
+<p>查询进入系统后，第一步不是直接向量搜索，而是识别意图。用户问“支付回调为什么要幂等”，需要找设计决策和代码证据；用户问“我改这个字段会影响哪些服务”，需要找实体关系和变更历史；用户问“这个报警怎么处理”，需要找运行手册、最近事故和当前值班规则。不同问题应该走不同召回配方。</p>
+<p>一个可落地的检索编排表如下：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">查询类型</th><th scope="col">主召回</th><th scope="col">辅助召回</th><th scope="col">上下文组织方式</th><th scope="col">风险</th></tr></thead><tbody><tr><td>概念解释</td><td>文档片段、词汇表</td><td>代码符号</td><td>从定义到例子</td><td>容易引用过期说明</td></tr><tr><td>架构原因</td><td>ADR、评审纪要</td><td>PR、复盘</td><td>决策、约束、替代方案</td><td>容易漏掉后续修订</td></tr><tr><td>变更影响</td><td>图关系、代码索引</td><td>发布记录</td><td>上游、下游、数据表、任务</td><td>依赖关系不完整</td></tr><tr><td>故障处理</td><td>Runbook、事故复盘</td><td>监控说明、值班记录</td><td>现象、判断、操作、回滚</td><td>权限和时效要求高</td></tr><tr><td>入职学习</td><td>主题图谱、精选文档</td><td>FAQ、代码入口</td><td>路线图式排序</td><td>需要人工策展</td></tr></tbody></table></div>
+<p>图解里还有一个反馈回路。RAG 系统回答错了，不能只记录一个差评。应该把差评拆成可行动的知识修复任务：是没有召回到正确文档，还是正确文档过期，还是权限过滤太严格，还是上下文太长导致模型忽略关键句，还是用户的问题用了团队黑话。只有反馈能落回采集、标注、切分或评测，系统才会越用越好。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>工程实现上，我建议先做一个小而硬的闭环：选择一个业务域，把文档、ADR、代码符号、发布和事故记录连起来；不要一开始导入全公司资料。比如先做“订单库存链路”，覆盖订单服务、库存服务、履约服务、支付服务里最常问的问题。这个范围足够复杂，可以暴露真实问题，又不至于让团队陷入无限清洗。</p>
+<p>数据结构可以从下面这组表开始。它不是唯一答案，但能表达团队知识库最需要的几个维度。</p>
+<div class="code-block"><pre class="line-numbers language-sql" data-language="SQL"><code class="language-sql">create table knowledge_document (
+  doc_id text primary key,
+  source_type text not null,
+  source_uri text not null,
+  title text not null,
+  owner_team text not null,
+  confidentiality text not null,
+  lifecycle_status text not null,
+  version text not null,
+  updated_at timestamptz not null
+);
+
+create table knowledge_chunk (
+  chunk_id text primary key,
+  doc_id text not null references knowledge_document(doc_id),
+  heading_path text[] not null,
+  body text not null,
+  token_count int not null,
+  content_hash text not null,
+  valid_from timestamptz,
+  valid_to timestamptz
+);
+
+create table knowledge_edge (
+  edge_id text primary key,
+  from_id text not null,
+  to_id text not null,
+  edge_type text not null,
+  evidence_chunk_id text references knowledge_chunk(chunk_id),
+  confidence numeric not null,
+  created_at timestamptz not null
+);</code></pre></div>
+<p>这里有两个细节值得强调。第一，<code>lifecycle_status</code> 要放在文档层，同时 <code>valid_from</code> 和 <code>valid_to</code> 要放在片段层。因为一篇文档可能整体仍然有效，但其中某个配置段落已经被新版本替换。第二，关系边要有证据片段。没有证据的边，在工程上很难审计，也很难在回答里让用户信服。</p>
+<p>采集器可以按来源分插件，但输出统一事件。文档更新、PR 合并、发布完成、事故复盘归档，都产生 <code>KnowledgeSourceChanged</code>。索引器消费事件后做增量处理，避免每天全量重建。一个简化事件如下：</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;event_id&quot;: &quot;evt_20260505_103012&quot;,
+  &quot;source_type&quot;: &quot;adr&quot;,
+  &quot;source_uri&quot;: &quot;docs/adr/042-stock-reservation.md&quot;,
+  &quot;change_type&quot;: &quot;updated&quot;,
+  &quot;actor&quot;: &quot;inventory-team&quot;,
+  &quot;occurred_at&quot;: &quot;2026-05-05T10:30:12+08:00&quot;,
+  &quot;hints&quot;: {
+    &quot;business_domain&quot;: &quot;order_inventory&quot;,
+    &quot;related_services&quot;: [&quot;order-api&quot;, &quot;inventory-worker&quot;]
+  }
+}</code></pre></div>
+<p>切分策略要尊重文档结构。团队知识文档通常有标题层级、代码块、表格、决策状态和链接。不要固定每八百字切一块。更好的做法是先按标题切，再把过长段落按语义句群拆开；表格要转成可读文本，同时保留原始表格；代码块要和解释段落放在同一邻近窗口里。对于 ADR，我会把“背景、决策、后果、替代方案”拆成有类型的片段，检索时可以优先召回“决策”和“后果”。</p>
+<p>查询时的权限过滤必须前置。不要先召回再过滤，因为召回日志、重排特征和模型上下文都可能泄露信息。用户身份进入检索层后，系统先计算可见文档集合，再在这个集合内做向量和关键词召回。对于需要跨团队协作的问题，可以返回“存在不可见材料，需要向某团队申请权限”的提示，而不是静默给出不完整答案。</p>
+<p>上下文组装可以使用“证据包”而不是纯文本拼接。一个证据包包含片段正文、来源、状态、时间、关系、引用标识和为什么被选中。模型看到的上下文可以压缩，但引用包不能丢。</p>
+<div class="code-block"><pre class="line-numbers language-json" data-language="JSON"><code class="language-json">{
+  &quot;citation_id&quot;: &quot;C3&quot;,
+  &quot;chunk_id&quot;: &quot;chunk_adr_042_decision&quot;,
+  &quot;title&quot;: &quot;库存预占与释放策略&quot;,
+  &quot;status&quot;: &quot;accepted&quot;,
+  &quot;updated_at&quot;: &quot;2026-04-18&quot;,
+  &quot;why_selected&quot;: &quot;matches decision reason for cancel flow&quot;,
+  &quot;text&quot;: &quot;取消订单后不直接释放库存，而是由库存事件消费者处理释放，失败后进入补偿队列。&quot;,
+  &quot;edges&quot;: [
+    {&quot;type&quot;: &quot;implemented_by&quot;, &quot;target&quot;: &quot;inventory-worker/ReleaseReservedStock&quot;},
+    {&quot;type&quot;: &quot;revised_by&quot;, &quot;target&quot;: &quot;incident-2026-04-30&quot;}
+  ]
+}</code></pre></div>
+<p>回答生成时要给模型明确约束：只使用证据包中的事实；冲突时按生命周期、时间和来源优先级说明差异；没有证据就说不知道；对操作类问题给出前置检查和回滚提示。这个提示词不是为了让模型“更聪明”，而是把团队的工程纪律编码进去。</p>
+<p>最后要做一个小后台，给知识维护者处理系统发现的问题。比如“这篇文档被引用很多但没有 owner”“这个代码符号被删除但仍有三篇文档引用”“两个 ADR 对同一配置给出冲突建议”“某条答案被三次踩，但召回都没命中最新复盘”。团队知识库如果没有维护入口，很快会变成另一套没人负责的旧 wiki。</p>
+<p>还有一块经常被低估：知识运营的节奏。团队知识库不是平台团队单独维护的资产，它需要嵌入研发流程。设计评审通过时，ADR 状态从 <code>proposed</code> 变成 <code>accepted</code>；PR 合并时，相关代码符号和文档引用被刷新；发布完成后，发布记录写入事件索引；事故复盘关闭时，系统把临时判断和最终结论分开标注。这样做的好处是知识不靠某个人周五下午集中整理，而是在团队已经存在的工程节点上自然更新。</p>
+<p>可以给每个业务域设置一张“知识责任表”：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">业务域</th><th scope="col">维护人</th><th scope="col">必备材料</th><th scope="col">更新触发</th><th scope="col">健康指标</th></tr></thead><tbody><tr><td>订单库存</td><td>库存服务 owner</td><td>ADR、状态机、Runbook、复盘</td><td>发布、事故、接口变更</td><td>关键问题引用命中率</td></tr><tr><td>支付退款</td><td>支付平台 owner</td><td>错误码、流程图、对账说明</td><td>通道变更、失败率异常</td><td>过期文档数量</td></tr><tr><td>会员权益</td><td>增长后端 owner</td><td>规则说明、灰度策略、客服 FAQ</td><td>活动上线、投诉复盘</td><td>冲突知识处理时长</td></tr></tbody></table></div>
+<p>这张表看起来不像算法，却直接影响 RAG 质量。没有责任表，系统发现知识冲突也不知道找谁；没有更新触发，索引再自动也只能索到旧材料；没有健康指标，知识库会在一段时间后慢慢变差。团队知识系统最需要的不是一次性“大清洗”，而是低摩擦的持续维护机制。</p>
+<p>在落地时，我还会给知识维护者提供一个“引用热度视图”。它显示过去一周哪些文档被答案频繁引用，哪些文档在高风险问题中被引用，哪些引用被用户点踩。高热度文档要优先保证准确，因为它们已经进入团队日常决策；低热度但高风险的文档要检查是否难以召回；长期无人引用的文档要判断是过期、命名不清，还是确实只用于归档。这个视图能让维护工作从“凭感觉整理 wiki”变成“围绕真实查询修复知识”。</p>
+<p>还有一个实用做法是建立“答案到文档”的反向改进。当某类问题反复需要模型拼接五六个片段才能回答，说明原始知识本身可能不适合人读，也不适合机器读。这时不要只调重排参数，而应该推动 owner 写一篇新的主题文档，把分散的背景、决策、流程和常见误区整理成稳定入口。RAG 不应该掩盖文档结构问题，它应该暴露这些问题，并把修复成本导向最值得修的地方。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>团队知识库 RAG 的评测不能只看答案像不像。它至少要覆盖召回、引用、权限、时效、冲突处理和可操作性。我的做法是把测试样本分成五类：日常解释题、架构追问题、变更影响题、故障处置题、权限边界题。每类样本都绑定期望证据，而不是只写一个理想答案。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">评测维度</th><th scope="col">通过标准</th><th scope="col">检查方法</th></tr></thead><tbody><tr><td>证据召回</td><td>Top 10 包含关键 ADR、代码或复盘</td><td>固定查询集加人工标注</td></tr><tr><td>引用准确</td><td>回答中的每个关键结论能回到来源</td><td>引用抽查和自动链接检查</td></tr><tr><td>时效选择</td><td>新版本覆盖旧版本时优先新知识</td><td>构造冲突文档测试</td></tr><tr><td>权限安全</td><td>无权限用户拿不到敏感片段和摘要</td><td>角色矩阵测试</td></tr><tr><td>变更影响</td><td>能列出主要上下游和遗漏风险</td><td>与代码依赖和服务目录对比</td></tr><tr><td>答案克制</td><td>不知道时不编造负责人、命令和配置</td><td>负样本测试</td></tr></tbody></table></div>
+<p>一个具体评测样本可以这样写：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">id: order_cancel_stock_release_001
+question: &quot;订单取消后库存为什么不是同步释放？&quot;
+role: &quot;backend_engineer_inventory_readonly&quot;
+must_cite:
+  - &quot;docs/adr/042-stock-reservation.md#decision&quot;
+  - &quot;repo/inventory-worker:ReleaseReservedStock&quot;
+should_mention:
+  - &quot;事件消费者&quot;
+  - &quot;补偿队列&quot;
+  - &quot;取消成功不等于库存立即可售&quot;
+must_not_mention:
+  - &quot;直接更新库存表&quot;
+freshness_rule: &quot;prefer docs updated after 2026-04-01&quot;</code></pre></div>
+<p>这类样本的价值在于它直接驱动工程调参。召回不到 ADR，就看切分和索引；召回到了但没有引用，就看上下文组装；引用了旧设计，就看生命周期排序；说出了无权限事故细节，就看权限过滤。评测结果应该进入 CI 或至少进入每日索引报告，而不是等用户抱怨。</p>
+<p>还要做“知识漂移测试”。选取三十个团队长期问题，每周跑一次，比较引用来源和答案关键句是否变化。如果代码和文档没有变化，而答案大幅波动，说明检索排序或模型生成不稳定。如果文档变化了但答案没变，说明增量索引或时效权重有问题。漂移测试比单次准确率更贴近团队知识库的真实运行，因为团队最怕的是今天说 A，明天说 B，却没有任何变更依据。</p>
+<p>性能测试也不能省。团队知识库常见查询不是大并发，而是复杂查询延迟。混合召回、图扩展、重排和生成很容易叠到十几秒。可以把延迟拆成几个指标：查询理解耗时、权限集合计算耗时、召回耗时、重排耗时、上下文组装大小、首 token 时间、总生成时间。不要只看总延迟，否则优化时不知道该动哪一段。</p>
+<p>人工评测要让真正使用系统的人参与。研发会关注代码证据，产品会关注业务语义，运维会关注操作风险，安全会关注权限泄露。每类用户评审十个样本，比一个平台团队自己打分更可靠。评测会议里不要讨论模型“聪不聪明”，要讨论证据是否充分、结论是否可执行、边界是否说清楚。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是“旧知识胜出”。旧文档写得完整、关键词多、向量相似度高，新的修正文档短而克制，结果模型引用旧方案。这要靠生命周期、时间权重和冲突检测解决。只做向量检索，迟早会踩这个坑。</p>
+<p>第二类失败是“局部正确、整体错误”。模型引用的每段话都是真的，但拼在一起不成立。比如一个片段说取消订单会发事件，另一个片段说库存服务有释放接口，模型就推断订单服务同步调用释放接口。解决办法是给关系边加证据，生成时要求说明链路，而不是让模型在片段之间自由补桥。</p>
+<p>第三类失败是“权限后门”。系统没有直接返回敏感文档，却在摘要里泄露了客户名、事故原因或财务数字。很多团队只在文档读取时做权限，忽略了索引、缓存、日志、评测集和向量库本身。权限应该覆盖原文、片段、嵌入、摘要、重排日志和用户反馈。</p>
+<p>第四类失败是“无 owner 知识”。文档存在，没人负责，回答错了也没人修。团队知识库必须把 owner 当一等字段。没有 owner 的内容可以进入低置信索引，但不应该支撑生产操作建议。</p>
+<p>第五类失败是“过度自动维护”。一些系统尝试让模型自动改写团队文档，最后产生看似清爽但丢失语境的材料。我的建议是模型可以提出修订建议、生成差异摘要、标记冲突，但不要静默覆盖原始知识。团队知识最重要的是责任链，自动改写很容易把责任链抹掉。</p>
+<p>第六类失败是“评测样本太干净”。真实用户会问半句话、带错别字、混用项目黑话，还会把多个问题塞在一起。评测集如果全是标准书面问句，系统上线后会显得很脆弱。要从真实查询日志里抽样，脱敏后加入评测。</p>
+<p>第七类失败是“把 RAG 当制度替代品”。如果团队没有 ADR 习惯、复盘不写结论、代码 owner 不清晰，RAG 只能把混乱放大。知识库系统可以推动治理，但不能替代治理。工程上要承认这点，把“缺失 owner”“缺失决策记录”“复盘未归档”作为输出，让组织看到债务。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>数据来源已经分级：哪些进入主索引，哪些只做探索索引，哪些暂不接入。</li><li>每类来源都有 owner、权限级别、生命周期状态和更新时间字段。</li><li>增量索引可以处理新增、修改、删除、重命名和权限变化。</li><li>文档切分保留标题路径、表格语义、代码块上下文和原文引用。</li><li>查询前完成用户身份解析和可见范围计算，召回层不越权访问。</li><li>检索链路同时记录 query、召回结果、重排特征、上下文大小和引用来源。</li><li>回答必须带引用，操作建议必须带前置条件、风险和回滚线索。</li><li>冲突知识要显式展示来源、时间和状态，不能只给一个平均结论。</li><li>至少准备五十个团队真实问题作为回归评测集，覆盖权限和过期文档。</li><li>建立知识修复入口，让用户能把错误答案转成待处理任务。</li><li>为高风险操作类问题设置人工确认或跳转到正式 Runbook。</li><li>对索引、缓存、日志和评测数据做同等权限治理和脱敏策略。</li><li>定义延迟、召回率、引用准确率、踩赞率、知识修复时长等运行指标。</li><li>上线初期限定业务域，不要一次性承诺“问公司任何问题”。</li><li>每周复盘失败查询，把问题归类到数据、检索、权限、生成或流程治理。</li></ul>
+<h2 id="总结">总结</h2>
+<p>团队知识库 RAG 的价值，不在于让模型背下更多文档，而在于把团队已经做过的判断、写过的代码、经历过的事故和正在执行的流程连起来。它是一个工程系统，也是一个知识治理系统。工程上要处理切分、索引、权限、召回、重排、引用、评测和观测；治理上要处理 owner、生命周期、冲突和修复责任。两边缺一边，系统都会很快退化成更贵的全文搜索。</p>
+<p>如果要从小处开始，我建议选一个高频业务域，先把十个最常问的问题做准。为每个问题标注必须引用的文档、代码和事件，建立最小评测集，再围绕失败样本改进索引和上下文组装。等这条链路跑通，再扩展到更多团队。RAG 在团队场景里最怕大而空，最需要小而实。一个能可靠解释“我们为什么这么做”的系统，比一个号称能读完全公司文档的系统更值得投入。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

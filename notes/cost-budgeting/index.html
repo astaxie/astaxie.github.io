@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 应用成本预算 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="成本预算要进入设计阶段，而不是上线后再补。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="AI 应用成本预算">
+  <meta property="og:description" content="成本预算要进入设计阶段，而不是上线后再补。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/cost-budgeting.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link active" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>AI 应用成本预算</span></nav>
+          <div class="note-kicker">NOTES / EVAL / 074</div>
+          <h1>AI 应用成本预算</h1>
+          <p>成本预算要进入设计阶段，而不是上线后再补。</p>
+          <div class="note-tag-row"><span>Cost</span><span>Budget</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/cost-budgeting.svg" alt="标题图" loading="lazy"><figcaption>AI 应用成本预算 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>AI 应用的成本问题通常不是第一天暴露出来的。早期原型只有几个内部用户，大家关心的是能不能回答、能不能接工具、能不能把演示跑通。模型账单看起来也不大，几百次调用、几万 token，不值得专门做平台能力。真正的问题会在两个时刻出现：一是产品开始进入真实用户流程，二是团队开始把“智能能力”嵌入多个业务节点。此时一次用户操作不再是一条模型调用，而是检索、重排、上下文压缩、模型生成、工具调用、结构化修复、二次评测、失败重试和日志落盘组成的链路。账单上涨时，工程团队往往只能看到总数，却解释不了钱花在了哪些任务、哪些租户、哪些 prompt、哪些失败路径上。</p>
+<p>成本预算要进入设计阶段，而不是上线后再补。原因很简单：AI 应用的成本不是单纯的基础设施成本，它同时受到产品交互、上下文策略、模型路由、错误处理、评测方式和运营流程影响。一个“让用户继续追问”的按钮，可能让平均会话 token 翻倍；一个“失败自动重试三次”的兜底策略，可能把高峰期成本推到预算之外；一个“把所有检索片段都塞进上下文”的简单实现，可能让本来便宜的问题走成昂贵路径。等账单出来再优化，通常只能做止血动作，难以保留产品体验。</p>
+<p>很多团队会把 AI 成本理解为模型供应商价格表上的输入 token 和输出 token。这个理解太窄。真实系统里还有嵌入模型、向量库、对象存储、搜索引擎、数据库查询、浏览器或代码沙箱、工具 API、队列、审计日志、离线评测、人工审核和故障排查成本。更关键的是，失败也要花钱。一次 schema 校验失败后重新生成，一次工具超时后的重试，一次引用检查失败后的降级回答，都可能没有给用户带来价值，却已经消耗预算。成本预算如果只看成功请求，会系统性低估生产开销。</p>
+<p>另一个常见误区是把成本控制等同于“换便宜模型”。便宜模型当然重要，但成本预算的核心不是越省越好，而是在可接受质量、可接受延迟和可接受风险内，把钱花到最有价值的地方。企业知识库问答里，员工问一个制度日期，低成本路径就够；法务让系统比较三份合同并输出风险条款，应该允许走更强模型和更多上下文；后台批量打标签可以慢一点、便宜一点；高价值客户的关键工作流可以多花一些钱换稳定性。没有预算模型时，这些差异会被隐藏在业务代码里，最后变成不可解释的 if else。</p>
+<p>成本预算还影响组织协作。产品希望用户体验顺畅，工程希望系统稳定，财务希望费用可预测，安全团队希望敏感数据不要进入不合适的供应商，运营希望知道哪些客户和功能真正创造价值。如果没有统一的成本账本，每个团队都拿不到完整证据。产品看到“用户很喜欢智能摘要”，财务看到“模型账单翻了三倍”，工程看到“请求量只涨了一点”，三方很难讨论同一个问题。成本预算的目标就是把调用、质量、收入、风险和资源消耗放到同一个可复盘的口径里。</p>
+<p>我更倾向于把成本预算做成 AI 应用的基础控制面。它不应该是月底导出账单的报表，而应该参与请求前的决策、请求中的限流、请求后的归因和版本发布前的评测。一次模型调用在发出前，系统应该知道它属于哪个租户、哪个功能、哪个任务类型、最多允许花多少钱、超预算时应该降级还是拒绝；调用完成后，系统应该知道估算和实际差了多少、是否命中重试、是否带来有效结果、是否值得写入缓存。只有这样，成本才从财务问题变成工程变量。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>第一个概念是成本口径。AI 应用至少要同时看三种口径：单次请求成本、单个用户或租户成本、单个功能或任务成本。单次请求成本用于在线决策和限流，租户成本用于套餐、配额和商务讨论，功能成本用于产品取舍。只看总账没有意义，因为总账无法告诉你“合同审查功能是否值得继续扩展”“免费用户是否在消耗高价模型”“某个客户的用量是否超出合同毛利”。</p>
+<p>第二个概念是预算层级。预算不能只有一个全局月度上限。一个可用系统通常有全局预算、供应商预算、租户预算、功能预算、会话预算和单请求预算。层级越靠上越适合做预警和容量规划，层级越靠下越适合做实时决策。比如全局月预算剩余不足时，可以降低非核心功能的默认模型；单请求预算不足时，可以减少检索片段、关闭二次评审或要求用户确认是否继续。</p>
+<p>第三个概念是估算与结算分离。请求发出前只能估算成本，发出后才能结算成本。估算依赖 tokenizer、上下文长度、候选模型价格、预期输出长度和可能的工具路径；结算依赖供应商返回的 usage、内部工具耗时、重试次数和后处理资源。估算用于避免明显超支，结算用于账本和策略校准。不要要求估算百分之百准确，但要持续记录误差。如果估算长期低估，预算控制就会形同虚设。</p>
+<p>第四个概念是可归因账本。每一笔成本都要能归到 <code>tenant_id</code>、<code>user_id</code>、<code>feature</code>、<code>prompt_slug</code>、<code>model_route</code>、<code>trace_id</code> 和 <code>release_version</code>。没有这些维度，月底只能做平均分摊，平均分摊会掩盖真正的问题。比如某次发布把摘要 prompt 加长了两倍，单看请求量看不出来；只有按 prompt 版本聚合，才能知道成本增长来自上下文膨胀，而不是用户量增长。</p>
+<p>第五个概念是质量成本边界。成本优化不能脱离质量评测。把强模型换成弱模型后，账单下降但用户重试率上升、人工补救上升、投诉上升，整体可能更贵。预算系统需要把成本和质量指标放在一起看：通过率、引用正确率、结构化输出成功率、用户采纳率、人工修改率、重试率。一次便宜但失败的调用不是节省，而是把成本转移到下一步。</p>
+<p>第六个概念是边际成本。AI 功能的固定成本和边际成本差异很大。做一套观测平台、评测集和缓存系统是固定投入；每次模型调用和工具查询是边际成本。产品定价、套餐限制和内部预算应该主要围绕边际成本建模，因为用户增长后真正放大的就是边际部分。固定成本也要算，但它更多影响平台投入和团队规划。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">成本维度</th><th scope="col">典型来源</th><th scope="col">预算粒度</th><th scope="col">工程动作</th></tr></thead><tbody><tr><td>输入 token</td><td>系统提示词、历史消息、检索片段、工具描述</td><td>请求、会话、功能</td><td>压缩上下文、裁剪历史、片段去重</td></tr><tr><td>输出 token</td><td>答案正文、JSON 字段、解释过程、修复内容</td><td>请求、功能</td><td>限制格式、分段生成、流式中止</td></tr><tr><td>工具调用</td><td>搜索、数据库、浏览器、代码执行、第三方 API</td><td>请求、租户</td><td>缓存、并发上限、参数收敛</td></tr><tr><td>重试成本</td><td>超时、限流、schema 失败、低置信度升级</td><td>请求、模型路由</td><td>幂等控制、退避、校验前移</td></tr><tr><td>评测成本</td><td>离线回归、线上抽检、二次裁判模型</td><td>发布、功能</td><td>分层抽样、缓存评测结果</td></tr><tr><td>人工成本</td><td>审核、纠错、客服补救、故障复盘</td><td>功能、客户</td><td>风险分级、界面反馈、自动归因</td></tr></tbody></table></div>
+<p>预算还有一个容易被忽略的维度：时间。今天没花完的预算，不代表可以在月末突然放开；早上便宜的队列，不代表晚高峰还能承受同样策略。生产系统最好支持预算燃烧率，也就是在当前时间点，实际消耗相对于预期曲线是超前还是落后。如果月预算是三万美元，十号已经花掉两万美元，即使没有超过绝对上限，也应该触发策略调整。预算系统要关注速度，而不只是余额。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个实用的 AI 成本预算架构可以放在模型网关和业务服务之间，也可以先做成内部库，但必须有清晰边界。业务层负责声明任务和上下文，预算层负责计算可用额度和执行策略，模型网关负责调用和结算，账本负责沉淀事实。核心流程如下：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">业务请求
+  |
+  v
+任务画像构建
+  |-- tenant_id
+  |-- feature
+  |-- prompt_slug
+  |-- input_token_estimate
+  |-- risk_level
+  |-- expected_value
+  |
+  v
+预算策略查询
+  |-- 套餐配额
+  |-- 功能预算
+  |-- 单请求上限
+  |-- 月度燃烧率
+  |-- 供应商价格
+  |
+  v
+执行计划选择
+  |-- 模型档位
+  |-- 上下文大小
+  |-- 工具开关
+  |-- 是否允许重试
+  |-- 是否允许升级
+  |
+  v
+调用与实时计量
+  |
+  v
+成本账本、指标、告警、策略回写</code></pre></div>
+<p>这里的关键不是多一个网关，而是让成本在调用前就参与计划选择。比如同样是问答，如果租户还有充足预算，且问题风险高，可以使用强模型加引用检查；如果预算接近阈值，且问题属于低风险常见问答，可以先走缓存和小模型；如果单请求估算已经超过上限，可以在用户界面上要求确认，或者让用户缩小文档范围。预算层不应该静默丢弃质量，而应该根据产品语义选择合适降级方式。</p>
+<p>账本要记录“计划成本”和“实际成本”。计划成本用于解释当时为什么允许这次调用，实际成本用于复盘和计费。一个 trace 里可能有多笔账：嵌入查询、向量检索、重排模型、主模型生成、JSON 修复、裁判评测。账本不必把所有基础设施细节都暴露给产品，但至少要保留足够细的内部事件，方便后续聚合。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">trace: tr_9af2
+  cost_event: retrieval.embedding_query
+  cost_event: retrieval.rerank
+  cost_event: llm.primary_generate
+  cost_event: llm.schema_repair
+  cost_event: eval.citation_check
+  rollup: request_total
+  rollup: tenant_daily
+  rollup: feature_release</code></pre></div>
+<p>预算策略本身也要版本化。价格表会变，模型路由会变，套餐会变，产品对降级的接受度也会变。如果账本只记录“花了多少钱”，却不记录当时使用的策略版本，就无法解释某天成本突然下降是因为价格调整、路由调整还是功能变少。策略版本应该和 prompt 版本、模型版本一起进入观测维度。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>工程上可以从三个数据结构开始：预算策略、成本估算、成本事件。预算策略描述约束，成本估算描述调用前的预判，成本事件描述已经发生的资源消耗。下面是一个 Go 服务里可以落地的结构示例：</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type BudgetPolicy struct {
+	TenantID              string
+	Feature              string
+	MonthlyLimitCents    int64
+	DailySoftLimitCents  int64
+	RequestHardLimitCents int64
+	SessionLimitCents    int64
+	AllowUpgrade         bool
+	AllowPaidRetry       bool
+	DegradeMode          string
+	PolicyVersion        string
+}
+
+type CostEstimate struct {
+	TraceID          string
+	InputTokens      int
+	ExpectedOutput   int
+	ModelID          string
+	ToolPlan         []string
+	EstimatedCents   int64
+	WorstCaseCents   int64
+	EstimateVersion  string
+}
+
+type CostEvent struct {
+	TraceID        string
+	TenantID       string
+	UserID         string
+	Feature        string
+	PromptSlug     string
+	ModelRoute     string
+	EventType      string
+	InputTokens    int
+	OutputTokens   int
+	CostCents      int64
+	Success        bool
+	FailureReason  string
+	PolicyVersion  string
+	CreatedAtUnix  int64
+}</code></pre></div>
+<p>预算决策可以保持朴素。先估算当前请求的正常成本和最坏成本，再检查单请求硬上限、会话剩余额度、租户日软上限和月度燃烧率。如果正常成本可接受但最坏成本过高，可以保留主调用，关闭付费重试；如果正常成本已经超出单请求上限，可以要求上游缩小输入或走摘要预处理；如果租户整体预算告急，可以把低价值功能降级为缓存优先或批处理队列。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">决策顺序：
+1. 输入是否超过可承受上下文成本，超过则先压缩或拒绝。
+2. 单请求估算是否超过硬上限，超过则不直接调用强模型。
+3. 租户日预算是否进入软告警，进入则降低默认模型档位。
+4. 月度燃烧率是否超前，超前则限制非关键功能的重试和评测抽样。
+5. 风险等级是否要求强模型，要求则记录预算例外并进入审批或高价值池。</code></pre></div>
+<p>价格表要做成数据，而不是写死在代码里。供应商经常调整价格，同一模型的输入、输出、缓存命中、批处理价格也可能不同。一个可维护的价格表至少包含模型 ID、生效时间、输入单价、输出单价、缓存输入单价、批处理折扣、最小计费单位和货币。账本事件应该记录使用的价格版本，避免历史报表被新价格重算后失真。</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">prices:
+  - model_id: reasoning-large-2026-03
+    provider: vendor_a
+    effective_from: 2026-03-01
+    input_per_million_cents: 250
+    output_per_million_cents: 1000
+    cached_input_per_million_cents: 60
+    batch_discount: 0.5
+    currency: USD
+    price_version: v2026-03-a
+  - model_id: fast-structured-2026-02
+    provider: vendor_a
+    effective_from: 2026-02-15
+    input_per_million_cents: 20
+    output_per_million_cents: 80
+    cached_input_per_million_cents: 10
+    batch_discount: 0.7
+    currency: USD
+    price_version: v2026-02-b</code></pre></div>
+<p>估算器要做保守一点。输入 token 可以通过 tokenizer 或近似规则估算，输出 token 可以按任务类型设置上限。比如分类任务预期输出 80 token，摘要任务预期 800 token，合同审查预期 3000 token。工具调用要按计划估算，不要忽略。一次“查三份文档并比较”的请求，可能触发三次检索、一次重排、一次主生成和一次引用检查。即使工具本身不按 token 收费，也会带来队列和基础设施成本。</p>
+<p>一个具体例子：客服系统提供“生成工单总结”。请求包含最近十轮对话和两条内部知识库片段，估算输入 12000 token，预期输出 900 token。低风险工单使用小模型，单次成本约 0.4 美分；高风险退款工单使用中模型并加一次裁判评测，单次成本约 2.1 美分；如果 schema 修复触发一次，成本可能升到 2.8 美分。看起来单次很小，但每天五十万次请求时，差异就是数千美元。预算策略应该让低风险工单默认走便宜路径，高风险工单有明确例外，而不是所有工单都走同一个模型。</p>
+<p>成本账本最好采用追加写。每个成本事件一旦写入就不修改，后续用修正事件调整。这样可以避免并发更新和审计问题。聚合表可以异步生成，用于仪表盘和告警。在线请求只依赖快速可用的余额快照，不直接扫描账本。余额快照可以按租户、功能和日期维护，允许少量延迟，但要有保护性冗余。例如在线估算发现余额只剩十美元，而聚合延迟可能是一分钟，就应该进入保守模式。</p>
+<p>缓存策略也要和预算系统打通。缓存命中不是免费，但通常远低于完整生成。账本里要单独记录缓存命中节省的估算成本，这对产品决策很有价值。比如某个知识库 FAQ 的共享缓存命中率达到百分之六十，就说明这个功能可以继续扩大；如果某个语义缓存命中率很低但维护成本高，可能应该回退到精确缓存。成本预算不是只管花费，也要证明优化措施是否真的有效。</p>
+<p>评测成本需要单独建模。很多团队上线前会跑几千条离线样本，上线后还会抽样使用裁判模型。评测本身可能占到总成本的明显比例，尤其在高风险业务里。不要把评测成本混进线上功能成本，否则会误导产品毛利。更好的做法是把评测成本归到发布版本、评测集和质量门禁，让团队知道一次 prompt 改动带来了多少验证开销。</p>
+<p>最后是用户和套餐层面的反馈。如果一个租户接近预算上限，系统不要只在后台告警。产品界面可以显示用量趋势、主要消耗功能、建议优化动作和是否允许超额。对于内部系统，也可以给团队负责人发送预算燃烧报告。成本透明不是为了惩罚使用，而是让用户理解 AI 能力不是无限资源，从而愿意选择更准确的输入、更小的文档范围和更合适的执行模式。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>成本预算的测试不能只验证“代码能算钱”。它要验证估算准确性、策略边界、账本完整性、聚合一致性和降级体验。上线前可以用过去一段时间的脱敏请求构造回放集，把每个请求的输入长度、任务类型、模型路由和真实 usage 带进去，比较新策略下的估算成本、实际成本和质量结果。只有当成本下降没有明显伤害质量时，优化才成立。</p>
+<p>一个基础评测表可以这样设计：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">评测项</th><th scope="col">样本来源</th><th scope="col">指标</th><th scope="col">通过标准</th></tr></thead><tbody><tr><td>估算误差</td><td>真实 trace 回放</td><td>估算/实际成本比</td><td>P90 不低于 0.8 且不高于 1.5</td></tr><tr><td>单请求上限</td><td>构造超长上下文</td><td>拦截率、误拦截率</td><td>超预算请求全部被处理，正常请求不被误伤</td></tr><tr><td>租户预算</td><td>多租户压测</td><td>余额扣减一致性</td><td>并发下无明显超扣或漏扣</td></tr><tr><td>降级质量</td><td>高低预算对照集</td><td>通过率、用户采纳率</td><td>低风险任务可降级，高风险任务不自动降级</td></tr><tr><td>账本完整性</td><td>trace 与 cost event 对账</td><td>缺失事件比例</td><td>核心事件缺失低于阈值</td></tr><tr><td>告警有效性</td><td>模拟价格上涨和重试风暴</td><td>告警延迟</td><td>在预算燃烧异常早期触发</td></tr></tbody></table></div>
+<p>回放测试要覆盖失败路径。很多成本问题只在异常里出现：供应商限流导致重试、工具超时导致备用路径、输出 JSON 不合法导致修复、引用检查失败导致重新生成。如果评测集只有成功请求，预算系统会低估最坏情况。建议为每类关键功能准备一组故障注入样本，强制主模型超时、强制工具返回慢响应、强制结构化输出失败，然后看成本是否被限制在预期范围内。</p>
+<p>线上评测要关注单位经济。可以按功能计算“每一百次有效完成的模型成本”“每个被用户采纳答案的成本”“每个工单节省人工分钟对应的成本”。这些指标比单纯 token 总量更接近业务价值。比如某个分析功能单次成本很高，但能节省分析师二十分钟，就可能非常值得；某个闲聊功能单次成本很低，但没有业务价值，仍然应该被限制。</p>
+<p>还要测试账本与供应商账单的对齐。供应商账单通常按模型、日期和组织聚合，内部账本按租户和功能聚合，两者不可能天然一致。工程上需要每日对账：内部总成本与供应商账单差异超过阈值时告警；差异按价格版本、缓存计费、失败请求、批处理折扣和四舍五入规则拆解。对账不是财务才需要，工程也需要它来发现 usage 字段解析错误、模型映射错误和漏记事件。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一类失败是低估输入成本。系统提示词、工具 schema、历史消息和检索片段不断增长，但估算器只看用户输入。结果是预算层认为请求很便宜，实际调用却带着长上下文进入强模型。解决办法是估算时使用最终 prompt 组装后的上下文，至少在路由前完成一次近似组装，并把各部分 token 拆开记录。</p>
+<p>第二类失败是重试风暴。供应商短暂抖动时，所有请求同时重试，成本和延迟一起上升，还可能放大限流。预算策略必须区分免费重试和付费重试，必须有指数退避、请求级重试上限和租户级重试预算。对于用户已经离开的流式请求，也要能取消后续生成，不能继续在后台烧钱。</p>
+<p>第三类失败是工具扇出失控。一个看似简单的问题触发大量检索、数据库查询或浏览器操作，模型成本不高，工具成本和排队成本却失控。解决办法是给工具计划设置预算，例如最大检索轮数、最大候选文档数、最大外部 API 次数，并在 trace 中记录每个工具的价值信号。没有命中结果的工具调用也要计入成本。</p>
+<p>第四类失败是预算口径混乱。财务按供应商账单看美元，工程按 token 看用量，产品按功能看次数，三者没有共同主键。月底讨论时每个人都对，但无法合并。解决办法是从第一天就规定账本主键和聚合维度，并把 <code>trace_id</code>、<code>tenant_id</code>、<code>feature</code>、<code>release_version</code> 贯穿全链路。</p>
+<p>第五类失败是降级伤害关键场景。预算快用完时，系统把所有请求都切到便宜模型，结果高风险任务质量下降，人工补救成本更高。降级策略要按任务风险和用户价值分层。低风险可以降级，高风险可以要求确认、排队或走审批预算，不应该静默牺牲质量。</p>
+<p>第六类失败是价格变化没有进入策略。供应商降价后仍按旧价格估算，导致过度限制；供应商涨价后仍按旧价格放行，导致预算穿透。价格表要版本化、生效时间明确，并且在价格变更后跑回放评测，确认预算阈值仍然合理。</p>
+<p>第七类失败是缓存节省被高估。团队把缓存命中按“避免一次完整生成”计算节省，但实际缓存需要验证、权限检查和后台刷新。节省应该按真实替代路径估算，并扣除缓存维护成本。否则仪表盘会显示节省很多，账单却没有明显下降。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>front matter、prompt 版本、模型路由版本和预算策略版本都能在 trace 中查到。</li><li>每个核心功能都有单请求预算、会话预算和租户级预算，且默认值经过回放验证。</li><li>成本估算覆盖系统提示词、检索片段、工具描述、历史消息、预期输出和可能重试。</li><li>价格表是数据化配置，包含生效时间、价格版本、输入输出单价和批处理折扣。</li><li>成本事件采用追加写，核心事件包含 <code>trace_id</code>、<code>tenant_id</code>、<code>feature</code>、<code>prompt_slug</code>、<code>model_route</code>。</li><li>在线余额快照有并发保护，聚合延迟不会导致明显超支。</li><li>降级策略按任务风险分层，高风险任务不会因为租户预算告急而静默换成低能力路径。</li><li>重试、修复、评测和工具调用都有独立预算，不会无限放大。</li><li>仪表盘同时展示总成本、单位有效完成成本、预算燃烧率、估算误差和失败路径成本。</li><li>每日对账内部账本与供应商账单，差异超过阈值时能按模型、价格版本和日期定位。</li><li>用户或客户成功团队能看到租户用量趋势和主要消耗功能。</li><li>预算策略变更有灰度、回滚和回放评测，不直接全量发布。</li></ul>
+<h2 id="总结">总结</h2>
+<p>AI 应用成本预算不是月底看账单，也不是简单换便宜模型。它是一套贯穿设计、调用、观测、评测和运营的工程机制。好的预算系统在请求前给出边界，在请求中约束执行，在请求后沉淀账本，并把成本和质量放到同一个讨论框架里。这样团队才能回答几个关键问题：钱花在哪里，哪些花费创造了价值，哪些失败路径在浪费预算，哪些功能应该降级，哪些场景值得使用更强模型。</p>
+<p>从实现上看，第一步不需要复杂平台。先把成本事件写完整，把价格表数据化，把请求前估算做起来，把预算策略和 trace 关联起来，就能显著提升可解释性。接下来再逐步加入燃烧率、租户配额、成本感知路由、缓存节省评估和对账流程。成本预算越早进入系统，后面做产品定价、模型升级和规模化运营就越稳。真正成熟的 AI 应用，不是永远选择最便宜的路径，而是知道什么时候该省，什么时候该花，以及每一笔钱换回了什么工程和业务结果。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

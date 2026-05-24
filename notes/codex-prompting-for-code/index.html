@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>给 Codex 写任务描述的方式 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="好的任务描述包含目标、约束、验证方式和不希望改动的范围。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="给 Codex 写任务描述的方式">
+  <meta property="og:description" content="好的任务描述包含目标、约束、验证方式和不希望改动的范围。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/codex-prompting-for-code.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link active" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>给 Codex 写任务描述的方式</span></nav>
+          <div class="note-kicker">NOTES / WORKFLOW / 087</div>
+          <h1>给 Codex 写任务描述的方式</h1>
+          <p>好的任务描述包含目标、约束、验证方式和不希望改动的范围。</p>
+          <div class="note-tag-row"><span>Codex</span><span>Prompt</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/codex-prompting-for-code.svg" alt="标题图" loading="lazy"><figcaption>给 Codex 写任务描述的方式 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>给 Codex 写任务描述，本质上不是写一句“让模型听懂的话”，而是在共享工程环境里发出一张可执行工单。很多人把 prompt 当成聊天技巧，关注语气、角色和一些神奇关键词；真正影响代码交付质量的，往往是更朴素的东西：目标是否明确，边界是否清楚，验收方式是否可运行，哪些文件不希望动，失败时应该如何汇报。代码任务和普通问答不同，它会改变文件，会运行命令，会触发测试，会影响后续维护。描述不清楚时，Codex 不是完全不能做，而是会用自己的推断补齐缺失部分。推断越多，结果越不稳定。</p>
+<p>一句“帮我优化这个接口”看似自然，工程含义却很模糊。优化是降低延迟、减少内存、改善错误信息，还是整理代码结构？接口是 HTTP API、Go interface、前端组件 props，还是对外 SDK？是否允许改数据库 schema，是否允许调整返回格式，是否必须保持向后兼容，应该用哪条压测或单测证明优化有效？如果这些问题没有写出来，Codex 可能选择一个合理但不符合业务的方向。它也许会把性能优化做成重构，把重构做成格式化，把格式化做成大 diff。</p>
+<p>另一个常见问题是任务描述只写“要做什么”，不写“不要做什么”。人类同事熟悉项目背景，知道某些目录是生成物，知道某个旧测试不能碰，知道这次只想要最小修复。Codex 没有这些隐性默契。你不告诉它不要升级依赖，它可能在解决类型错误时顺手升级包；你不告诉它不要改测试语义，它可能为了通过测试调整断言；你不告诉它只改后端，它可能同时改前端展示。好的任务描述要把重要的沉默边界写成明文。</p>
+<p>还有一类问题是缺少验证方式。用户说“修一下这个 bug”，但不给复现步骤、失败日志、期望行为和测试命令。Codex 可以去探索，但探索成本会上升，而且容易把第一个看见的异常当根因。相反，如果任务描述里包含“运行 <code>go test ./internal/billing -run TestInvoiceRounding</code> 会失败，期望金额四舍五入到分，不能改变历史发票数据”，Codex 的工作空间立刻缩小到可验证问题。它可以先复现，再定位，再修复，再运行同一命令。这个闭环比任何花哨 prompt 都更重要。</p>
+<p>任务描述也影响最终协作体验。一个清晰任务会让 Codex 在中途减少追问，在改动时更守边界，在最终汇报中提供你关心的信息。一个模糊任务则会把很多判断推给模型，最终你需要花更多时间审 diff、问它为什么这样改、再补充限制让它返工。写好任务描述不是为了迎合 AI，而是把软件工程里本来应该存在的目标、约束和验收条件显式化。</p>
+<p>我更愿意把给 Codex 的描述看成“最小可执行规格”。它不需要像完整 PRD 那样长，也不需要替 Codex 规定每一行代码怎么写。它要做的是给出稳定边界：要解决的问题、当前证据、期望结果、允许范围、禁止范围、验证命令和汇报格式。边界清楚后，Codex 可以在内部选择实现路径；边界不清楚时，越强的模型越可能做出越多主观补全。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>好的代码任务描述由七个部分组成：目标、背景、证据、范围、约束、验证和交付说明。不是每次都要写成七个标题，但这些信息应该在任务里出现。目标说明最终用户或系统要发生什么变化；背景说明为什么要做；证据提供错误日志、截图、路径、输入输出或现有行为；范围告诉 Codex 可以看哪里、改哪里；约束说明兼容性、安全、性能、风格和禁止动作；验证给出可运行命令或人工检查方式；交付说明告诉它最终如何汇报。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">部分</th><th scope="col">应该写什么</th><th scope="col">不写的风险</th></tr></thead><tbody><tr><td>目标</td><td>期望行为、业务结果、用户可见变化</td><td>Codex 改了相关代码但没有解决问题</td></tr><tr><td>背景</td><td>相关模块、近期改动、业务语义</td><td>模型误解术语或选择错误路径</td></tr><tr><td>证据</td><td>失败命令、日志、截图、输入输出样例</td><td>需要大量探索，根因定位不稳</td></tr><tr><td>范围</td><td>允许修改文件、优先查看目录、非目标模块</td><td>diff 扩大，碰到无关区域</td></tr><tr><td>约束</td><td>兼容性、性能、接口、依赖、风格、禁止项</td><td>引入破坏性变更或项目不合群写法</td></tr><tr><td>验证</td><td>必跑命令、最小测试、构建、手工检查</td><td>最终无法证明补丁有效</td></tr><tr><td>交付</td><td>汇报内容、是否需要计划、是否直接修改</td><td>输出不符合协作习惯</td></tr></tbody></table></div>
+<p>第一个概念是“结果优先于做法”。不要只说“把这里重构成策略模式”，除非策略模式本身就是目标。更好的写法是说明结果：“当前折扣计算在新增渠道时需要改多个分支，请把渠道差异收敛到可扩展结构，保持现有公共接口不变，并补测试覆盖两个已有渠道。”这样 Codex 可以判断是否需要策略模式、表驱动、接口抽象或简单映射。用户提供目标和约束，Codex 负责在仓库语法里选择实现。</p>
+<p>第二个概念是“证据比形容词有用”。“偶尔失败”“很慢”“体验不好”“代码很乱”都是形容词，不能直接驱动工程动作。把它们换成证据：失败率是多少，哪条命令失败，哪个页面在什么网络条件下慢，哪个函数有重复逻辑，哪段用户路径出现异常。证据越具体，Codex 越容易建立复现和验证闭环。</p>
+<p>第三个概念是“范围控制”。范围不是只为了防止模型乱改，也是在告诉它投入深度。你可以说“请优先在 <code>internal/payments</code> 内解决，除非测试证明公共类型必须调整”；也可以说“可以改 API 和前端，但不要改数据库迁移”；还可以说“这次只做诊断，不要修改文件”。不同范围对应完全不同的工作方式。Codex 如果不知道范围，就会按自己对任务的理解扩大或缩小。</p>
+<p>第四个概念是“硬约束原文表达”。涉及文件范围、禁止动作、兼容性、输出格式、验收命令的要求，最好写成明确句子，而不是藏在长段落里。例如“只修改 <code>content/articles/&lt;slug&gt;.md</code>，不要修改脚本或生成 HTML”；“不要升级依赖”；“保持响应 JSON 字段名不变”；“最终只汇报改动和测试结果”。这类句子应该让 Codex 能直接加入内部检查清单。</p>
+<p>第五个概念是“允许不确定”。有些任务刚开始确实不知道根因，这时不要编造确定范围。可以给 Codex 一个诊断型任务：“先复现并定位，不要改文件；找到根因后给出最小修复计划。”这比直接说“修好它”更稳。诊断和实施是两种模式，前者强调证据收集，后者强调补丁和验证。把模式写清楚，可以减少误操作。</p>
+<p>第六个概念是“验收可执行”。任务描述里最有价值的一行经常是命令。<code>npm test -- ButtonGroup.test.tsx</code>、<code>go test ./internal/auth -run TestRefreshToken</code>、<code>python3 scripts/check_articles.py slug</code>、<code>pnpm build</code> 这类命令把目标变成可以被机器检查的事实。没有自动命令时，也应该写人工检查标准，例如“打开设置页，切换语言后按钮文案不应溢出”。验收越具体，最终交付越可信。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个清晰任务描述进入 Codex 后，理想流程不是“模型直接写代码”，而是从规格到证据再到补丁的闭环。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">用户任务描述
+   |
+   v
+任务解析：目标、证据、范围、约束、验证命令、交付格式
+   |
+   v
+仓库探索：读取规范、定位入口、检查工作区、确认相关测试
+   |
+   v
+执行计划：写入范围、实现策略、验证顺序、风险点
+   |
+   v
+小步修改：遵循本地项目语法，保护用户已有改动
+   |
+   v
+验证反馈：运行指定命令，阅读失败，必要时修正假设
+   |
+   v
+最终汇报：文件、行为变化、验证结果、残留风险</code></pre></div>
+<p>任务描述在这个流程里起到“上游约束包”的作用。它不替代 Codex 的仓库阅读，但决定阅读方向。比如你写“只改 API 层，不改前端”，Codex 仍然可以读前端来理解调用方式，但不应该编辑前端。你写“保留旧字段兼容一个版本”，它在设计数据结构时就要考虑双写或兼容解析。你写“最终只要简短汇报”，它不应该输出长篇实现说明。越是关键约束，越应该在任务描述里直接出现。</p>
+<p>可以把任务描述分成三层。第一层是不可违反的硬约束，如文件范围、禁止命令、兼容性、验收命令和最终输出格式。第二层是任务上下文，如业务背景、相关路径、失败日志、用户截图和已有讨论。第三层是偏好，如希望优先小改、喜欢测试先行、希望说明取舍。硬约束应该短而明确；上下文可以详细；偏好可以帮助 Codex 做风格选择，但不要和硬约束冲突。</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">硬约束层
+  只修改 A 和 B；不要升级依赖；保持公共 API 不变；必须运行指定测试
+
+上下文层
+  最近重构了缓存；失败日志显示 key 为空；相关代码在 internal/cache
+
+偏好层
+  优先最小修复；如果发现更大设计问题，请先说明，不要直接重构</code></pre></div>
+<p>这个分层能减少长 prompt 里的权重问题。很多任务描述写得很长，真正的硬约束被夹在中间一句话里，Codex 到后面容易忽略。把硬约束放在显眼位置，可以让它在计划、编辑和最终验证时持续保留。</p>
+<p>还有一个流程要点：把“开始条件”和“停止条件”写清楚。开始条件说明 Codex 是否可以直接修改，还是先诊断、先计划、先提问。停止条件说明什么时候算完成，什么时候应该停下来问用户。例如“如果需要改数据库 schema，先停下来确认”；“如果指定测试无法运行，说明原因并不要改测试绕过”；“如果发现问题不在这个模块，先给出证据再扩大范围”。这些停止条件能显著降低高风险任务的副作用。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>如果把代码任务描述结构化，可以用下面这个数据结构理解。实际写给 Codex 时不一定需要 JSON，但字段思维很有用。</p>
+<div class="code-block"><pre class="line-numbers language-typescript" data-language="TypeScript"><code class="language-typescript">type CodingTaskSpec = {
+  goal: string;
+  context?: string[];
+  evidence?: {
+    commands?: string[];
+    logs?: string[];
+    screenshots?: string[];
+    examples?: Array&lt;{ input: string; expected: string }&gt;;
+  };
+  scope: {
+    preferReadPaths?: string[];
+    allowedWritePaths?: string[];
+    disallowedPaths?: string[];
+  };
+  constraints: string[];
+  verification: string[];
+  stopConditions?: string[];
+  finalReport: string[];
+};</code></pre></div>
+<p>这个结构把自然语言任务拆成 Codex 可以执行的部分。<code>goal</code> 不是“修改某文件”，而是行为结果。<code>context</code> 帮助理解领域。<code>evidence</code> 提供复现材料。<code>scope</code> 控制读写范围。<code>constraints</code> 是不应该被实现细节覆盖的规则。<code>verification</code> 是最终必须尝试的命令或检查。<code>stopConditions</code> 定义越界时何时暂停。<code>finalReport</code> 则控制协作输出。</p>
+<p>一个差的 bug 修复描述可能是：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">登录有问题，帮我修一下。</code></pre></div>
+<p>它没有说明问题是什么、如何复现、哪个登录入口、期望行为、允许修改范围和验证方式。Codex 会先搜索登录相关文件，然后根据最可能路径猜。更好的描述是：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">请修复刷新 token 失效后前端仍显示已登录的问题。
+
+证据：
+- 复现路径：登录后删除 refresh_token cookie，刷新 `/settings`，页面仍短暂显示用户信息，然后 API 返回 401。
+- 期望行为：401 后立即清理本地会话并跳转 `/login?reason=expired`。
+- 相关路径优先看 `src/auth/session.ts`、`src/api/client.ts`、`src/routes/settings.tsx`。
+
+约束：
+- 不要改后端接口。
+- 不要改变登录成功后的正常跳转。
+- 不要升级依赖。
+
+验证：
+- 运行 `pnpm test -- session`.
+- 如果需要浏览器手工验证，请说明具体步骤。</code></pre></div>
+<p>这个描述没有替 Codex 写实现，但它给出了行为闭环。Codex 可以从 API client 的 401 处理、会话存储和路由守卫入手，避免跑去重写登录表单。它也知道后端接口不能动，依赖不能升级，最终至少要跑会话测试。</p>
+<p>一个特性任务可以这样写：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">为订单列表 API 增加按 `created_at` 游标分页。
+
+目标：
+- 客户端可以传 `limit` 和 `cursor`。
+- 响应包含 `items`、`next_cursor`、`has_more`。
+- 默认保持现有按创建时间倒序。
+
+兼容性：
+- 现有不传分页参数的请求返回前 50 条，字段名保持不变。
+- 不做数据库迁移。
+- 不改管理后台页面。
+
+实现范围：
+- 优先看 `internal/orders/handler.go`、`internal/orders/repository.go` 和相关测试。
+- 可以新增 repository 单元测试。
+
+验证：
+- 运行 `go test ./internal/orders`.
+- 增加至少一个覆盖 `next_cursor` 的测试。</code></pre></div>
+<p>这里最重要的是兼容性。分页看起来像普通功能，但它会影响 API 合约。把响应字段、默认行为和禁止迁移写清楚，Codex 才能在实现里控制风险。若不写，模型可能改成 offset 分页，也可能调整旧响应结构。</p>
+<p>文档或内容任务也需要工程化描述。比如：</p>
+<div class="code-block"><pre class="line-numbers language-plaintext" data-language="Text"><code class="language-plaintext">请为这两个 slug 创建 Markdown 长文：`a`、`b`。
+
+约束：
+- front matter 必须与 `js/articles.js` 中对应元数据一致。
+- 正文必须遵守 `content/ARTICLE_STYLE.md`。
+- 只修改 `content/articles/a.md` 和 `content/articles/b.md`。
+- 不要写脚本生成正文。
+
+验证：
+- 运行 `python3 scripts/check_articles.py --min-han 5000 a b`。
+
+最终：
+- 只简短汇报创建文件和校验结果。</code></pre></div>
+<p>这个任务看似是写文章，实质上也有代码仓库约束：元数据来源、路径、校验脚本、修改范围、生成禁令和最终输出。Codex 如果直接写文案而不读元数据，就会漏字段；如果运行生成脚本，就违反要求；如果最终长篇解释，就不符合交付。好的描述把这些风险提前关掉。</p>
+<p>在团队里，可以把这些字段沉淀成 issue 模板，但不要把模板变成僵硬表格。小任务可以一句话加验证命令，大任务需要完整规格。关键是判断哪些信息会影响 Codex 的行动。如果一个信息只影响背景理解，可以简写；如果它影响文件边界、兼容性、测试和风险，就必须明确。</p>
+<p>任务描述还应该给 Codex 一定自治空间。过度规定实现细节会让它无法适应仓库现状。例如你要求“必须新增 <code>UserManagerFactory</code>”，但仓库里根本没有类似工厂风格，结果会变得不合群。更好的方式是写“请沿用当前 service 初始化方式，不引入全局单例”。这既表达了设计方向，又让 Codex 能读本地代码后选择合适落点。</p>
+<p>对于诊断任务，描述要改变语气。不要写“修复性能问题”，而是写“先诊断性能问题，不要修改文件；请找出最可能瓶颈、证据、建议验证方式”。如果你允许它随后实施，可以加停止条件：“如果能用一个小补丁修复且有测试覆盖，可以继续；如果需要改缓存策略或数据库索引，先给我方案。”这把探索和实施分开，适合高风险或不确定问题。</p>
+<p>对于已有 PR 或失败 CI，任务描述要提供分支、失败检查、日志来源和限制。比如“请修复当前分支 GitHub Actions 中 <code>unit-tests</code> 失败；优先根据失败日志定位；不要重写无关测试；修复后本地运行同等命令”。CI 任务最怕为了通过而降低测试质量，所以约束里要写“不允许删除断言或跳过测试，除非能证明测试本身过期并先说明原因”。</p>
+<p>最后，任务描述应该保持最新。如果你在 Codex 工作过程中补充了新限制，例如“刚才发现不要改 schema”，要用明确句子覆盖旧要求。多轮对话里，旧信息和新信息会同时存在。越关键的更新，越要写得短、直接、可执行。不要只说“还是别这么做了”，要说“停止当前重构方向；保持 schema 不变；只修 handler 参数校验”。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>评估一条任务描述好不好，不应该只看它读起来是否礼貌，而要看它是否提高交付成功率。可以从几个指标观察：Codex 是否需要追问，首次计划是否命中正确模块，最终 diff 是否在预期范围内，指定验证是否通过，是否出现无关改动，最终汇报是否包含你需要的证据。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">指标</th><th scope="col">好任务描述的表现</th><th scope="col">坏任务描述的表现</th></tr></thead><tbody><tr><td>澄清次数</td><td>只在真实缺信息时提问</td><td>因目标模糊反复确认</td></tr><tr><td>定位速度</td><td>很快找到入口和目标测试</td><td>大量搜索相似文件</td></tr><tr><td>diff 范围</td><td>与允许范围一致</td><td>顺手改样式、依赖、测试或生成物</td></tr><tr><td>验证结果</td><td>能运行指定命令并解释结果</td><td>不知道跑什么，或只做主观判断</td></tr><tr><td>返工率</td><td>一轮补丁接近可审</td><td>多轮补充限制后才收敛</td></tr><tr><td>风险暴露</td><td>主动说明未覆盖项</td><td>把局部通过说成全面完成</td></tr></tbody></table></div>
+<p>可以做一个简单的 prompt 回归集。选取团队里常见的五类任务：bug 修复、小功能、重构、CI 修复、文档更新。每类准备一条模糊描述和一条结构化描述，让 Codex 在同一仓库快照上执行，比较修改范围、验证通过率和人工审查时间。这个评测很快会显示：模型能力相同的情况下，任务描述质量会显著影响结果。</p>
+<p>评测还要看“负面约束是否被遵守”。例如描述中写了“不要升级依赖”，最终 diff 是否真的没有动 lockfile；写了“只修改后端”，是否没有改前端；写了“不要改测试绕过问题”，是否没有删除断言。很多任务的失败不是正向目标没做，而是负向边界被破坏。负面约束应该进入评测 checklist。</p>
+<p>对于验证命令，可以检查 Codex 是否先复现再修复。一个成熟工作流通常是：运行失败命令或读取失败日志，确认问题存在；修改最小范围；再次运行同一命令；必要时补充更广检查。如果任务描述给了命令但 Codex 没跑，要么是环境限制，要么是执行漏了。最终汇报必须说清楚。团队可以把“未运行指定验证且没有解释”视为不合格交付。</p>
+<p>任务描述还可以通过人工审查质量评估。审查者看最终 diff 时，应该能把每个改动映射回任务里的某个目标或约束。如果某个文件改动无法解释，说明任务范围或执行纪律有问题。如果某个约束没有对应实现或测试，说明描述或执行存在缺口。好 prompt 的一个标志是它让 code review 更容易，而不是让 reviewer 猜 Codex 的意图。</p>
+<p>最后，评测要保留真实失败案例。不要只收集成功 prompt。每次 Codex 做偏了，都问三个问题：任务描述有没有给出足够证据，边界有没有写清楚，验证有没有可执行。如果没有，改描述；如果有但 Codex 仍然违反，改工作流或评测。这样 prompt 会逐渐从“个人经验”变成团队资产。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一种失败是目标过宽。“优化用户中心”“整理支付模块”“提升代码质量”都太宽。Codex 会被迫选择自己的切入点，结果很可能和你的真实意图不同。解决方法是把宽目标拆成可交付结果，例如“减少用户中心首屏重复请求，保持 UI 不变，并用网络请求数量验证”。</p>
+<p>第二种失败是过度指定实现。用户把自己脑中的方案写成唯一道路，但没有提供问题证据。Codex 可能机械执行一个不适合仓库的设计。更好的写法是描述问题、约束和期望性质，让它读代码后选择局部最合适方案。只有当实现方式本身是硬要求时，才把它写成必须。</p>
+<p>第三种失败是隐藏上下文。团队内部知道某个字段不能改、某个客户依赖旧行为、某个测试代表线上事故，但任务里没写。Codex 不知道隐性历史，只会根据当前文件推断。凡是会影响兼容性和风险的历史，都应该进入任务描述。</p>
+<p>第四种失败是缺少复现。没有失败命令、日志、输入输出样例时，Codex 会先探索。探索不是坏事，但成本和不确定性都更高。能提供复现就提供复现；不能提供时，明确要求先诊断，不要直接大改。</p>
+<p>第五种失败是约束冲突。比如同时要求“只改一个文件”和“补完整集成测试”，或者要求“保持 API 完全不变”又要求“删除旧字段”。Codex 可能选择其中一个执行，也可能来回摇摆。任务描述里出现冲突时，最好明确优先级：“如果两者冲突，以兼容性为准，先说明测试缺口”。</p>
+<p>第六种失败是把验证写成愿望。“确保没有问题”“充分测试”不是验证命令。它们表达态度，不提供行动。更好的写法是列出具体命令和人工检查路径。如果不知道命令，可以让 Codex 先查找项目中合适的验证方式，并在实施前说明。</p>
+<p>第七种失败是让 Codex 同时做太多角色。一个任务里要求它诊断、重构、写测试、改文案、做性能优化、生成发布说明，范围会迅速扩大。复杂目标可以拆阶段：先诊断，确认方案后修复；先实现后端，再接前端；先补测试暴露问题，再改实现。阶段越清楚，风险越低。</p>
+<p>第八种失败是最终输出要求缺失。有些场景你只想要 diff 和测试结果，有些场景你想要详细解释，有些场景你不希望它提交代码。若不写清楚，Codex 会按默认习惯汇报。对协作来说，输出格式也是接口。尤其在自动化流水线或批量任务里，最终汇报不稳定会增加人工处理成本。</p>
+<p>第九种失败是多轮更新含糊。用户中途说“算了，换个方向”，但没有说明旧约束哪些保留。Codex 可能混用新旧目标。更新任务时要显式覆盖：“放弃前面的缓存方案；当前目标改为修复空指针；仍然不要改数据库 schema；验证命令不变。”这类短句比长解释更可靠。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>用一句话写清楚期望结果，而不是只写要修改的技术点。</li><li>提供失败命令、日志、截图、输入输出样例或相关路径，至少给一种可验证证据。</li><li>明确允许修改范围和禁止修改范围，尤其是生成文件、依赖、测试、schema 和公共 API。</li><li>写出兼容性要求：字段名、响应格式、迁移策略、旧行为是否必须保留。</li><li>给出必须运行的验证命令；没有命令时，要求 Codex 先找验证方式并说明。</li><li>指明任务模式：直接实施、先计划、先诊断、不修改文件、需要人工确认。</li><li>为高风险动作设置停止条件，例如改 schema、发外部消息、删除数据、升级依赖。</li><li>把硬约束写成短句，放在任务描述显眼位置。</li><li>不要把实现细节规定得过死，除非它就是验收要求。</li><li>多轮补充时明确哪些旧要求仍然保留，哪些要求被新指令覆盖。</li><li>最终汇报要求写清楚：文件、验证结果、残留风险，还是详细设计说明。</li><li>对重复任务沉淀 issue 模板，但允许根据任务风险增减字段。</li></ul>
+<h2 id="总结">总结</h2>
+<p>给 Codex 写任务描述，不是学习某种神秘提示词，而是把工程任务写成可执行规格。目标、证据、范围、约束、验证和交付说明越清楚，Codex 的探索空间越合理，补丁越容易审，最终结果越能复盘。模糊描述也能启动工作，但它会把大量工程判断交给模型猜；清晰描述则把关键判断留在团队控制内。</p>
+<p>最实用的做法是从小处开始：每个任务至少写清楚期望行为、相关路径、禁止事项和验证命令。遇到高风险任务，再补充兼容性、停止条件和人工确认。不要把 prompt 当咒语，把它当工单接口。接口设计得好，Codex 才能在仓库里稳定工作；接口设计得差，再强的模型也会在目标、边界和证据之间来回猜。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>

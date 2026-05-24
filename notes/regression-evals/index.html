@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>回归评测怎么跑 | Asta 的 AI 小站</title>
+  <meta name="author" content="Asta Xie">
+  <meta name="description" content="每次 prompt、模型和工具变更都应该触发回归样本。">
+  <meta name="keywords" content="Astaxie, astaxie, AI 小站, AI Agent, MCP, RAG, LLM 应用工程, AI Native, 本地 AI 工具, ThinkInAI, DeepChat, Go, beego, GopherChina">
+  <meta property="og:title" content="回归评测怎么跑">
+  <meta property="og:description" content="每次 prompt、模型和工具变更都应该触发回归样本。">
+  <meta property="og:site_name" content="Asta 的 AI 小站">
+  <meta property="og:image" content="/assets/article-visuals/regression-evals.svg">
+  <link href="/favicon.ico" rel="icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="docs-home note-page">
+  <div class="docs-layout">
+    
+    <aside class="left-rail" aria-label="About me">
+      <section class="rail-card about-me-card">
+        <div class="rail-title">关于我</div>
+        <div class="about-profile"><img src="/css/img/avatar-astaxie.jpg" alt="Asta Xie 的 GitHub 头像" width="460" height="460"><div><strong>Asta Xie</strong><span>astaxie</span></div></div>
+        <p>我从 Go 开源生态一路做到 AI 开发者工具，长期写代码、写书、做社区，也持续整理真实项目里的工程经验。</p>
+        <div class="rail-stats">
+          <span><b>Go</b> GopherChina / beego / Go Web</span>
+          <span><b>Book</b> 《Go Web 编程》</span>
+          <span><b>AI</b> ThinkInAI / 星科实验室</span>
+        </div>
+        <div class="lang-toggle rail-lang-toggle" aria-label="Language"><button type="button" data-lang="zh">中</button><button type="button" data-lang="en">EN</button></div>
+      </section>
+      <section class="rail-card rail-nav-card"><nav class="rail-menu" aria-label="页面导航"><a class="rail-link rail-primary-link" href="/about/">关于我</a><a class="rail-link rail-primary-link" href="/projects/">开源项目</a><details class="rail-menu-group" open><summary class="rail-link rail-primary-link rail-menu-summary active">文章</summary><div class="article-menu rail-submenu" aria-label="文章分类"><a class="rail-link rail-sub-link" href="/#article-browser">全部文章</a>
+<a class="rail-link rail-sub-link" href="/#agents">AI Agent 设计</a>
+<a class="rail-link rail-sub-link" href="/#mcp">MCP 与工具协议</a>
+<a class="rail-link rail-sub-link" href="/#rag">RAG 与知识系统</a>
+<a class="rail-link rail-sub-link" href="/#llm-apps">LLM 应用工程</a>
+<a class="rail-link rail-sub-link active" href="/#evals">评测、观测与成本</a>
+<a class="rail-link rail-sub-link" href="/#workflow">AI 工作流与工具</a></div></details></nav></section>
+      
+      <div class="rail-social-links" aria-label="社交链接">
+        <a class="rail-social-link" href="https://github.com/astaxie" aria-label="GitHub" title="GitHub" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18.92-.26 1.91-.39 2.9-.39.98 0 1.98.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.23 2.75.11 3.04.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.39-5.25 5.67.41.35.78 1.05.78 2.12 0 1.53-.01 2.76-.01 3.14 0 .31.21.67.8.56A10.99 10.99 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+        <a class="rail-social-link" href="https://twitter.com/astaxie" aria-label="Twitter" title="Twitter" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.95 4.57c-.88.39-1.83.65-2.83.77a4.92 4.92 0 0 0 2.17-2.72 9.84 9.84 0 0 1-3.13 1.2A4.92 4.92 0 0 0 11.78 8.3 13.97 13.97 0 0 1 1.64 3.16a4.92 4.92 0 0 0 1.52 6.57 4.87 4.87 0 0 1-2.23-.62v.06a4.93 4.93 0 0 0 3.95 4.83 4.97 4.97 0 0 1-2.22.08 4.94 4.94 0 0 0 4.6 3.42A9.87 9.87 0 0 1 0 19.54a13.93 13.93 0 0 0 7.55 2.21c9.05 0 14-7.5 14-14v-.64a10 10 0 0 0 2.4-2.54Z"/></svg></a>
+      </div>
+    </aside>
+    <main class="docs-main">
+      <article class="note-detail article-rich-detail">
+        <header>
+          <nav class="note-breadcrumb" aria-label="文章路径"><a href="/#article-browser">全部文章</a><span>-></span><span>回归评测怎么跑</span></nav>
+          <div class="note-kicker">NOTES / EVAL / 076</div>
+          <h1>回归评测怎么跑</h1>
+          <p>每次 prompt、模型和工具变更都应该触发回归样本。</p>
+          <div class="note-tag-row"><span>Regression</span><span>Evals</span></div>
+        </header>
+        <figure class="note-hero-visual"><img src="/assets/article-visuals/regression-evals.svg" alt="标题图" loading="lazy"><figcaption>回归评测怎么跑 的工程图示。</figcaption></figure>
+<h2 id="问题背景">问题背景</h2>
+<p>AI 应用的回归问题，比普通后端服务更隐蔽。普通代码改坏了，通常会表现为接口报错、数据库约束失败、状态机走错分支。LLM 应用改坏了，很多时候接口还是二百，回答也依然流畅，只是少引用了一条证据、把工具参数传错了一个时间窗口、把拒答边界放宽了一点，或者在低频场景里把旧事故重新复现。用户看到的是“好像不太靠谱”，工程师看到的是“日志没有异常”，这就是必须跑回归评测的原因。</p>
+<p>很多团队早期会用人工体验来替代回归。改完 prompt 后，找几个常见问题问一遍，感觉答案更自然，就上线。换模型后，挑十条样本看一下，觉得整体更聪明，就合并。工具 schema 改了，自己调用一次能跑通，就认为兼容。这个流程在原型阶段可以接受，在生产系统里很危险。因为 AI 应用的质量不是单个回答的主观印象，而是一组行为契约：该引用时要引用，该拒答时要拒答，该调用工具时要按顺序调用工具，该保守时不能胡乱补全，该省钱时不能无限扩展上下文。</p>
+<p>回归评测要解决的核心问题，是让每次变更都能回答三个问题：有没有把以前修过的问题又弄坏，关键路径有没有变差，风险边界有没有被悄悄移动。这里的变更不只是代码提交，也包括 prompt 修改、模型版本切换、检索参数调整、索引重建、工具描述改写、系统策略更新、输出 schema 变更、缓存策略变化、温度参数调整，甚至是文档内容更新。只要它会影响模型看到什么、能做什么、怎么判断、怎么输出，就应该触发对应范围的回归。</p>
+<p>AI 系统的回归还有一个特点：改动收益和损害经常同时出现。一个新 prompt 可能让复杂推理更好，却让结构化输出更容易带解释文字；一个新模型可能事实性更强，却更喜欢调用工具，导致成本和延迟上涨；一次检索重排优化可能提升长文档命中，却降低短问题的精确召回。没有回归评测，团队只会看到自己关心的那个指标变好，看不到其他维度被牺牲。上线后用户会替你发现，但那时已经进入事故处理。</p>
+<p>回归评测不是为了追求百分百自动化，也不是为了制造一个漂亮分数。它是一套工程刹车系统：在变更进入主干、灰度和全量之前，用已经沉淀的真实风险样本去拦截明显退化；在无法自动判断的场景里，把样本送到人工 review；在允许上线的变更里，保留可比较的报告，方便后续复盘。它的价值不在于一次评测跑了多少题，而在于每次失败都能定位到责任维度，每次通过都能给团队一个可解释的信心边界。</p>
+<p>我更倾向把回归评测看成发布流水线的一部分，而不是评测团队的独立活动。只要一个 PR 改了 prompt、工具、模型路由或检索配置，就应该自动选择相关样本跑一遍；如果改动触碰高风险场景，就算样本数量少，也要阻断；如果只是低风险文案调整，可以跑轻量冒烟集。这样回归才不会变成上线前临时补课，而是日常开发的一种肌肉记忆。</p>
+<h2 id="核心概念">核心概念</h2>
+<p>第一个概念是“回归样本”。它和普通评测样本有重叠，但目的不同。普通评测可能用于比较两个方案谁更好，回归样本用于防止已经承诺的行为被破坏。回归样本通常来自真实失败、事故复盘、关键客户场景、安全边界和历史修复。它要记录输入、上下文、期望行为、必须证据、禁止行为、判定方式和风险等级。没有明确期望的样本不能作为阻断回归，只能放在探索集里观察。</p>
+<p>第二个概念是“变更影响面”。不是每次改动都要跑全量样本。一个大型系统里全量回归可能成本高、耗时长、还容易因为外部依赖波动产生噪声。更稳的做法是把样本和系统资产建立映射：哪些样本依赖某个 prompt，哪些样本覆盖某类工具，哪些样本关注某个检索索引，哪些样本属于某个安全策略。变更发生后，先跑影响面样本，再补一小组核心冒烟样本，重大版本再跑全量。</p>
+<p>第三个概念是“基线”。回归评测不是只看当前输出是否像标准答案，还要看它相对上一个可发布版本是否退化。对于完全确定的契约，例如 JSON schema、引用 ID、工具调用参数，可以直接用规则判定。对于开放回答，可以记录基线输出和人工评审结论，在候选版本和基线之间做对比。这样能够区分“和标准答案措辞不同但仍然正确”和“相对已发布版本丢了关键信息”。</p>
+<p>第四个概念是“维度化判定”。一个样本不应该只有 pass 或 fail。至少要拆成事实正确、证据覆盖、引用准确、工具行为、格式结构、拒答策略、延迟、成本、稳定性几个维度。维度化以后，失败报告才有修复价值。比如证据覆盖失败，优先看检索和索引；工具行为失败，优先看工具描述、参数抽取和策略；格式失败，优先看 schema、输出解析和模型选择。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">概念</th><th scope="col">工程含义</th><th scope="col">如果缺失会怎样</th><th scope="col">建议做法</th></tr></thead><tbody><tr><td>回归样本</td><td>已知风险的可重放场景</td><td>历史事故反复出现</td><td>从线上失败和复盘中持续补样本</td></tr><tr><td>影响面</td><td>变更和样本之间的映射</td><td>小改动也要跑昂贵全量，最后没人愿意跑</td><td>给样本打资产标签，按 diff 选择套件</td></tr><tr><td>基线</td><td>上一个可信版本的行为记录</td><td>不知道当前是变好还是变坏</td><td>保存 release_id、trace、输出和评分</td></tr><tr><td>维度评分</td><td>对失败进行可修复归因</td><td>只看到总分下降，找不到责任链路</td><td>规则判定优先，语义裁判补充</td></tr><tr><td>阻断阈值</td><td>发布门禁</td><td>高风险退化仍然上线</td><td>高风险样本零容忍，低风险看趋势</td></tr></tbody></table></div>
+<p>第五个概念是“可复现环境”。回归评测如果每次依赖实时数据库、实时搜索结果、当天日期和随机模型参数，就很难判断失败来自变更还是环境。阻断型回归要尽量固定输入、工具 fixture、文档快照、索引版本、模型参数和时间。线上影子评测可以使用真实依赖，用来观察分布变化，但 CI 里的阻断回归必须先保证可复现。</p>
+<p>第六个概念是“样本分层”。我通常把回归样本分成四层：核心冒烟集、高风险阻断集、功能专项集、长尾探索集。核心冒烟集数量少，任何 AI 相关改动都跑；高风险阻断集保护权限、安全、财务、医疗、生产操作等场景；功能专项集按检索、工具、结构化输出、长上下文、多轮会话等能力划分；长尾探索集用于趋势观察，不一定阻断。分层以后，团队能在速度和覆盖之间做有意识的取舍。</p>
+<h2 id="架构流程图解说明">架构/流程图解说明</h2>
+<p>一个可用的回归评测架构，不需要一开始很复杂，但边界要清楚。它至少包含变更检测、样本选择、评测执行、评分器、基线对比、报告和门禁六个部分。变更检测负责判断这次改动碰到了哪些 AI 资产；样本选择负责从样本库挑出对应套件；评测执行负责用固定上下文调用真实应用链路；评分器负责维度化判定；基线对比负责找出退化；报告负责给工程师可操作信息；门禁负责决定是否允许合并或发布。</p>
+<figure class="mermaid-block" data-mermaid-block><template data-mermaid-source>flowchart TD
+  A[代码、Prompt、模型、工具或索引变更] --&gt; B[变更影响面分析]
+  B --&gt; C[选择回归套件]
+  C --&gt; D[加载样本与固定 fixture]
+  D --&gt; E[执行真实 Runtime]
+  E --&gt; F[收集 answer 与 trace]
+  F --&gt; G[规则评分与语义评分]
+  G --&gt; H[基线对比]
+  H --&gt; I[生成维度化报告]
+  I --&gt; J{是否触发阻断}
+  J --&gt;|是| K[阻止合并并分派 owner]
+  J --&gt;|否| L[允许进入灰度并记录版本]</template><div class="mermaid-render" role="img" aria-label="Mermaid 图表" aria-busy="true">图表加载中...</div></figure>
+<p>这张图里最容易被低估的是“执行真实 Runtime”。有些团队为了评测方便，直接把问题拼进 prompt 调模型，这样只能测 prompt，测不到权限过滤、上下文装配、工具网关、缓存、重试、引用映射和输出解析。生产事故往往就发生在这些胶水层里。回归评测要尽量走和线上一致的代码路径，只把外部世界替换成 fixture。比如数据库工具可以返回固定结果，搜索工具可以返回固定候选，当前时间可以冻结，用户权限可以从样本里注入。</p>
+<p>回归套件的选择可以用资产标签驱动。每个样本声明自己覆盖哪些资产，变更检测根据 diff 计算受影响标签。下面是一个简单映射：</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">变更类型</th><th scope="col">必跑套件</th><th scope="col">追加套件</th><th scope="col">阻断策略</th></tr></thead><tbody><tr><td>system prompt</td><td>核心冒烟、高风险阻断</td><td>相关任务类型专项</td><td>高风险样本失败即阻断</td></tr><tr><td>工具 schema</td><td>工具调用专项、核心冒烟</td><td>使用该工具的历史失败</td><td>参数错误和越权调用阻断</td></tr><tr><td>检索参数</td><td>检索召回、引用质量</td><td>相关知识域样本</td><td>必须证据未命中阻断</td></tr><tr><td>模型版本</td><td>全部核心、高风险、格式专项</td><td>成本和延迟套件</td><td>质量退化或成本超预算阻断</td></tr><tr><td>文档索引</td><td>受影响文档样本</td><td>冲突知识和过期引用</td><td>引用缺失阻断，高层摘要观察</td></tr></tbody></table></div>
+<p>评测报告不要只输出一张总表。最有用的报告应该先回答“这次不能上线的原因是什么”，再展示“哪些维度变好或变差”，最后提供“到哪里看 trace”。我会把报告分成四层：发布结论、阻断失败、非阻断退化、成本和延迟变化。每条失败都要能点到样本、期望、实际输出、关键 trace 事件、最近通过版本和建议 owner。</p>
+<figure class="mermaid-block" data-mermaid-block><template data-mermaid-source>sequenceDiagram
+  participant C as CI Job
+  participant S as Sample Store
+  participant R as Eval Runner
+  participant A as AI Runtime
+  participant T as Trace Store
+  participant E as Evaluators
+  C-&gt;&gt;S: select suite by changed assets
+  S--&gt;&gt;C: samples and fixtures
+  C-&gt;&gt;R: run candidate release
+  R-&gt;&gt;A: execute sample through production path
+  A-&gt;&gt;T: emit retrieval, model, tool, parser events
+  A--&gt;&gt;R: answer and trace_id
+  R-&gt;&gt;T: fetch structured trace
+  R-&gt;&gt;E: score dimensions and compare baseline
+  E--&gt;&gt;C: gate result and failure report</template><div class="mermaid-render" role="img" aria-label="Mermaid 图表" aria-busy="true">图表加载中...</div></figure>
+<p>这个流程还有一个重要输出：失败样本的归因标签。归因标签不是为了甩锅，而是为了让长期趋势可见。连续几周失败都集中在 <code>missing_evidence</code>，说明检索和上下文策略有系统问题；失败集中在 <code>schema_invalid</code>，说明输出约束和解析器需要治理；失败集中在 <code>tool_loop</code>，说明工具计划器或停止条件有问题。没有归因标签，团队每次都在单点修补，看不到结构性问题。</p>
+<h2 id="工程实现">工程实现</h2>
+<p>工程实现可以从一个仓库化样本库开始。样本用 YAML 或 JSONL 都可以，关键是字段要支持可重放和可判定。下面是一个回归样本例子，它覆盖工具调用、引用和拒答边界：</p>
+<div class="code-block"><pre class="line-numbers language-yaml" data-language="YAML"><code class="language-yaml">id: reg_support_refund_042
+title: 退款政策变更后的高价值客户查询
+risk_level: high
+assets:
+  prompts:
+    - support_answer_v5
+  tools:
+    - order_lookup
+    - policy_search
+  indexes:
+    - help_center_2026_03
+triggered_by:
+  - incident: inc_2026_02_21_wrong_refund_window
+input:
+  query: &quot;这个企业客户三月十号买的年付套餐，现在要退，按新规则能退多少？&quot;
+  user:
+    role: support_agent
+    tenant: cn_enterprise
+  frozen_time: &quot;2026-03-18T09:30:00+08:00&quot;
+fixtures:
+  order_lookup:
+    request:
+      customer_type: enterprise
+      purchase_date: &quot;2026-03-10&quot;
+    response:
+      plan: annual
+      paid_amount_cny: 120000
+      refund_status: eligible
+expected:
+  must_call:
+    - tool: order_lookup
+    - tool: policy_search
+  must_cite:
+    - doc_id: refund-policy-2026-03
+      section: enterprise-annual-plan
+  must_include:
+    - &quot;按企业年付套餐的新规则计算&quot;
+    - &quot;需要客服主管确认后执行&quot;
+  must_not_include:
+    - &quot;七天无理由全额退款&quot;
+    - &quot;无需审批&quot;
+evaluation:
+  max_latency_ms: 6000
+  max_cost_usd: 0.05
+  evaluators:
+    - tool_sequence
+    - citation_coverage
+    - forbidden_claims
+    - factual_judge_v3
+owner:
+  team: ai-support
+  slack: support-ai-oncall</code></pre></div>
+<p>这个样本里，<code>assets</code> 用于影响面分析，<code>fixtures</code> 用于固定工具返回，<code>expected</code> 用于规则和语义评分，<code>owner</code> 用于失败分派。<code>triggered_by</code> 很有价值，它记录这条样本来自哪次事故。半年后有人想删除或放宽这条样本时，可以知道它保护的历史风险，不会因为“现在看起来有点严格”就随手移除。</p>
+<p>Runner 的职责不要写成一个巨大脚本。比较清晰的边界是：loader 读取样本并解析 fixture，executor 调用真实 runtime，trace collector 拉取事件，evaluator 按维度评分，comparator 和基线比较，reporter 输出门禁结果。每一层都可以独立测试。尤其是 evaluator，一定不要和 runner 混在一起，否则评分口径很难演进。</p>
+<div class="code-block"><pre class="line-numbers language-go" data-language="Go"><code class="language-go">type RegressionSample struct {
+    ID         string            `json:&quot;id&quot;`
+    RiskLevel  string            `json:&quot;risk_level&quot;`
+    Assets     AssetRefs         `json:&quot;assets&quot;`
+    Input      SampleInput       `json:&quot;input&quot;`
+    Fixtures   map[string]any    `json:&quot;fixtures&quot;`
+    Expected   ExpectedBehavior  `json:&quot;expected&quot;`
+    Evaluation EvaluationConfig  `json:&quot;evaluation&quot;`
+    Owner      Owner             `json:&quot;owner&quot;`
+}
+
+type EvalResult struct {
+    SampleID     string                     `json:&quot;sample_id&quot;`
+    ReleaseID    string                     `json:&quot;release_id&quot;`
+    Passed       bool                       `json:&quot;passed&quot;`
+    GateBlocking bool                       `json:&quot;gate_blocking&quot;`
+    Dimensions   map[string]DimensionResult `json:&quot;dimensions&quot;`
+    FailureLabel string                     `json:&quot;failure_label,omitempty&quot;`
+    TraceID      string                     `json:&quot;trace_id&quot;`
+    BaselineID   string                     `json:&quot;baseline_id&quot;`
+}</code></pre></div>
+<p>基线存储也要认真设计。不要只保存最终答案，因为未来排查时需要知道当时的检索结果、工具输出、上下文长度、模型版本和评分器版本。一个可用的基线记录至少包含：release_id、sample_id、runtime_version、prompt_version、model_version、tool_schema_version、index_version、answer_hash、trace_id、dimension_scores、approved_by、approved_at。对于高风险样本，基线变更应该要求人工批准。</p>
+<p>变更影响面可以先做得简单。CI 中读取 git diff，匹配路径和标签：<code>prompts/support_answer.md</code> 变了，就选 <code>support_answer_v5</code> 相关样本；<code>tools/order_lookup.schema.json</code> 变了，就选 <code>order_lookup</code> 样本；<code>retrieval/rerank.yaml</code> 变了，就选检索专项。等系统成熟后，再把 prompt、工具和样本的依赖关系写入注册表，由平台统一维护。</p>
+<p>回归评测还需要处理随机性。模型采样参数应该在阻断评测中固定，能设 seed 就设 seed，不能设 seed 就用多次运行和稳定性阈值。对于高风险样本，我会要求连续两次通过，或者一次失败就进入人工 review。对于低风险开放问答，可以用三次运行取最差维度，观察答案是否稳定。这样可以避免一次偶然通过掩盖不稳定行为。</p>
+<p>评分器的顺序也有讲究。先跑便宜且确定的规则：schema、必填字段、工具调用、引用 ID、禁止词、成本和延迟。规则失败后，如果已经足以阻断，就不必再调用昂贵的 LLM judge。只有在规则通过但语义仍需判断时，才调用裁判模型。这样既省钱，也减少裁判漂移对结果的影响。</p>
+<p>一个具体执行例子可以这样走：工程师改了客服助手的系统 prompt，CI 识别到 <code>support_answer_v5</code> 变更，选择二十条核心冒烟、三十五条客服高风险、十五条历史退款事故样本。Runner 冻结时间，注入订单查询 fixture，通过真实 runtime 执行。某条退款样本里，候选版本调用了订单工具，也引用了政策文档，但最终答案写成“可直接退款，无需审批”。规则评分器发现 <code>must_not_include</code> 命中，语义裁判确认审批约束被丢失，门禁阻断。报告指出上一个通过版本是 <code>rel_2026_03_14</code>，失败维度是 <code>forbidden_claims</code>，建议 owner 是 <code>ai-support</code>。工程师不用猜模型哪里坏了，直接看 trace 和 prompt 差异。</p>
+<h2 id="测试评测">测试评测</h2>
+<p>回归评测系统本身也要被测试。首先是样本 schema 测试：每个样本必须有 id、risk_level、input、expected、evaluation、owner；风险等级必须在枚举里；must_cite 指向的文档和片段必须存在；tool fixture 必须符合工具 schema；时间必须是明确时区；成本阈值不能缺省成无限。这个校验应该在样本 PR 中先跑，避免坏样本进入主干。</p>
+<p>其次是评分器单测。每个 evaluator 都要有正例、反例和边界例。工具顺序评分器要区分“没调用”“调用错工具”“工具参数错”“顺序错但业务等价”；引用评分器要区分“引用不存在”“引用存在但不支持结论”“引用支持部分结论”；禁止声明评分器要处理同义表达，不能只靠简单字符串。LLM judge 要有固定校准集，每次改裁判 prompt 都要跑校准，观察误判率。</p>
+<p>第三是端到端回放测试。选一小组稳定样本，用固定 fixture 跑 runtime，确保 trace 事件完整、评分器能读取、报告能生成。这个测试不是为了证明模型质量，而是为了证明评测管线没有断。很多团队会遇到这样的尴尬：真正要发布时，才发现评测 runner 跑不起来，原因是工具 schema 改了但样本 fixture 没更新。端到端回放可以提前暴露这种问题。</p>
+<p>第四是基线对比测试。你需要故意构造一个候选结果：事实变好、成本变差；引用变差、格式不变；工具调用多一次但答案正确。确认 comparator 能正确标记退化和非退化。没有 comparator 测试，报告很容易把所有差异都当成失败，或者把关键退化当成正常变化。</p>
+<div class="article-table-wrap"><table class="article-data-table"><thead><tr><th scope="col">测试对象</th><th scope="col">测试重点</th><th scope="col">通过标准</th><th scope="col">失败后的处理</th></tr></thead><tbody><tr><td>样本 schema</td><td>字段完整、引用存在、fixture 合法</td><td>样本可被 runner 加载</td><td>修样本，不进入 active</td></tr><tr><td>规则评分器</td><td>确定性和边界条件</td><td>正反例全部通过</td><td>修 evaluator 并补回归例</td></tr><tr><td>语义裁判</td><td>裁判一致性和漂移</td><td>校准集误判率低于阈值</td><td>调整 rubric 或转人工</td></tr><tr><td>Runtime 回放</td><td>真实链路可执行</td><td>trace 完整且结果可评分</td><td>修夹具或适配器</td></tr><tr><td>基线对比</td><td>退化识别</td><td>维度变化解释正确</td><td>修 comparator</td></tr></tbody></table></div>
+<p>评测结果还要做趋势验证。一次失败很重要，但连续趋势更有价值。建议按天或按 release 记录每个维度的通过率、阻断次数、平均成本、P95 延迟和不稳定样本数量。如果 schema 失败率慢慢上升，说明格式约束正在失效；如果成本在模型未变的情况下上涨，可能是上下文装配变长；如果同一批样本偶发失败增多，说明随机性或外部 fixture 有问题。趋势可以让团队在事故前看到苗头。</p>
+<p>人工复核是测试评测中不可缺的一环。不是所有样本都应该全自动阻断。对于开放答案、策略权衡和业务口径变化，自动评分器可以先给建议，再由 reviewer 确认。人工复核的结果要反过来更新样本、评分器和基线。如果 reviewer 经常推翻某个 LLM judge，说明裁判提示词或 rubric 有问题；如果 reviewer 经常发现样本期望过时，说明样本生命周期治理有问题。</p>
+<h2 id="失败模式">失败模式</h2>
+<p>第一个失败模式是 flaky eval。样本有时通过有时失败，团队就会失去对评测的信任。原因可能是模型随机性、实时依赖、时间未冻结、检索索引漂移、工具 fixture 不完整、裁判模型不稳定。解决办法不是简单重跑直到通过，而是给样本打 <code>unstable</code> 标签，隔离到诊断队列，找出波动来源。阻断集必须保持高稳定性，否则门禁会被绕过。</p>
+<p>第二个失败模式是过拟合回归集。工程师为了让 CI 过，把 prompt 写得只适配已知样本，甚至在系统里硬编码某些问法。短期分数提高，真实泛化下降。避免过拟合的方法是保留隐藏样本、定期从线上失败补充新样本、检查 prompt 中是否出现样本特有措辞，并把 variants 设计成真实问法簇，而不是固定题面。</p>
+<p>第三个失败模式是只看总分。一个版本从九十二分涨到九十四分，但高风险权限样本失败了一条，这个版本不能上线。AI 应用的风险不是平均分游戏。门禁应该优先看高风险样本、硬契约和重大退化，再看总体趋势。总分可以用于观察，不应该单独决定发布。</p>
+<p>第四个失败模式是评测和生产链路脱节。评测直接调用模型，线上经过检索、权限、工具、缓存和解析器。最后评测通过，生产仍然失败。解决方式是共享 runtime，外部依赖用 fixture 替换，评测 trace 和生产 trace 用同一种事件模型。这样失败才有可比性。</p>
+<p>第五个失败模式是裁判漂移。LLM judge 本身升级、prompt 修改或采样参数变化，会改变判定口径。裁判漂移会让质量趋势失真。裁判也要版本化，也要有校准集。高风险样本尽量用规则和人工确认，不要把安全边界完全交给语义裁判。</p>
+<p>第六个失败模式是样本无人维护。业务规则变了，文档迁移了，工具废弃了，样本还在阻断，工程师只能绕过。每条 active 样本都要有 owner 和 review 周期。过时样本不要直接删除，先 quarantined，说明原因和替代样本，再 retired。这样既保护历史，也不让评测集变成负担。</p>
+<p>第七个失败模式是成本失控。回归越做越大，如果没有分层和缓存，一次 PR 就调用大量模型，团队最后会关闭 CI。要按风险分层，先跑便宜规则，语义裁判按需调用，对低风险样本做抽样，对全量回归安排在夜间或发布候选阶段。评测成本也是生产成本的一部分，必须被预算管理。</p>
+<h2 id="上线-checklist">上线 checklist</h2>
+<ul><li>变更影响面已经识别，涉及的 prompt、模型、工具、索引、策略和 schema 都有对应样本套件。</li><li>核心冒烟集全部通过，高风险阻断集零失败，非阻断退化已经有 owner 确认。</li><li>失败报告包含 sample_id、risk_level、失败维度、实际输出、期望行为、trace_id、最近通过版本。</li><li>评测运行使用固定时间、固定 fixture、固定模型参数和明确的 release_id。</li><li>新增或修改的样本通过 schema 校验，must_cite 指向有效文档，tool fixture 符合当前工具 schema。</li><li>LLM judge 的版本和 prompt 已记录，裁判校准集没有明显漂移。</li><li>成本和延迟在预算内，P95 没有超过发布阈值，重试次数没有异常增加。</li><li>基线变更经过 review，高风险样本的基线更新有人类批准记录。</li><li>灰度阶段的线上 trace 会按同一套维度采集，方便和离线回归对照。</li><li>如果有 quarantined 样本，已经说明隔离原因、负责人和恢复条件。</li></ul>
+<h2 id="总结">总结</h2>
+<p>回归评测的目标不是把 AI 应用变成完全确定的传统程序，而是在不确定行为外面建立可执行的工程边界。每一次 prompt、模型、工具和索引变更，都可能同时带来收益和退化。没有回归，团队只能靠感觉上线；有了回归，至少能知道哪些历史风险仍然被守住，哪些关键契约已经破坏，哪些变化需要人工判断。</p>
+<p>真正有用的回归评测，依赖四件事：来自真实失败的样本，和生产一致的执行链路，维度化且可解释的评分，以及能进入发布流程的门禁。样本库不必一开始很大，但每条都要有明确风险和维护责任。评测平台不必一开始很重，但必须能复现、能归因、能对比基线。这样回归评测才不会变成形式化报表，而会成为 AI 应用持续迭代时最重要的安全网。</p>
+      </article>
+    </main>
+  </div>
+  <script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/toolbar/prism-toolbar.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/show-language/prism-show-language.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.js" defer></script>
+  <script src="/js/vendor/mermaid.min.js" defer></script>
+  <script src="/js/article-rendering.js?v=20260524-render4" defer></script>
+  <script src="/js/i18n.js?v=20260524-lang6" defer></script>
+</body>
+</html>
